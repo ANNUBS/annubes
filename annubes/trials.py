@@ -5,6 +5,8 @@ import numpy as np
 class HabituationTask:
     def __init__(self, task_param):
         # Q: which values and why?
+        # ok tra 0 e 1
+        # maybe there to make them closer to the exp
         self.intensity = [9, 9.25, 9.5, 9.75, 10, 10.25, 10.5, 11, 12, 13]
         # 'catch' refers to giving only gaussian noise to the animal, no stimulus at all
         self.modalities = ['v', 'a', 'catch']
@@ -12,6 +14,7 @@ class HabituationTask:
         self.imin = self.intensity[0]
         self.imax = self.intensity[-1]
 
+        # all of the tasks we plan to implement have a fixation
         self.fixation = 100 # Q: ms? Amount?
         self.stimulus = 5000  # stimulus is present for model second
         self.T = self.fixation + self.stimulus
@@ -43,6 +46,7 @@ class HabituationTask:
         # Select task condition
         # -------------------------------------------------------------------------------------
         # Q: how to decide catch_prob? (In Thomas' repo was 0.5)
+        # No catch trials in the first stage
         if catch_prob is not None:
             # non_catch_prob = (1 - catch_prob) / 3  # probability for generating 'v', 'a' and 'va' trials
             # p = [non_catch_prob] * 3 + [catch_prob]
