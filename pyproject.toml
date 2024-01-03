@@ -12,18 +12,15 @@ authors = [
     { name = "Giulia Crocioni", email = "g.crocioni@esciencecenter.nl" }
 ]
 classifiers = [
-    "Development Status :: 2 - Pre-Alpha",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: Apache Software License",
     "Natural Language :: English",
-    "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.9",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
 ]
-dependencies = []
+dependencies = [
+    "numpy >= 1.26.2"
+]
 description = "ANNUBeS: training Artificial Neural Networks to Uncover Behavioral Strategies in neuroscience"
 keywords = [
     "neuroscience",

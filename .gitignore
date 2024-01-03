@@ -29,3 +29,6 @@ env
 env3
 venv
 venv3
+
+# personal folders for dev
+training_results
