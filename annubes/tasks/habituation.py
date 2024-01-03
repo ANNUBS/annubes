@@ -2,23 +2,15 @@ import itertools
 import numpy as np
 
 
-# Q: In general, check together all attributes and parameters (also in the ipynb)
 class HabituationTask:
     def __init__(self, task_param):
-        # Q: Is intensity okay?
-        # During the training we want the animal to learn all the stimulus' range
-        # but during testing, we may be most interested in the lowest part of the range
-        # keep intensity attribute flexible (arg for the class)
-        # Jorge will ask more about this
         self.intensity = [.8, .9, 1]
-        # self.intensity = list(np.linspace(0, 1, 11))
         # 'catch' refers to giving only gaussian noise to the animal, no stimulus at all
-        self.modalities = ['v', 'a', 'catch']
+        self.modalities = task_param['modalities']
 
         self.imin = self.intensity[0]
         self.imax = self.intensity[-1]
 
-        # Q: Do we leave the fixation period in the task?
         self.fixation = 100
         self.stimulus = 5000
         self.T = self.fixation + self.stimulus
@@ -45,7 +37,7 @@ class HabituationTask:
         # -------------------------------------------------------------------------------------
 
         if catch_prob is not None:
-            non_catch_prob = (1 - catch_prob) / 3  # probability for generating trials in each of the other modalities
+            non_catch_prob = (1 - catch_prob) / 1  # probability for generating trials in each of the other modalities
             n_other_trials = int(non_catch_prob * minibatch_size)  # number of trials in other modalities
             non_catch_trials = list(itertools.chain.from_iterable([[m] * n_other_trials for m in self.modalities[:-1]]))
             modality = np.array(non_catch_trials + (minibatch_size - len(non_catch_trials)) * ['catch'])
@@ -109,7 +101,7 @@ class HabituationTask:
         alpha = dt/self.tau
 
         inp_noise = 1/alpha * np.sqrt(2 * alpha) * self.std_inp_noise * rng.normal(loc=0, scale=1, size=x.shape)
-       # inp_noise = rng.normal(loc=0, scale=self.std_inp_noise, size=x.shape)
+
         trials['inputs'] = x + self.baseline_inp + inp_noise
 
         # -------------------------------------------------------------------------------------
