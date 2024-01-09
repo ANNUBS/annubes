@@ -209,7 +209,6 @@ class Task:
 
         self.trials['outputs'] = y
 
-
     def plot_trials(self, n = 1):
         """Method for plotting generated trials.
 
