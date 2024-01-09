@@ -19,7 +19,7 @@ class Task:
                  baseline_inp: float | int = 0.2, # baseline input for all neurons
                  high_output: float | int = 1.5, # desired network outputs
                  low_output: float | int = 0.2
-                 ):
+                 ) -> None:
         """Constructor method for Task class.
 
         Args:
@@ -208,6 +208,8 @@ class Task:
             y[i, phases['stimulus'], 1 - choice[i]] = self.low_output
 
         self.trials['outputs'] = y
+
+        return self.trials
 
 
     def plot_trials(self, n = 1):
