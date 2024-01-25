@@ -19,7 +19,6 @@ class Task:
                  value_in: list[float | int] = [.8, .9, 1], # intensity values for each stimulus
                  scaling: bool = False, # True if you want to scale the input
                  t_fixation: int | None = 100, # time for fixation in ms
-                 # TODO: implement value_fixation usage
                  value_fixation: int | float | None = None, # intensity value for fixation
                  # TODO: implement max_sequential usage
                  max_sequential: int | None = None, # maximum number of sequential trials of the same modality
@@ -62,22 +61,19 @@ class Task:
         self.modalities = list(OrderedDict.fromkeys(char for string in session_in for char in string))
         self.n_in = len(self.modalities) + 1 # +1 for start cue
         self.value_in.sort()
+        self.imin = self.value_in[0]
+        self.imax = self.value_in[-1]
+        if (self.value_fixation is not None) and self.scaling:
+            self.value_fixation = self.scale_input(self.value_fixation, self.imin, self.imax)
         self.T = self.t_fixation + self.t_in
         self.t = np.linspace(self.dt, self.T, int(self.T / self.dt))
 
         # Checks
         # TODO: check that the sum of the probabilities of session_in is 1
 
-    def scale_input(self, f):
-        """Method for scaling input.
-
-        Args:
-            f (_type_): _description_
-
-        Returns:
-            _type_: _description_
-        """
-        return 0.6*(f - self.value_in[0]) / (self.value_in[-1] - self.value_in[0])
+    def scale_input(self, f, min, max):
+        """Method for scaling input."""
+        return 0.6*(f - min) / (max - min)
 
     def generate_trials(self,
                         batch_size: int = 20,
@@ -140,11 +136,13 @@ class Task:
                 if (modality_seq[n] != 'catch') and (m in modality_seq[n]):
                     sel_value_in[n, idx] = rng.choice(self.value_in[1:], 1)
                 if self.scaling:
-                    sel_value_in[n, idx] = self.scale_input(sel_value_in[n, idx])
+                    sel_value_in[n, idx] = self.scale_input(sel_value_in[n, idx], self.imin, self.imax)
                 x[n, phases['input'], idx] = sel_value_in[n, idx]
+                x[n, phases['t_fixation'], idx] = self.value_fixation
             x[n, phases['input'], len(self.modality_idx)] = 1 # start cue
 
-        # store intensities in trial
+        # store intensities in trials
+        self.trials['value_fixation'] = self.value_fixation
         self.trials['sel_value_in'] = sel_value_in
 
         # add noise to inputs
