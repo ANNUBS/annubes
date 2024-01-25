@@ -30,9 +30,7 @@ class Task:
                  std_inp_noise: float | int =  0.01, # standard deviation for input noise
                  baseline_inp: float | int = 0.2, # baseline input for all neurons
                  n_out: int = 2, # number of outputs
-                 # TODO: make this a list of values
-                 high_out: float | int = 1.0, # value for high output
-                 low_out: float | int = 0.0 # value for low output
+                 value_out: list[float | int] = [0, 1]
                  ):
         """Constructor method for Task class."""
         # Attributes from the class constructor parameters
@@ -52,8 +50,7 @@ class Task:
         self.std_inp_noise = std_inp_noise
         self.baseline_inp = baseline_inp
         self.n_out = n_out
-        self.high_out = high_out
-        self.low_out = low_out
+        self.value_out = value_out
 
         # Derived attributes
         self.trials = {}
@@ -67,8 +64,12 @@ class Task:
             self.value_fixation = self.scale_input(self.value_fixation, self.imin, self.imax)
         self.T = self.t_fixation + self.t_in
         self.t = np.linspace(self.dt, self.T, int(self.T / self.dt))
+        self.value_out.sort()
+        self.low_out = self.value_out[0]
+        self.high_out = self.value_out[1]
 
         # Checks
+        # if abs(sum_of_floats - target_number) < tolerance
         # TODO: check that the sum of the probabilities of session_in is 1
 
     def scale_input(self, f, min, max):
