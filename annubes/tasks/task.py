@@ -9,6 +9,7 @@ from plotly.subplots import make_subplots
 
 # TODO: Complete docstrings
 # TODO: Evaluate https://docs.pydantic.dev/latest/ for input validation
+# TODO: Wrap pieces of code into internal methods
 class Task:
     """General class for defining a task."""
     def __init__(self,
