@@ -217,18 +217,17 @@ class Task:
                 showlegend=showlegend,
                 line_color = 'green'
             ), row=i+1, col=1)
-            # TODO: improve the labeling for the outputs, smt like "choice 1/2 stimulus/no-stimulus"
             fig.add_trace(go.Scatter(
-                name="NO STIMULUS",
+                name="Choice 1: NO STIMULUS",
                 mode="lines", x=self.trials['t'], y=self.trials['outputs'][i][:,0],
-                legendgroup="OUTPUT 1",
+                legendgroup="Choice 1",
                 showlegend=showlegend,
                 line_color = 'orange'
             ), row=i+1, col=1)
             fig.add_trace(go.Scatter(
-                name="STIMULUS/STIMULI",
+                name="Choice 2: STIMULUS",
                 mode="lines", x=self.trials['t'], y=self.trials['outputs'][i][:,1],
-                legendgroup="OUTPUT 2",
+                legendgroup="Choice 2",
                 showlegend=showlegend,
                 line_color = 'purple'
             ), row=i+1, col=1)
