@@ -22,7 +22,7 @@ class Task:
                  value_fixation: int | float | None = None, # intensity value for fixation
                  # TODO: implement max_sequential usage
                  max_sequential: int | None = None, # maximum number of sequential trials of the same modality
-                 catch_prob: float | None = 0.5, # probability of catch trials in the session, between 0 and 1
+                 catch_prob: float | int = 0, # probability of catch trials in the session, between 0 and 1
                  # TODO: implement inter_trial usage
                  inter_trial: int | None = None, # inter-trial interval in ms
                  dt: int = 20, # time step in ms
@@ -81,29 +81,36 @@ class Task:
                         batch_size: int = 20,
                         numpy_seed: int = None):
         """Method for generating synthetic trials."""
+        # Set the seed for reproducibility
         if numpy_seed is None:
-            numpy_seed = random.randrange(sys.maxsize)
+            numpy_seed = random.randrange(2**32 - 1)
         self.trials['numpy_seed'] = numpy_seed
         rng = np.random.default_rng(numpy_seed)
+        np.random.seed(numpy_seed)
 
         # -------------------------------------------------------------------------------------
         # Select task condition
         # -------------------------------------------------------------------------------------
 
+        # Extract keys and probabilities from the dictionary
+        scenarios = list(self.session_in.keys())
+        probabilities = np.array(list(self.session_in.values()))
+        # Normalize probabilities to ensure they sum to 1
+        probabilities /= probabilities.sum()
+        # Generate random numbers of samples based on the probabilities
+        prob_samples = np.random.multinomial(batch_size, probabilities)
+        # Create a dictionary to store the results
+        self.session_in_samples = {
+            scenario: np.random.multinomial(prob_samples[i], [1-self.catch_prob, self.catch_prob])
+                for i, scenario in enumerate(scenarios)}
+        # Generate the sequence of modalities
         modality_seq = []
-        for m in self.session_in.keys():
-            if self.catch_prob is not None:
-                # TODO: encode this as an actual probability
-                n_m = round(self.session_in[m] * batch_size * (1 - self.catch_prob))
-                n_catch = round(self.session_in[m] * batch_size) - n_m
-                temp_seq = n_m * [m] + n_catch * ['catch']
-                rng.shuffle(temp_seq)
-                modality_seq += list(temp_seq)
-            else:
-                n_m = int(self.session_in[m] * batch_size)
-                modality_seq += n_m * [m]
-            if not self.ordered:
-                rng.shuffle(modality_seq)
+        for m in scenarios:
+            temp_seq = self.session_in_samples[m][0] * [m] + self.session_in_samples[m][1] * ['catch']
+            rng.shuffle(temp_seq)
+            modality_seq += list(temp_seq)
+        if not self.ordered:
+            rng.shuffle(modality_seq)
         modality_seq = np.array(modality_seq)
 
         # -------------------------------------------------------------------------------------
@@ -129,11 +136,11 @@ class Task:
         # Inputs
         # -------------------------------------------------------------------------------------
 
-        x = np.zeros((len(self.trials['modality_seq']), len(self.t), self.n_in), dtype=np.float32)
-        sel_value_in = np.full((len(self.trials['modality_seq']), self.n_in - 1), self.value_in[0], dtype=np.float32)
+        x = np.zeros((batch_size, len(self.t), self.n_in), dtype=np.float32)
+        sel_value_in = np.full((batch_size, self.n_in - 1), self.value_in[0], dtype=np.float32)
         self.modality_idx = {m: i for i, m in enumerate(self.modalities)}
 
-        for n in range(len(modality_seq)):
+        for n in range(batch_size):
             for m, idx in self.modality_idx.items():
                 if (modality_seq[n] != 'catch') and (m in modality_seq[n]):
                     sel_value_in[n, idx] = rng.choice(self.value_in[1:], 1)
@@ -156,8 +163,8 @@ class Task:
         # target output
         # -------------------------------------------------------------------------------------
 
-        y = np.zeros((len(modality_seq), len(self.t), self.n_out), dtype=np.float32)
-        for i in range(len(modality_seq)):
+        y = np.zeros((batch_size, len(self.t), self.n_out), dtype=np.float32)
+        for i in range(batch_size):
             if self.t_fixation is not None:
                 y[i, phases['t_fixation'], :] = self.low_out
 
