@@ -69,8 +69,9 @@ class Task:
         self.high_out = self.value_out[1]
 
         # Checks
-        # if abs(sum_of_floats - target_number) < tolerance
-        # TODO: check that the sum of the probabilities of session_in is 1
+        tolerance = 1/50
+        if not abs(sum(self.session_in.values()) - 1) < tolerance:
+            raise ValueError('The sum of the probabilities of session_in must be 1.')
 
     def scale_input(self, f, min, max):
         """Method for scaling input."""
