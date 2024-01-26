@@ -23,8 +23,7 @@ class Task:
                  value_fixation: int | float | None = None, # intensity value for fixation
                  max_sequential: int | None = None, # maximum number of sequential trials of the same modality
                  catch_prob: float | int = 0, # probability of catch trials in the session, between 0 and 1
-                 # TODO: implement inter_trial usage
-                 inter_trial: int | None = None, # inter-trial interval in ms
+                 inter_trial: int = 0, # inter-trial interval in ms
                  dt: int = 20, # time step in ms
                  tau: int = 100, # time constant in ms
                  std_inp_noise: float | int =  0.01, # standard deviation for input noise
@@ -62,8 +61,9 @@ class Task:
         self.imax = self.value_in[-1]
         if (self.value_fixation is not None) and self.scaling:
             self.value_fixation = self.scale_input(self.value_fixation, self.imin, self.imax)
-        self.T = self.t_fixation + self.t_in
-        self.t = np.linspace(self.dt, self.T, int(self.T / self.dt))
+        self.T = self.inter_trial + self.t_fixation + self.t_in
+        self.t = np.linspace(0, self.T, self.dt)
+        self.t = np.linspace(0, self.T, int((self.T + self.dt)/self.dt))
         self.value_out.sort()
         self.low_out = self.value_out[0]
         self.high_out = self.value_out[1]
@@ -131,8 +131,9 @@ class Task:
         # -------------------------------------------------------------------------------------
 
         phases = {}
-        phases['t_fixation'] = np.where(self.t <= self.t_fixation)[0]
-        phases['input'] = np.where(self.t > self.t_fixation)[0]
+        phases['inter_trial'] = np.where(self.t <= self.inter_trial)[0]
+        phases['t_fixation'] = np.where((self.t > self.inter_trial) & (self.t <= self.inter_trial + self.t_fixation))[0]
+        phases['input'] = np.where(self.t > self.inter_trial + self.t_fixation)[0]
 
         # -------------------------------------------------------------------------------------
         # Trial Info
@@ -178,6 +179,8 @@ class Task:
 
         y = np.zeros((batch_size, len(self.t), self.n_out), dtype=np.float32)
         for i in range(batch_size):
+            if self.inter_trial is not None:
+                y[i, phases['inter_trial'], :] = self.low_out
             if self.t_fixation is not None:
                 y[i, phases['t_fixation'], :] = self.low_out
 
@@ -245,7 +248,7 @@ class Task:
                 line_color = 'purple'
             ), row=i+1, col=1)
             fig.add_vline(
-                x=self.t_fixation + self.dt, line_width=3, line_dash="dash", line_color="red")
+                x=self.inter_trial + self.t_fixation, line_width=3, line_dash="dash", line_color="red")
             showlegend = False
             # fig.update_yaxes(range=[0, 2], row=i+1, col=1)
         fig.update_layout(height=1300, width=900, title_text="Trials")
