@@ -7,6 +7,7 @@ build
 dist
 .cache
 __pycache__
+node_modules
 
 htmlcov
 .coverage
@@ -19,7 +20,6 @@ docs/_build
 # ide
 .idea
 .eclipse
-.vscode
 
 # Mac
 .DS_Store

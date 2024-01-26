@@ -9,32 +9,27 @@ build-backend = "setuptools.build_meta"
 
 [project]
 authors = [
-    { name = "Giulia Crocioni", email = "g.crocioni@esciencecenter.nl" }
+    { name = "Giulia Crocioni", email = "g.crocioni@esciencecenter.nl" },
+    { name = "Dani Bodor", email = "d.bodor@esciencecenter.nl" },
 ]
 classifiers = [
     "Intended Audience :: Developers",
     "License :: OSI Approved :: Apache Software License",
     "Natural Language :: English",
     "Programming Language :: Python :: 3.11",
-    "Programming Language :: Python :: 3.12",
 ]
-dependencies = [
-    "numpy >= 1.26.2"
-]
+dependencies = ["numpy >= 1.26.2", "ruff >= 0.1.13"]
 description = "ANNUBeS: training Artificial Neural Networks to Uncover Behavioral Strategies in neuroscience"
-keywords = [
-    "neuroscience",
-    "neural networks",
-]
-license = {file = "LICENSE"}
+keywords = ["neuroscience", "neural networks"]
+license = { file = "LICENSE" }
 name = "annubes"
-readme = {file = "README.md", content-type = "text/markdown"}
+readme = { file = "README.md", content-type = "text/markdown" }
 requires-python = ">=3.11"
 version = "0.1.0"
 
 [project.optional-dependencies]
 dev = [
-    "build",  # build is not only used in publishing (below), but also in the template's test suite
+    "build",            # build is not only used in publishing (below), but also in the template's test suite
     "bump2version",
     "coverage [toml]",
     "pytest",
@@ -46,11 +41,7 @@ dev = [
     "tox",
     "myst_parser",
 ]
-publishing = [
-    "build",
-    "twine",
-    "wheel",
-]
+publishing = ["build", "twine", "wheel"]
 
 [project.urls]
 Repository = "https://github.com/ANNUBS/annubes"
@@ -64,14 +55,6 @@ testpaths = ["tests"]
 branch = true
 source = ["annubes"]
 command_line = "-m pytest"
-
-[tool.isort]
-lines_after_imports = 2
-force_single_line = 1
-no_lines_before = ["FUTURE", "STDLIB", "THIRDPARTY", "FIRSTPARTY", "LOCALFOLDER"]
-known_first_party = "annubes"
-src_paths = ["annubes", "tests"]
-line_length = 120
 
 # For completeness, until we move to an src-based layout
 [tool.setuptools.packages.find]
@@ -89,76 +72,113 @@ extras = dev
 """
 
 [tool.ruff]
-# Enable Pyflakes `E` and `F` codes by default.
+line-length = 120
 select = [
-    "F",  # Pyflakes
-    "E",  # pycodestyle (error)
-    "W",    # pycodestyle (warning)
-    # "C90",  # mccabe
-    "I",    # isort
-    "D",    # pydocstyle
-    # "PL",   # Pylint
-    # "PLC",  # Convention
-    # "PLE",  # Error
-    # "PLR",  # Refactor
-    # "PLW",  # Warning
-
+    "F",      # Pyflakes
+    "E",      # pycodestyle (error)
+    "W",      # pycodestyle (warning)
+    "I",      # isort
+    "D",      # pydocstyle
+    "UP",     # pyupgrade
+    "SIM",    # simplify
+    "C4",     # flake8-comprehensions
+    "S",      # flake8-bandit
+    "PGH",    # pygrep-hooks
+    "BLE",    # blind-except
+    "FBT003", # boolean-positional-value-in-call
+    "B",      # flake8-bugbear
+    "Q",      # flake8-quotes
+    "PLR",    # pylint refactoring
+    "ARG",    # flake8-unused-arguments
+    "SLF001", # Private member accessed
+    "PIE",    # flake8-pie
+    "RET",    # flaske8-return
+    "PT",     # pytest
+    "TID",    # imports
+    "TCH",    # imports
+    "PD",     # pandas
+    "NPY",    # numpy
+    "PL",     # pylint
+    "RUF",    # ruff rtecommendations
+    "PERF",   # performance
+    "TRY",    # try blocks
+    "ERA",    # commented out code
+    "PTH",    # flake8-use-pathlib
+    "N",      # naming conventions
+    "C901",   # mccabe complexity
+    # The type annotation module is quite strict, we might have to disable it
+    "ANN", # type annotations
+    # other linting conventions
+    "FLY",
+    "AIR",
+    "YTT",
+    "ASYNC",
+    "A",
+    "DTZ",
+    "DJ",
+    "FA",
+    "ISC",
+    "ICN",
+    "G",
+    "INP",
+    "PYI",
+    "Q",
+    "RSE102",
+    "SLOT",
+    "INT",
 ]
 ignore = [
-    'D100',  # Missing module docstring
-    'D104',  # Missing public package docstring
-    # The following list excludes rules irrelevant to the Google style
-    'D203',
-    'D204',
-    'D213',
-    'D215',
-    'D400',
-    'D401',
-    'D404',
-    'D406',
-    'D407',
-    'D408',
-    'D409',
-    'D413',
+    "PLR0912", # Too many branches,
+    "PLR0913", #Too many arguments in function definition
+    "B028",    # No explicit `stacklevel` keyword argument found in
+    "PLR2004", # Magic value used in comparison
+    "S105",    # Possible hardcoded password
+    "S311",    # insecure random generators
+    "PT011",   # pytest-raises-too-broad
+    "SIM108",  # Use ternary operator
+    "TRY003",  # Long error messages
+    "ANN101",  # Missing type annotation for `self` in method
+    "ANN204",  # Missing return type annotation for special method `__init__`
+    # Missing docstrings Documentation
+    "D100", # Missing module docstring
+    "D101", # Missing docstring in public class
+    "D102", # Missing docstring in public method
+    "D103", # Missing docstring in public function
+    "D104", # Missing public package docstring
+    "D105", # Missing docstring in magic method
+    "D107", # Missing docstring in `__init__`
+    # Rules irrelevant to the Google style
+    "D203", # 1 blank line required before class docstring
+    "D204",
+    "D212", # Multi-line docstring summary should start at the first line
+    "D213", # Multi-line docstring summary should start at the second line
+    "D215",
+    "D400",
+    "D401",
+    "D404", # First word of the docstring should not be This
+    "D406",
+    "D407",
+    "D408",
+    "D409",
+    "D413",
 ]
 
-# Allow autofix for all enabled rules (when `--fix`) is provided.
-fixable = ["A", "B", "C", "D", "E", "F", "I"]
-unfixable = []
+# Allow autofix for all enabled rules.
+fixable = ["ALL"]
+unfixable = ["F401"] # unused imports (should not disappear while editing)
 
-exclude = [
-    ".bzr",
-    ".direnv",
-    ".eggs",
-    ".git",
-    ".hg",
-    ".mypy_cache",
-    ".nox",
-    ".pants.d",
-    ".ruff_cache",
-    ".svn",
-    ".tox",
-    ".venv",
-    "__pypackages__",
-    "_build",
-    "buck-out",
-    "build",
-    "dist",
-    "node_modules",
-    "venv",
-    ".venv",
-    "scripts",
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S101"] # Use of `assert` detected
+"docs/*" = ["ALL"]
+
+[tool.ruff.lint]
+extend-safe-fixes = [
+    "D415",   # First line should end with a period, question mark, or exclamation point
+    "D300",   # Use triple double quotes `"""`
+    "D200",   # One-line docstring should fit on one line
+    "TCH",    # type checking only imports
+    "ISC001", # implicitly concatenated strings on a single line
 ]
-per-file-ignores = {}
-
-
-# Allow unused variables when underscore-prefixed.
-dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
-
-target-version = "py39"
-line-length = 120
 
 [tool.ruff.isort]
 known-first-party = ["annubes"]
-force-single-line = true
-no-lines-before = ["future","standard-library","third-party","first-party","local-folder"]
