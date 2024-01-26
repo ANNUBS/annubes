@@ -4,6 +4,7 @@ from collections import OrderedDict
 
 import numpy as np
 import plotly.graph_objects as go
+from numpy.typing import NDArray
 from plotly.subplots import make_subplots
 
 
@@ -13,22 +14,22 @@ class Task:
     def __init__(
         self,
         name: str,
-        session_in: dict[str, float] = {"v": 0.5, "a": 0.5},
+        session_in: dict[str, float] | None = None,
         ordered: bool = False,
         t_in: int = 1000,
-        value_in: list[float | int] = [0.8, 0.9, 1],
+        value_in: list[float] | None = None,
         scaling: bool = False,
         t_fixation: int | None = 100,
-        value_fixation: int | float | None = None,
+        value_fixation: float | None = None,
         max_sequential: int | None = None,
-        catch_prob: float | int = 0,
+        catch_prob: float = 0,
         inter_trial: int = 0,
         dt: int = 20,
         tau: int = 100,
-        std_inp_noise: float | int = 0.01,
-        baseline_inp: float | int = 0.2,
+        std_inp_noise: float = 0.01,
+        baseline_inp: float = 0.2,
         n_out: int = 2,
-        value_out: list[float | int] = [0, 1],
+        value_out: list[float] | None = None,
     ):
         """Constructor method for the Task class.
 
@@ -39,21 +40,21 @@ class Task:
                 Defaults to {'v': 0.5, 'a': 0.5}.
             ordered (bool, optional): True if you want to keep the order of the modalities. Defaults to False.
             t_in (int, optional): time for each stimulus in ms. Defaults to 1000.
-            value_in (list[float | int], optional): intensity values for each stimulus. Defaults to [.8, .9, 1].
+            value_in (list[float], optional): intensity values for each stimulus. Defaults to [.8, .9, 1].
             scaling (bool, optional): True if you want to scale the input. Defaults to False.
             t_fixation (int | None, optional): time for fixation in ms. Defaults to 100.
-            value_fixation (int | float | None, optional): intensity value for fixation. Defaults to None.
+            value_fixation (float | None, optional): intensity value for fixation. Defaults to None.
             max_sequential (int | None, optional): maximum number of sequential trials of the same modality.
                 Defaults to None.
-            catch_prob (float | int, optional): probability of catch trials in the session, between 0 and 1.
+            catch_prob (float, optional): probability of catch trials in the session, between 0 and 1.
                 Defaults to 0.
             inter_trial (int, optional): inter-trial interval in ms. Defaults to 0.
             dt (int, optional): time step in ms. Defaults to 20.
             tau (int, optional): time constant in ms. Defaults to 100.
-            std_inp_noise (float | int, optional): standard deviation for input noise. Defaults to 0.01.
-            baseline_inp (float | int, optional): baseline input for all neurons. Defaults to 0.2.
+            std_inp_noise (float, optional): standard deviation for input noise. Defaults to 0.01.
+            baseline_inp (float, optional): baseline input for all neurons. Defaults to 0.2.
             n_out (int, optional): number of outputs. Defaults to 2.
-            value_out (list[float | int], optional): low and high intensity values for the output signals.
+            value_out (list[float], optional): low and high intensity values for the output signals.
                 Defaults to [0, 1].
 
         Attributes:
@@ -63,33 +64,33 @@ class Task:
                 put the modalities in the right order. Defaults to {'v': 0.5, 'a': 0.5}.
             ordered (bool): True if you want to keep the order of the modalities. Defaults to False.
             t_in (int): time for each stimulus in ms. Defaults to 1000.
-            value_in (list[float | int]): intensity values for each stimulus. Defaults to [.8, .9, 1].
+            value_in (list[float]): intensity values for each stimulus. Defaults to [.8, .9, 1].
             scaling (bool): True if you want to scale the input. Defaults to False.
             t_fixation (int | None): time for fixation in ms. Defaults to 100.
-            value_fixation (int | float | None): intensity value for fixation. Defaults to None.
+            value_fixation (float | None): intensity value for fixation. Defaults to None.
             max_sequential (int | None): maximum number of sequential trials of the same modality.
                 Defaults to None.
-            catch_prob (float | int): probability of catch trials in the session, between 0 and 1.
+            catch_prob (float): probability of catch trials in the session, between 0 and 1.
                 Defaults to 0.
             inter_trial (int): inter-trial interval in ms. Defaults to 0.
             dt (int): time step in ms. Defaults to 20.
             tau (int): time constant in ms. Defaults to 100.
-            std_inp_noise (float | int): standard deviation for input noise. Defaults to 0.01.
-            baseline_inp (float | int): baseline input for all neurons. Defaults to 0.2.
+            std_inp_noise (float): standard deviation for input noise. Defaults to 0.01.
+            baseline_inp (float): baseline input for all neurons. Defaults to 0.2.
             n_out (int): number of outputs. Defaults to 2.
-            value_out (list[float | int]): low and high intensity values for the output signals.
+            value_out (list[float]): low and high intensity values for the output signals.
                 Defaults to [0, 1].
             trials (dict): dictionary containing all the trials generated and the task's relevant information.
             modalities (list[str]): list of individual modalities.
             modality_idx (dict[str, int]): dictionary of modalities and their index.
             n_in (int): number of inputs.
-            imin (float | int): minimum value of the input intensities.
-            imax (float | int): maximum value of the input intensities.
+            imin (float): minimum value of the input intensities.
+            imax (float): maximum value of the input intensities.
             coeff (float): coefficient for scaling the input.
             T (int): total time of each trial in ms.
             t (np.ndarray): time vector of each trial in ms.
-            low_out (float | int): low intensity value for the output signals.
-            high_out (float | int): high intensity value for the output signals.
+            low_out (float): low intensity value for the output signals.
+            high_out (float): high intensity value for the output signals.
 
         Raises:
             ValueError: if the sum of the probabilities of `session_in` is not 1.
@@ -97,10 +98,10 @@ class Task:
         """
         # Attributes from the class constructor parameters
         self.name = name
-        self.session_in = OrderedDict(session_in)
+        self.session_in = OrderedDict(session_in) if session_in else OrderedDict({"v": 0.5, "a": 0.5})
         self.ordered = ordered
         self.t_in = t_in
-        self.value_in = value_in
+        self.value_in = value_in if value_in else [0.8, 0.9, 1]
         self.scaling = scaling
         self.t_fixation = t_fixation
         self.value_fixation = value_fixation
@@ -112,7 +113,7 @@ class Task:
         self.std_inp_noise = std_inp_noise
         self.baseline_inp = baseline_inp
         self.n_out = n_out
-        self.value_out = value_out
+        self.value_out = value_out if value_out else [0, 1]
 
         # Derived attributes
         self.trials = {}
@@ -142,21 +143,31 @@ class Task:
         if not (catch_prob >= 0 and catch_prob < 1):
             raise ValueError("`catch_prob` must be higher or equal to 0, or lower than 1.")
 
-    def _scale_input(self, f: float | int, coeff: float, min: float | int, max: float | int):
+    def _scale_input(
+        self,
+        f: float,
+        coeff: float,
+        min_intensity: float,
+        max_intensity: float,
+    ) -> float:
         """Internal method for scaling input.
 
         Args:
-            f (float | int): input value.
+            f (float): input value.
             coeff (float): coefficient for scaling the input.
-            min (float | int) : minimum value of the input intensities.
-            max (float | int): maximum value of the input intensities.
+            min_intensity (float) : minimum value of the input intensities.
+            max_intensity (float): maximum value of the input intensities.
 
         Returns:
             float: scaled input value.
         """
-        return coeff * (f - min) / (max - min)
+        return coeff * (f - min_intensity) / (max_intensity - min_intensity)
 
-    def _build_trials_seq(self, batch_size: int, rng: np.random.Generator):
+    def _build_trials_seq(
+        self,
+        batch_size: int,
+        rng: np.random.Generator,
+    ) -> NDArray:
         """Internal method for generating a sequence of modalities.
 
         Args:
@@ -164,7 +175,7 @@ class Task:
             rng (np.random.Generator): random number generator.
 
         Returns:
-            list[str]: list of modalities.
+            NDarray[str]: list of modalities.
         """
         # Extract keys and probabilities from the dictionary
         scenarios = list(self.session_in.keys())
@@ -172,10 +183,10 @@ class Task:
         # Normalize probabilities to ensure they sum to 1
         probabilities /= probabilities.sum()
         # Generate random numbers of samples based on the probabilities
-        prob_samples = np.random.multinomial(batch_size, probabilities)
+        prob_samples = np.random.Generator.multinomial(batch_size, probabilities)
         # Create a dictionary to store the results
         session_in_samples = {
-            scenario: np.random.multinomial(prob_samples[i], [1 - self.catch_prob, self.catch_prob])
+            scenario: np.random.Generator.multinomial(prob_samples[i], [1 - self.catch_prob, self.catch_prob])
             for i, scenario in enumerate(scenarios)
         }
         # Generate the sequence of modalities
@@ -199,12 +210,15 @@ class Task:
                     count = 1
                     while i > 0 and modality_seq[i] == modality_seq[i - 1] and count >= self.max_sequential:
                         i -= 1
-        modality_seq = np.array(modality_seq)
-        return modality_seq
+        return np.array(modality_seq)
 
     def _build_trials_inputs(
-        self, batch_size: int, modality_seq: list[str], rng: np.random.Generator, phases: dict[str, np.ndarray]
-    ):
+        self,
+        batch_size: int,
+        modality_seq: list[str],
+        rng: np.random.Generator,
+        phases: dict[str, np.ndarray],
+    ) -> NDArray:
         """Internal method for generating inputs.
 
         Args:
@@ -238,7 +252,12 @@ class Task:
 
         return x + self.baseline_inp + inp_noise
 
-    def _build_trials_outputs(self, batch_size: int, phases: dict[str, np.ndarray], choice: np.ndarray):
+    def _build_trials_outputs(
+        self,
+        batch_size: int,
+        phases: dict[str, np.ndarray],
+        choice: np.ndarray,
+    ) -> NDArray:
         """Internal method for generating outputs.
 
         Args:
@@ -261,7 +280,11 @@ class Task:
 
         return y
 
-    def generate_trials(self, batch_size: int = 20, numpy_seed: int = None):
+    def generate_trials(
+        self,
+        batch_size: int = 20,
+        numpy_seed: int | None = None,
+    ) -> None:
         """Method for generating trials. It populates the `trials` attribute.
 
         Args:
@@ -273,7 +296,7 @@ class Task:
             numpy_seed = random.randrange(2**32 - 1)
         self.trials["numpy_seed"] = numpy_seed
         rng = np.random.default_rng(numpy_seed)
-        np.random.seed(numpy_seed)
+        np.random.seed(numpy_seed)  # noqa: NPY002
 
         # Generate sequence of modalities
         modality_seq = self._build_trials_seq(batch_size, rng)
@@ -297,7 +320,7 @@ class Task:
         # Generate and store outputs
         self.trials["outputs"] = self._build_trials_outputs(batch_size, phases, choice)
 
-    def plot_trials(self, n=1):
+    def plot_trials(self, n: int = 1) -> go.Figure:
         """Method for plotting generated trials.
 
         Args:
@@ -323,7 +346,9 @@ class Task:
         )
         showlegend = True
         colors = [
-            "#%02x%02x%02x" % tuple(int(c * 255) for c in colorsys.hsv_to_rgb(i / len(self.modality_idx), 1.0, 1.0))
+            "#{:02x}{:02x}{:02x}".format(
+                *tuple(int(c * 255) for c in colorsys.hsv_to_rgb(i / len(self.modality_idx), 1.0, 1.0))
+            )
             for i in range(len(self.modality_idx))
         ]
         for i in range(n):
