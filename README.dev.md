@@ -62,7 +62,7 @@ coverage report
 
 ## Running linters locally
 
-For linting and sorting imports we will use [ruff](https://beta.ruff.rs/docs/). Running the linters requires an 
+For linting and sorting imports we will use [ruff](https://beta.ruff.rs/docs/). Running the linters requires an
 activated virtual environment with the development tools installed.
 
 ```shell
