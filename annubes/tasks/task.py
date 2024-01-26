@@ -1,6 +1,7 @@
 import colorsys
 import random
 from collections import OrderedDict
+
 import numpy as np
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
@@ -8,25 +9,27 @@ from plotly.subplots import make_subplots
 
 class Task:
     """General class for defining a task."""
-    def __init__(self,
-                 name: str,
-                 session_in: dict[str, float] = {'v': 0.5, 'a': 0.5},
-                 ordered: bool = False,
-                 t_in: int = 1000,
-                 value_in: list[float | int] = [.8, .9, 1],
-                 scaling: bool = False,
-                 t_fixation: int | None = 100,
-                 value_fixation: int | float | None = None,
-                 max_sequential: int | None = None,
-                 catch_prob: float | int = 0,
-                 inter_trial: int = 0,
-                 dt: int = 20,
-                 tau: int = 100,
-                 std_inp_noise: float | int =  0.01,
-                 baseline_inp: float | int = 0.2,
-                 n_out: int = 2,
-                 value_out: list[float | int] = [0, 1]
-                 ):
+
+    def __init__(
+        self,
+        name: str,
+        session_in: dict[str, float] = {"v": 0.5, "a": 0.5},
+        ordered: bool = False,
+        t_in: int = 1000,
+        value_in: list[float | int] = [0.8, 0.9, 1],
+        scaling: bool = False,
+        t_fixation: int | None = 100,
+        value_fixation: int | float | None = None,
+        max_sequential: int | None = None,
+        catch_prob: float | int = 0,
+        inter_trial: int = 0,
+        dt: int = 20,
+        tau: int = 100,
+        std_inp_noise: float | int = 0.01,
+        baseline_inp: float | int = 0.2,
+        n_out: int = 2,
+        value_out: list[float | int] = [0, 1],
+    ):
         """Constructor method for the Task class.
 
         Args:
@@ -113,10 +116,10 @@ class Task:
 
         # Derived attributes
         self.trials = {}
-        self.trials['name'] = self.name
+        self.trials["name"] = self.name
         self.modalities = list(OrderedDict.fromkeys(char for string in session_in for char in string))
         self.modality_idx = {m: i for i, m in enumerate(self.modalities)}
-        self.n_in = len(self.modalities) + 1 # +1 for start cue
+        self.n_in = len(self.modalities) + 1  # +1 for start cue
         self.value_in.sort()
         self.imin = self.value_in[0]
         self.imax = self.value_in[-1]
@@ -125,26 +128,21 @@ class Task:
             self.value_fixation = self._scale_input(self.value_fixation, self.coeff, self.imin, self.imax)
         self.T = self.inter_trial + self.t_fixation + self.t_in
         self.t = np.linspace(0, self.T, self.dt)
-        self.t = np.linspace(0, self.T, int((self.T + self.dt)/self.dt))
+        self.t = np.linspace(0, self.T, int((self.T + self.dt) / self.dt))
         self.value_out.sort()
         self.low_out = self.value_out[0]
         self.high_out = self.value_out[1]
 
         # Checks
         # session_in
-        tolerance = 1/50
+        tolerance = 1 / 50
         if not abs(sum(self.session_in.values()) - 1) < tolerance:
-            raise ValueError('The sum of the probabilities of `session_in` must be 1.')
+            raise ValueError("The sum of the probabilities of `session_in` must be 1.")
         # catch_prob
         if not (catch_prob >= 0 and catch_prob < 1):
-            raise ValueError('`catch_prob` must be higher or equal to 0, or lower than 1.')
+            raise ValueError("`catch_prob` must be higher or equal to 0, or lower than 1.")
 
-    def _scale_input(
-            self,
-            f: float | int,
-            coeff: float,
-            min: float | int,
-            max: float | int):
+    def _scale_input(self, f: float | int, coeff: float, min: float | int, max: float | int):
         """Internal method for scaling input.
 
         Args:
@@ -156,12 +154,9 @@ class Task:
         Returns:
             float: scaled input value.
         """
-        return coeff*(f - min) / (max - min)
+        return coeff * (f - min) / (max - min)
 
-    def _build_trials_seq(
-            self,
-            batch_size: int,
-            rng: np.random.Generator):
+    def _build_trials_seq(self, batch_size: int, rng: np.random.Generator):
         """Internal method for generating a sequence of modalities.
 
         Args:
@@ -180,12 +175,13 @@ class Task:
         prob_samples = np.random.multinomial(batch_size, probabilities)
         # Create a dictionary to store the results
         session_in_samples = {
-            scenario: np.random.multinomial(prob_samples[i], [1-self.catch_prob, self.catch_prob])
-                for i, scenario in enumerate(scenarios)}
+            scenario: np.random.multinomial(prob_samples[i], [1 - self.catch_prob, self.catch_prob])
+            for i, scenario in enumerate(scenarios)
+        }
         # Generate the sequence of modalities
         modality_seq = []
         for m in scenarios:
-            temp_seq = session_in_samples[m][0] * [m] + session_in_samples[m][1] * ['catch']
+            temp_seq = session_in_samples[m][0] * [m] + session_in_samples[m][1] * ["catch"]
             rng.shuffle(temp_seq)
             modality_seq += list(temp_seq)
         if not self.ordered:
@@ -207,11 +203,8 @@ class Task:
         return modality_seq
 
     def _build_trials_inputs(
-            self,
-            batch_size: int,
-            modality_seq: list[str],
-            rng: np.random.Generator,
-            phases: dict[str, np.ndarray]):
+        self, batch_size: int, modality_seq: list[str], rng: np.random.Generator, phases: dict[str, np.ndarray]
+    ):
         """Internal method for generating inputs.
 
         Args:
@@ -228,28 +221,24 @@ class Task:
 
         for n in range(batch_size):
             for m, idx in self.modality_idx.items():
-                if (modality_seq[n] != 'catch') and (m in modality_seq[n]):
+                if (modality_seq[n] != "catch") and (m in modality_seq[n]):
                     sel_value_in[n, idx] = rng.choice(self.value_in[1:], 1)
                 if self.scaling:
                     sel_value_in[n, idx] = self._scale_input(sel_value_in[n, idx], self.coeff, self.imin, self.imax)
-                x[n, phases['input'], idx] = sel_value_in[n, idx]
-                x[n, phases['t_fixation'], idx] = self.value_fixation
-            x[n, phases['input'], len(self.modality_idx)] = 1 # start cue
+                x[n, phases["input"], idx] = sel_value_in[n, idx]
+                x[n, phases["t_fixation"], idx] = self.value_fixation
+            x[n, phases["input"], len(self.modality_idx)] = 1  # start cue
 
         # Store intensities in trials
-        self.trials['sel_value_in'] = sel_value_in
+        self.trials["sel_value_in"] = sel_value_in
 
         # Add noise to inputs
-        alpha = self.dt/self.tau
-        inp_noise = 1/alpha * np.sqrt(2 * alpha) * self.std_inp_noise * rng.normal(loc=0, scale=1, size=x.shape)
+        alpha = self.dt / self.tau
+        inp_noise = 1 / alpha * np.sqrt(2 * alpha) * self.std_inp_noise * rng.normal(loc=0, scale=1, size=x.shape)
 
         return x + self.baseline_inp + inp_noise
 
-    def _build_trials_outputs(
-            self,
-            batch_size: int,
-            phases: dict[str, np.ndarray],
-            choice: np.ndarray):
+    def _build_trials_outputs(self, batch_size: int, phases: dict[str, np.ndarray], choice: np.ndarray):
         """Internal method for generating outputs.
 
         Args:
@@ -263,18 +252,16 @@ class Task:
         y = np.zeros((batch_size, len(self.t), self.n_out), dtype=np.float32)
         for i in range(batch_size):
             if self.inter_trial is not None:
-                y[i, phases['inter_trial'], :] = self.low_out
+                y[i, phases["inter_trial"], :] = self.low_out
             if self.t_fixation is not None:
-                y[i, phases['t_fixation'], :] = self.low_out
+                y[i, phases["t_fixation"], :] = self.low_out
 
-            y[i, phases['input'], choice[i]] = self.high_out
-            y[i, phases['input'], 1 - choice[i]] = self.low_out
+            y[i, phases["input"], choice[i]] = self.high_out
+            y[i, phases["input"], 1 - choice[i]] = self.low_out
 
         return y
 
-    def generate_trials(self,
-                        batch_size: int = 20,
-                        numpy_seed: int = None):
+    def generate_trials(self, batch_size: int = 20, numpy_seed: int = None):
         """Method for generating trials. It populates the `trials` attribute.
 
         Args:
@@ -284,7 +271,7 @@ class Task:
         # Set the seed for reproducibility
         if numpy_seed is None:
             numpy_seed = random.randrange(2**32 - 1)
-        self.trials['numpy_seed'] = numpy_seed
+        self.trials["numpy_seed"] = numpy_seed
         rng = np.random.default_rng(numpy_seed)
         np.random.seed(numpy_seed)
 
@@ -293,24 +280,24 @@ class Task:
 
         # Setup phases of trial
         phases = {}
-        phases['inter_trial'] = np.where(self.t <= self.inter_trial)[0]
-        phases['t_fixation'] = np.where((self.t > self.inter_trial) & (self.t <= self.inter_trial + self.t_fixation))[0]
-        phases['input'] = np.where(self.t > self.inter_trial + self.t_fixation)[0]
-        choice = (modality_seq != 'catch').astype(np.int_)
+        phases["inter_trial"] = np.where(self.t <= self.inter_trial)[0]
+        phases["t_fixation"] = np.where((self.t > self.inter_trial) & (self.t <= self.inter_trial + self.t_fixation))[0]
+        phases["input"] = np.where(self.t > self.inter_trial + self.t_fixation)[0]
+        choice = (modality_seq != "catch").astype(np.int_)
 
         # Trial Info
-        self.trials['modality_seq'] = modality_seq
-        self.trials['choice'] = choice
-        self.trials['phases'] = phases
-        self.trials['t'] = self.t
-        self.trials['value_fixation'] = self.value_fixation
+        self.trials["modality_seq"] = modality_seq
+        self.trials["choice"] = choice
+        self.trials["phases"] = phases
+        self.trials["t"] = self.t
+        self.trials["value_fixation"] = self.value_fixation
 
         # Generate and store inputs
-        self.trials['inputs'] = self._build_trials_inputs(batch_size, modality_seq, rng, phases)
+        self.trials["inputs"] = self._build_trials_inputs(batch_size, modality_seq, rng, phases)
         # Generate and store outputs
-        self.trials['outputs'] = self._build_trials_outputs(batch_size, phases, choice)
+        self.trials["outputs"] = self._build_trials_outputs(batch_size, phases, choice)
 
-    def plot_trials(self, n = 1):
+    def plot_trials(self, n=1):
         """Method for plotting generated trials.
 
         Args:
@@ -322,54 +309,80 @@ class Task:
         Returns:
             go.Figure: plotly figure.
         """
-        if n > self.trials['inputs'].shape[0]:
-            raise ValueError('n cannot be greater than the number of trials generated.')
+        if n > self.trials["inputs"].shape[0]:
+            raise ValueError("n cannot be greater than the number of trials generated.")
 
-        fig = make_subplots(rows=n, cols=1,
-                            shared_xaxes=True,
-                            vertical_spacing=0.5/n,
-                            subplot_titles=[
-                                "Trial " + str(i + 1) + " - modality " + str(self.trials['modality_seq'][i])
-                                for i in range(n)])
+        fig = make_subplots(
+            rows=n,
+            cols=1,
+            shared_xaxes=True,
+            vertical_spacing=0.5 / n,
+            subplot_titles=[
+                "Trial " + str(i + 1) + " - modality " + str(self.trials["modality_seq"][i]) for i in range(n)
+            ],
+        )
         showlegend = True
         colors = [
-            '#%02x%02x%02x' % tuple(int(c * 255)
-                                    for c in colorsys.hsv_to_rgb(i / len(self.modality_idx), 1.0, 1.0))
-                                    for i in range(len(self.modality_idx))]
+            "#%02x%02x%02x" % tuple(int(c * 255) for c in colorsys.hsv_to_rgb(i / len(self.modality_idx), 1.0, 1.0))
+            for i in range(len(self.modality_idx))
+        ]
         for i in range(n):
             for m, idx in self.modality_idx.items():
-                fig.add_trace(go.Scatter(
-                    name=m,
-                    mode="markers+lines", x=self.trials['t'], y=self.trials['inputs'][i][:,idx],
+                fig.add_trace(
+                    go.Scatter(
+                        name=m,
+                        mode="markers+lines",
+                        x=self.trials["t"],
+                        y=self.trials["inputs"][i][:, idx],
+                        marker_symbol="star",
+                        legendgroup=m,
+                        showlegend=showlegend,
+                        line_color=colors[idx],
+                    ),
+                    row=i + 1,
+                    col=1,
+                )
+            fig.add_trace(
+                go.Scatter(
+                    name="START",
+                    mode="markers+lines",
+                    x=self.trials["t"],
+                    y=self.trials["inputs"][i][:, len(self.modality_idx)],
                     marker_symbol="star",
-                    legendgroup=m,
+                    legendgroup="START",
                     showlegend=showlegend,
-                    line_color = colors[idx]
-                ), row=i+1, col=1)
-            fig.add_trace(go.Scatter(
-                name="START",
-                mode="markers+lines", x=self.trials['t'], y=self.trials['inputs'][i][:,len(self.modality_idx)],
-                marker_symbol="star",
-                legendgroup="START",
-                showlegend=showlegend,
-                line_color = 'green'
-            ), row=i+1, col=1)
-            fig.add_trace(go.Scatter(
-                name="Choice 1: NO STIMULUS",
-                mode="lines", x=self.trials['t'], y=self.trials['outputs'][i][:,0],
-                legendgroup="Choice 1",
-                showlegend=showlegend,
-                line_color = 'orange'
-            ), row=i+1, col=1)
-            fig.add_trace(go.Scatter(
-                name="Choice 2: STIMULUS",
-                mode="lines", x=self.trials['t'], y=self.trials['outputs'][i][:,1],
-                legendgroup="Choice 2",
-                showlegend=showlegend,
-                line_color = 'purple'
-            ), row=i+1, col=1)
-            fig.add_vline(
-                x=self.inter_trial + self.t_fixation, line_width=3, line_dash="dash", line_color="red")
+                    line_color="green",
+                ),
+                row=i + 1,
+                col=1,
+            )
+            fig.add_trace(
+                go.Scatter(
+                    name="Choice 1: NO STIMULUS",
+                    mode="lines",
+                    x=self.trials["t"],
+                    y=self.trials["outputs"][i][:, 0],
+                    legendgroup="Choice 1",
+                    showlegend=showlegend,
+                    line_color="orange",
+                ),
+                row=i + 1,
+                col=1,
+            )
+            fig.add_trace(
+                go.Scatter(
+                    name="Choice 2: STIMULUS",
+                    mode="lines",
+                    x=self.trials["t"],
+                    y=self.trials["outputs"][i][:, 1],
+                    legendgroup="Choice 2",
+                    showlegend=showlegend,
+                    line_color="purple",
+                ),
+                row=i + 1,
+                col=1,
+            )
+            fig.add_vline(x=self.inter_trial + self.t_fixation, line_width=3, line_dash="dash", line_color="red")
             showlegend = False
         fig.update_layout(height=1300, width=900, title_text="Trials")
         return fig
