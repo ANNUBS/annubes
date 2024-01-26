@@ -21,7 +21,6 @@ class Task:
                  scaling: bool = False, # True if you want to scale the input
                  t_fixation: int | None = 100, # time for fixation in ms
                  value_fixation: int | float | None = None, # intensity value for fixation
-                 # TODO: implement max_sequential usage
                  max_sequential: int | None = None, # maximum number of sequential trials of the same modality
                  catch_prob: float | int = 0, # probability of catch trials in the session, between 0 and 1
                  # TODO: implement inter_trial usage
@@ -72,7 +71,7 @@ class Task:
         # Checks
         tolerance = 1/50
         if not abs(sum(self.session_in.values()) - 1) < tolerance:
-            raise ValueError('The sum of the probabilities of session_in must be 1.')
+            raise ValueError('The sum of the probabilities of `session_in` must be 1.')
 
     def scale_input(self, f, min, max):
         """Method for scaling input."""
@@ -112,6 +111,17 @@ class Task:
             modality_seq += list(temp_seq)
         if not self.ordered:
             rng.shuffle(modality_seq)
+            if self.max_sequential is not None:
+                # Shuffle the list using Fisher-Yates algorithm with consecutive constraint
+                i = len(modality_seq) - 1
+                while i > 0:
+                    j = random.randint(0, i)
+                    modality_seq[i], modality_seq[j] = modality_seq[j], modality_seq[i]
+                    i -= 1
+                    # Check and fix the consecutive constraint
+                    count = 1
+                    while i > 0 and modality_seq[i] == modality_seq[i - 1] and count >= self.max_sequential:
+                        i -= 1
         modality_seq = np.array(modality_seq)
 
         # -------------------------------------------------------------------------------------
