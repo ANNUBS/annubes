@@ -9,7 +9,6 @@ from plotly.subplots import make_subplots
 
 # TODO: Complete docstrings
 # TODO: Evaluate https://docs.pydantic.dev/latest/ for input validation
-# TODO: Wrap pieces of code into internal methods
 class Task:
     """General class for defining a task."""
     def __init__(self,
@@ -55,12 +54,13 @@ class Task:
         self.trials = {}
         self.trials['name'] = self.name
         self.modalities = list(OrderedDict.fromkeys(char for string in session_in for char in string))
+        self.modality_idx = {m: i for i, m in enumerate(self.modalities)}
         self.n_in = len(self.modalities) + 1 # +1 for start cue
         self.value_in.sort()
         self.imin = self.value_in[0]
         self.imax = self.value_in[-1]
         if (self.value_fixation is not None) and self.scaling:
-            self.value_fixation = self.scale_input(self.value_fixation, self.imin, self.imax)
+            self.value_fixation = self._scale_input(self.value_fixation, self.imin, self.imax)
         self.T = self.inter_trial + self.t_fixation + self.t_in
         self.t = np.linspace(0, self.T, self.dt)
         self.t = np.linspace(0, self.T, int((self.T + self.dt)/self.dt))
@@ -73,24 +73,11 @@ class Task:
         if not abs(sum(self.session_in.values()) - 1) < tolerance:
             raise ValueError('The sum of the probabilities of `session_in` must be 1.')
 
-    def scale_input(self, f, min, max):
+    def _scale_input(self, f, min, max):
         """Method for scaling input."""
         return 0.6*(f - min) / (max - min)
 
-    def generate_trials(self,
-                        batch_size: int = 20,
-                        numpy_seed: int = None):
-        """Method for generating synthetic trials."""
-        # Set the seed for reproducibility
-        if numpy_seed is None:
-            numpy_seed = random.randrange(2**32 - 1)
-        self.trials['numpy_seed'] = numpy_seed
-        rng = np.random.default_rng(numpy_seed)
-        np.random.seed(numpy_seed)
-
-        # -------------------------------------------------------------------------------------
-        # Select task condition
-        # -------------------------------------------------------------------------------------
+    def _build_trials_seq(self, batch_size, rng):
 
         # Extract keys and probabilities from the dictionary
         scenarios = list(self.session_in.keys())
@@ -100,13 +87,13 @@ class Task:
         # Generate random numbers of samples based on the probabilities
         prob_samples = np.random.multinomial(batch_size, probabilities)
         # Create a dictionary to store the results
-        self.session_in_samples = {
+        session_in_samples = {
             scenario: np.random.multinomial(prob_samples[i], [1-self.catch_prob, self.catch_prob])
                 for i, scenario in enumerate(scenarios)}
         # Generate the sequence of modalities
         modality_seq = []
         for m in scenarios:
-            temp_seq = self.session_in_samples[m][0] * [m] + self.session_in_samples[m][1] * ['catch']
+            temp_seq = session_in_samples[m][0] * [m] + session_in_samples[m][1] * ['catch']
             rng.shuffle(temp_seq)
             modality_seq += list(temp_seq)
         if not self.ordered:
@@ -125,58 +112,32 @@ class Task:
                     while i > 0 and modality_seq[i] == modality_seq[i - 1] and count >= self.max_sequential:
                         i -= 1
         modality_seq = np.array(modality_seq)
+        return modality_seq
 
-        # -------------------------------------------------------------------------------------
-        # Setup phases of trial
-        # -------------------------------------------------------------------------------------
-
-        phases = {}
-        phases['inter_trial'] = np.where(self.t <= self.inter_trial)[0]
-        phases['t_fixation'] = np.where((self.t > self.inter_trial) & (self.t <= self.inter_trial + self.t_fixation))[0]
-        phases['input'] = np.where(self.t > self.inter_trial + self.t_fixation)[0]
-
-        # -------------------------------------------------------------------------------------
-        # Trial Info
-        # -------------------------------------------------------------------------------------
-
-        choice = (modality_seq != 'catch').astype(np.int_)
-
-        self.trials['modality_seq'] = modality_seq
-        self.trials['choice'] = choice
-        self.trials['phases'] = phases
-        self.trials['t'] = self.t
-
-        # -------------------------------------------------------------------------------------
-        # Inputs
-        # -------------------------------------------------------------------------------------
-
+    def _build_trials_inputs(self, batch_size, modality_seq, rng, phases):
         x = np.zeros((batch_size, len(self.t), self.n_in), dtype=np.float32)
         sel_value_in = np.full((batch_size, self.n_in - 1), self.value_in[0], dtype=np.float32)
-        self.modality_idx = {m: i for i, m in enumerate(self.modalities)}
 
         for n in range(batch_size):
             for m, idx in self.modality_idx.items():
                 if (modality_seq[n] != 'catch') and (m in modality_seq[n]):
                     sel_value_in[n, idx] = rng.choice(self.value_in[1:], 1)
                 if self.scaling:
-                    sel_value_in[n, idx] = self.scale_input(sel_value_in[n, idx], self.imin, self.imax)
+                    sel_value_in[n, idx] = self._scale_input(sel_value_in[n, idx], self.imin, self.imax)
                 x[n, phases['input'], idx] = sel_value_in[n, idx]
                 x[n, phases['t_fixation'], idx] = self.value_fixation
             x[n, phases['input'], len(self.modality_idx)] = 1 # start cue
 
-        # store intensities in trials
-        self.trials['value_fixation'] = self.value_fixation
+        # Store intensities in trials
         self.trials['sel_value_in'] = sel_value_in
 
-        # add noise to inputs
+        # Add noise to inputs
         alpha = self.dt/self.tau
         inp_noise = 1/alpha * np.sqrt(2 * alpha) * self.std_inp_noise * rng.normal(loc=0, scale=1, size=x.shape)
-        self.trials['inputs'] = x + self.baseline_inp + inp_noise
 
-        # -------------------------------------------------------------------------------------
-        # target output
-        # -------------------------------------------------------------------------------------
+        return x + self.baseline_inp + inp_noise
 
+    def _build_trials_outputs(self, batch_size, phases, choice):
         y = np.zeros((batch_size, len(self.t), self.n_out), dtype=np.float32)
         for i in range(batch_size):
             if self.inter_trial is not None:
@@ -187,7 +148,40 @@ class Task:
             y[i, phases['input'], choice[i]] = self.high_out
             y[i, phases['input'], 1 - choice[i]] = self.low_out
 
-        self.trials['outputs'] = y
+        return y
+
+    def generate_trials(self,
+                        batch_size: int = 20,
+                        numpy_seed: int = None):
+        """Method for generating synthetic trials."""
+        # Set the seed for reproducibility
+        if numpy_seed is None:
+            numpy_seed = random.randrange(2**32 - 1)
+        self.trials['numpy_seed'] = numpy_seed
+        rng = np.random.default_rng(numpy_seed)
+        np.random.seed(numpy_seed)
+
+        # Generate sequence of modalities
+        modality_seq = self._build_trials_seq(batch_size, rng)
+
+        # Setup phases of trial
+        phases = {}
+        phases['inter_trial'] = np.where(self.t <= self.inter_trial)[0]
+        phases['t_fixation'] = np.where((self.t > self.inter_trial) & (self.t <= self.inter_trial + self.t_fixation))[0]
+        phases['input'] = np.where(self.t > self.inter_trial + self.t_fixation)[0]
+        choice = (modality_seq != 'catch').astype(np.int_)
+
+        # Trial Info
+        self.trials['modality_seq'] = modality_seq
+        self.trials['choice'] = choice
+        self.trials['phases'] = phases
+        self.trials['t'] = self.t
+        self.trials['value_fixation'] = self.value_fixation
+
+        # Generate and store inputs
+        self.trials['inputs'] = self._build_trials_inputs(batch_size, modality_seq, rng, phases)
+        # Generate and store outputs
+        self.trials['outputs'] = self._build_trials_outputs(batch_size, phases, choice)
 
     def plot_trials(self, n = 1):
         """Method for plotting generated trials.
@@ -250,6 +244,5 @@ class Task:
             fig.add_vline(
                 x=self.inter_trial + self.t_fixation, line_width=3, line_dash="dash", line_color="red")
             showlegend = False
-            # fig.update_yaxes(range=[0, 2], row=i+1, col=1)
         fig.update_layout(height=1300, width=900, title_text="Trials")
         return fig
