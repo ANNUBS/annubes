@@ -1,12 +1,13 @@
 import itertools
+
 import numpy as np
 
 
 class HabituationTask:
     def __init__(self, task_param):
-        self.intensity = [.8, .9, 1]
+        self.intensity = [0.8, 0.9, 1]
         # 'catch' refers to giving only gaussian noise to the animal, no stimulus at all
-        self.modalities = task_param['modalities']
+        self.modalities = task_param["modalities"]
 
         self.imin = self.intensity[0]
         self.imax = self.intensity[-1]
@@ -18,9 +19,9 @@ class HabituationTask:
         self.Nin = 3  # number of inputs
         self.Nout = 2  # number of outputs
         self.baseline_inp = 0.2  # baseline input for all neurons
-        self.use_fixation = task_param['fixation']
-        self.tau = task_param['tau']
-        self.std_inp_noise = task_param['std_inp_noise']  # standard deviation for input noise
+        self.use_fixation = task_param["fixation"]
+        self.tau = task_param["tau"]
+        self.std_inp_noise = task_param["std_inp_noise"]  # standard deviation for input noise
 
         # desired network outputs
         self.high_output = 1.5
@@ -31,7 +32,13 @@ class HabituationTask:
         self.AUDITORY = 1  # auditory input greater than boundary frequency
         self.START = 2  # start cue
 
-    def generate_trials(self, rng, dt, minibatch_size, catch_prob=None):
+    def generate_trials(
+        self,
+        rng,
+        dt,
+        minibatch_size,
+        catch_prob=None,
+    ):
         # -------------------------------------------------------------------------------------
         # Select task condition
         # -------------------------------------------------------------------------------------
@@ -40,7 +47,7 @@ class HabituationTask:
             non_catch_prob = (1 - catch_prob) / 1  # probability for generating trials in each of the other modalities
             n_other_trials = int(non_catch_prob * minibatch_size)  # number of trials in other modalities
             non_catch_trials = list(itertools.chain.from_iterable([[m] * n_other_trials for m in self.modalities[:-1]]))
-            modality = np.array(non_catch_trials + (minibatch_size - len(non_catch_trials)) * ['catch'])
+            modality = np.array(non_catch_trials + (minibatch_size - len(non_catch_trials)) * ["catch"])
             rng.shuffle(modality)
         else:
             modality = rng.choice(self.modalities, minibatch_size)
@@ -53,19 +60,19 @@ class HabituationTask:
 
         t = np.linspace(dt, self.T, int(self.T / dt))
         phases = {}
-        phases['fixation'] = np.where(t <= self.fixation)[0]
-        phases['stimulus'] = np.where(t > self.fixation)[0]
+        phases["fixation"] = np.where(t <= self.fixation)[0]
+        phases["stimulus"] = np.where(t > self.fixation)[0]
 
         # -------------------------------------------------------------------------------------
         # Trial Info
         # -------------------------------------------------------------------------------------
 
-        choice = (modality != 'catch').astype(np.int_)
+        choice = (modality != "catch").astype(np.int_)
 
         trials = {}
-        trials['modality'] = modality
-        trials['choice'] = choice
-        trials['phases'] = phases
+        trials["modality"] = modality
+        trials["choice"] = choice
+        trials["phases"] = phases
 
         # -------------------------------------------------------------------------------------
         # Inputs
@@ -74,35 +81,35 @@ class HabituationTask:
         x = np.zeros((minibatch_size, len(t), self.Nin), dtype=np.float32)
         for i in range(minibatch_size):
             # set visual to minimum intensity in auditory and catch trials
-            if (modality[i] == 'catch') or (modality[i] == 'a'):
+            if (modality[i] == "catch") or (modality[i] == "a"):
                 intensity[i, 0] = self.imin
 
             # set auditory to minimum intensity in visual and catch trials
-            if (modality[i] == 'catch') or (modality[i] == 'v'):
+            if (modality[i] == "catch") or (modality[i] == "v"):
                 intensity[i, 1] = self.imin
 
             # intensity shouldn't be imin for non-catch trials
-            if modality[i] != 'catch':
-                if ('v' in modality[i]) and (intensity[i, 0] == self.imin):
+            if modality[i] != "catch":
+                if ("v" in modality[i]) and (intensity[i, 0] == self.imin):
                     intensity[i, 0] = rng.choice(self.intensity[1:], 1)
 
-                if ('a' in modality[i]) and (intensity[i, 1] == self.imin):
+                if ("a" in modality[i]) and (intensity[i, 1] == self.imin):
                     intensity[i, 1] = rng.choice(self.intensity[1:], 1)
 
             # input for all trials
-            x[i, phases['stimulus'], self.VISUAL] = intensity[i, 0]
-            x[i, phases['stimulus'], self.AUDITORY] = intensity[i, 1]
-            x[i, phases['stimulus'], self.START] = 1
+            x[i, phases["stimulus"], self.VISUAL] = intensity[i, 0]
+            x[i, phases["stimulus"], self.AUDITORY] = intensity[i, 1]
+            x[i, phases["stimulus"], self.START] = 1
 
         # store intensities in trial
-        trials['intensity'] = intensity
+        trials["intensity"] = intensity
 
         # add noise to inputs
-        alpha = dt/self.tau
+        alpha = dt / self.tau
 
-        inp_noise = 1/alpha * np.sqrt(2 * alpha) * self.std_inp_noise * rng.normal(loc=0, scale=1, size=x.shape)
+        inp_noise = 1 / alpha * np.sqrt(2 * alpha) * self.std_inp_noise * rng.normal(loc=0, scale=1, size=x.shape)
 
-        trials['inputs'] = x + self.baseline_inp + inp_noise
+        trials["inputs"] = x + self.baseline_inp + inp_noise
 
         # -------------------------------------------------------------------------------------
         # target output
@@ -110,13 +117,12 @@ class HabituationTask:
 
         y = np.zeros((minibatch_size, len(t), self.Nout), dtype=np.float32)
         for i in range(minibatch_size):
+            if self.use_fixation:
+                y[i, phases["fixation"], :] = self.low_output
 
-            if(self.use_fixation):
-                y[i, phases['fixation'], :] = self.low_output
+            y[i, phases["stimulus"], choice[i]] = self.high_output
+            y[i, phases["stimulus"], 1 - choice[i]] = self.low_output
 
-            y[i, phases['stimulus'], choice[i]] = self.high_output
-            y[i, phases['stimulus'], 1 - choice[i]] = self.low_output
-
-        trials['outputs'] = y
+        trials["outputs"] = y
 
         return trials
