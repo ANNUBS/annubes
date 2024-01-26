@@ -8,7 +8,6 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
 # TODO: Complete docstrings
-# TODO: Evaluate https://docs.pydantic.dev/latest/ for input validation
 class Task:
     """General class for defining a task."""
     def __init__(self,
