@@ -115,6 +115,8 @@ class Task:
                 # Shuffle the list using Fisher-Yates algorithm with consecutive constraint
                 i = len(modality_seq) - 1
                 while i > 0:
+                    # Picking j can't be fixed, otherwise the algorithm is not random
+                    # We may want to change this in the future
                     j = random.randint(0, i)
                     modality_seq[i], modality_seq[j] = modality_seq[j], modality_seq[i]
                     i -= 1
