@@ -1,6 +1,6 @@
 import colorsys
 import random
-from collections import OrderedDict
+from dataclasses import dataclass, field
 
 import numpy as np
 import plotly.graph_objects as go
@@ -8,117 +8,61 @@ from numpy.typing import NDArray
 from plotly.subplots import make_subplots
 
 
+@dataclass
 class Task:
-    """General class for defining a task."""
+    """General class for defining a task.
 
-    def __init__(
-        self,
-        name: str,
-        session_in: dict[str, float] | None = None,
-        ordered: bool = False,
-        t_in: int = 1000,
-        value_in: list[float] | None = None,
-        scaling: bool = False,
-        t_fixation: int | None = 100,
-        value_fixation: float | None = None,
-        max_sequential: int | None = None,
-        catch_prob: float = 0,
-        inter_trial: int = 0,
-        dt: int = 20,
-        tau: int = 100,
-        std_inp_noise: float = 0.01,
-        baseline_inp: float = 0.2,
-        n_out: int = 2,
-        value_out: list[float] | None = None,
-    ):
-        """Constructor method for the Task class.
+    Args:
+        name (str): name of the task.
+        session_in (dict[str, float], optional): Dictionary representing the session. Keys are the modalities
+            and values are the probabilities. If order matters, put the modalities in the right order.
+            Defaults to {'v': 0.5, 'a': 0.5}.
+        ordered (bool, optional): True if you want to keep the order of the modalities. Defaults to False.
+        t_in (int, optional): time for each stimulus in ms. Defaults to 1000.
+        value_in (list[float], optional): intensity values for each stimulus. Defaults to [.8, .9, 1].
+        scaling (bool, optional): True if you want to scale the input. Defaults to False.
+        t_fixation (int | None, optional): time for fixation in ms. Defaults to 100.
+        value_fixation (float | None, optional): intensity value for fixation. Defaults to None.
+        max_sequential (int | None, optional): maximum number of sequential trials of the same modality.
+            Defaults to None.
+        catch_prob (float, optional): probability of catch trials in the session, between 0 and 1.
+            Defaults to 0.
+        inter_trial (int, optional): inter-trial interval in ms. Defaults to 0.
+        dt (int, optional): time step in ms. Defaults to 20.
+        tau (int, optional): time constant in ms. Defaults to 100.
+        std_inp_noise (float, optional): standard deviation for input noise. Defaults to 0.01.
+        baseline_inp (float, optional): baseline input for all neurons. Defaults to 0.2.
+        n_out (int, optional): number of outputs. Defaults to 2.
+        value_out (list[float], optional): low and high intensity values for the output signals.
+            Defaults to [0, 1].
 
-        Args:
-            name (str): name of the task.
-            session_in (dict[str, float], optional): Dictionary representing the session. Keys are the modalities
-                and values are the probabilities. If order matters, put the modalities in the right order.
-                Defaults to {'v': 0.5, 'a': 0.5}.
-            ordered (bool, optional): True if you want to keep the order of the modalities. Defaults to False.
-            t_in (int, optional): time for each stimulus in ms. Defaults to 1000.
-            value_in (list[float], optional): intensity values for each stimulus. Defaults to [.8, .9, 1].
-            scaling (bool, optional): True if you want to scale the input. Defaults to False.
-            t_fixation (int | None, optional): time for fixation in ms. Defaults to 100.
-            value_fixation (float | None, optional): intensity value for fixation. Defaults to None.
-            max_sequential (int | None, optional): maximum number of sequential trials of the same modality.
-                Defaults to None.
-            catch_prob (float, optional): probability of catch trials in the session, between 0 and 1.
-                Defaults to 0.
-            inter_trial (int, optional): inter-trial interval in ms. Defaults to 0.
-            dt (int, optional): time step in ms. Defaults to 20.
-            tau (int, optional): time constant in ms. Defaults to 100.
-            std_inp_noise (float, optional): standard deviation for input noise. Defaults to 0.01.
-            baseline_inp (float, optional): baseline input for all neurons. Defaults to 0.2.
-            n_out (int, optional): number of outputs. Defaults to 2.
-            value_out (list[float], optional): low and high intensity values for the output signals.
-                Defaults to [0, 1].
+    Raises:
+        ValueError: if the sum of the probabilities of `session_in` is not 1.
+        ValueError: if `catch_prob` is not between 0 (included) and 1 (excluded).
+    """
 
-        Attributes:
-            name (str): name of the task.
-            session_in (OrderedDict[str, float]): Ordered Dictionary representing the session.
-                Keys are the modalities and values are the probabilities. If order matters,
-                put the modalities in the right order. Defaults to {'v': 0.5, 'a': 0.5}.
-            ordered (bool): True if you want to keep the order of the modalities. Defaults to False.
-            t_in (int): time for each stimulus in ms. Defaults to 1000.
-            value_in (list[float]): intensity values for each stimulus. Defaults to [.8, .9, 1].
-            scaling (bool): True if you want to scale the input. Defaults to False.
-            t_fixation (int | None): time for fixation in ms. Defaults to 100.
-            value_fixation (float | None): intensity value for fixation. Defaults to None.
-            max_sequential (int | None): maximum number of sequential trials of the same modality.
-                Defaults to None.
-            catch_prob (float): probability of catch trials in the session, between 0 and 1.
-                Defaults to 0.
-            inter_trial (int): inter-trial interval in ms. Defaults to 0.
-            dt (int): time step in ms. Defaults to 20.
-            tau (int): time constant in ms. Defaults to 100.
-            std_inp_noise (float): standard deviation for input noise. Defaults to 0.01.
-            baseline_inp (float): baseline input for all neurons. Defaults to 0.2.
-            n_out (int): number of outputs. Defaults to 2.
-            value_out (list[float]): low and high intensity values for the output signals.
-                Defaults to [0, 1].
-            trials (dict): dictionary containing all the trials generated and the task's relevant information.
-            modalities (list[str]): list of individual modalities.
-            modality_idx (dict[str, int]): dictionary of modalities and their index.
-            n_in (int): number of inputs.
-            imin (float): minimum value of the input intensities.
-            imax (float): maximum value of the input intensities.
-            coeff (float): coefficient for scaling the input.
-            T (int): total time of each trial in ms.
-            t (np.ndarray): time vector of each trial in ms.
-            low_out (float): low intensity value for the output signals.
-            high_out (float): high intensity value for the output signals.
+    name: str
+    session_in: dict[str, float] = field(default_factory=lambda: {"v": 0.5, "a": 0.5})
+    ordered: bool = False
+    t_in: int = 1000
+    value_in: list[float] = field(default_factory=lambda: [0.8, 0.9, 1])
+    scaling: bool = False
+    t_fixation: int | None = 100
+    value_fixation: float | None = None
+    max_sequential: int | None = None
+    catch_prob: float = 0
+    inter_trial: int = 0
+    dt: int = 20
+    tau: int = 100
+    std_inp_noise: float = 0.01
+    baseline_inp: float = 0.2
+    n_out: int = 2
+    value_out: list[float] = field(default_factory=lambda: [0, 1])
 
-        Raises:
-            ValueError: if the sum of the probabilities of `session_in` is not 1.
-            ValueError: if `catch_prob` is not between 0 (included) and 1 (excluded).
-        """
-        # Attributes from the class constructor parameters
-        self.name = name
-        self.session_in = OrderedDict(session_in) if session_in else OrderedDict({"v": 0.5, "a": 0.5})
-        self.ordered = ordered
-        self.t_in = t_in
-        self.value_in = value_in if value_in else [0.8, 0.9, 1]
-        self.scaling = scaling
-        self.t_fixation = t_fixation
-        self.value_fixation = value_fixation
-        self.max_sequential = max_sequential
-        self.catch_prob = catch_prob
-        self.inter_trial = inter_trial
-        self.dt = dt
-        self.tau = tau
-        self.std_inp_noise = std_inp_noise
-        self.baseline_inp = baseline_inp
-        self.n_out = n_out
-        self.value_out = value_out if value_out else [0, 1]
-
+    def __post_init__(self):
         # Derived attributes
-        self.trials = {}
-        self.trials["name"] = self.name
-        self.modalities = list(OrderedDict.fromkeys(char for string in session_in for char in string))
+        self.trials = {"name": self.name}
+        self.modalities = list(OrderedDict.fromkeys(char for string in self.session_in for char in string))
         self.modality_idx = {m: i for i, m in enumerate(self.modalities)}
         self.n_in = len(self.modalities) + 1  # +1 for start cue
         self.value_in.sort()
@@ -140,7 +84,7 @@ class Task:
         if not abs(sum(self.session_in.values()) - 1) < tolerance:
             raise ValueError("The sum of the probabilities of `session_in` must be 1.")
         # catch_prob
-        if not (catch_prob >= 0 and catch_prob < 1):
+        if not (self.catch_prob >= 0 and self.catch_prob < 1):
             raise ValueError("`catch_prob` must be higher or equal to 0, or lower than 1.")
 
     def _scale_input(
