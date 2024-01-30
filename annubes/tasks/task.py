@@ -46,7 +46,7 @@ class Task:
     ordered: bool = False
     t_in: int = 1000
     value_in: list[float] = field(default_factory=lambda: [0.8, 0.9, 1])
-    scaling: bool = False
+    coeff: float | None = None
     t_fixation: int | None = 100
     value_fixation: float | None = None
     max_sequential: int | None = None
@@ -56,36 +56,27 @@ class Task:
     tau: int = 100
     std_inp_noise: float = 0.01
     baseline_inp: float = 0.2
-    n_out: int = 2
     value_out: list[float] = field(default_factory=lambda: [0, 1])
 
     def __post_init__(self):
-        # Derived attributes
-        self.trials = {"name": self.name}
-        self.modalities = list(OrderedDict.fromkeys(char for string in self.session_in for char in string))
-        self.modality_idx = {m: i for i, m in enumerate(self.modalities)}
-        self.n_in = len(self.modalities) + 1  # +1 for start cue
-        self.value_in.sort()
-        self.imin = self.value_in[0]
-        self.imax = self.value_in[-1]
-        self.coeff = 0.6
-        if (self.value_fixation is not None) and self.scaling:
-            self.value_fixation = self._scale_input(self.value_fixation, self.coeff, self.imin, self.imax)
-        self.T = self.inter_trial + self.t_fixation + self.t_in
-        self.t = np.linspace(0, self.T, self.dt)
-        self.t = np.linspace(0, self.T, int((self.T + self.dt) / self.dt))
-        self.value_out.sort()
-        self.low_out = self.value_out[0]
-        self.high_out = self.value_out[1]
-
-        # Checks
-        # session_in
-        tolerance = 1 / 50
-        if not abs(sum(self.session_in.values()) - 1) < tolerance:
-            raise ValueError("The sum of the probabilities of `session_in` must be 1.")
-        # catch_prob
-        if not (self.catch_prob >= 0 and self.catch_prob < 1):
+        if not self.catch_prob >= 0 and self.catch_prob < 1:
             raise ValueError("`catch_prob` must be higher or equal to 0, or lower than 1.")
+
+        sum_session_in = sum(self.session_in.values())
+        for i in self.session_in:
+            self.session_in[i] = self.session_in[i] / sum_session_in
+        self.value_in.sort()
+        self.value_out.sort()
+        if (self.value_fixation is not None) and (self.coeff is not None):
+            self.value_fixation = self._scale_input(
+                self.value_fixation, self.coeff, min(self.value_in), max(self.value_in)
+            )
+
+        # Derived attributes
+        self.modalities = list(dict.fromkeys(char for string in self.session_in for char in string))
+        self.n_modalities = len(self.modalities)  # does not include start cue
+        duration = self.inter_trial + self.t_fixation + self.t_in
+        self.t = np.linspace(0, duration, int((duration + self.dt) / self.dt))  # TODO: rename attribute
 
     def _scale_input(
         self,
@@ -174,18 +165,20 @@ class Task:
         Returns:
             np.ndarray: array of inputs.
         """
-        x = np.zeros((batch_size, len(self.t), self.n_in), dtype=np.float32)
-        sel_value_in = np.full((batch_size, self.n_in - 1), self.value_in[0], dtype=np.float32)
+        x = np.zeros((batch_size, len(self.t), self.n_modalities + 1), dtype=np.float32)  # n_modalities+1 for start cue
+        sel_value_in = np.full((batch_size, self.n_modalities), min(self.value_in), dtype=np.float32)
 
         for n in range(batch_size):
-            for m, idx in self.modality_idx.items():
+            for idx, m in enumerate(self.modalities):
                 if (modality_seq[n] != "catch") and (m in modality_seq[n]):
                     sel_value_in[n, idx] = rng.choice(self.value_in[1:], 1)
-                if self.scaling:
-                    sel_value_in[n, idx] = self._scale_input(sel_value_in[n, idx], self.coeff, self.imin, self.imax)
+                if self.coeff is not None:
+                    sel_value_in[n, idx] = self._scale_input(
+                        sel_value_in[n, idx], self.coeff, min(self.value_in), max(self.value_in)
+                    )
                 x[n, phases["input"], idx] = sel_value_in[n, idx]
                 x[n, phases["t_fixation"], idx] = self.value_fixation
-            x[n, phases["input"], len(self.modality_idx)] = 1  # start cue
+            x[n, phases["input"], self.n_modalities] = 1  # start cue
 
         # Store intensities in trials
         self.trials["sel_value_in"] = sel_value_in
@@ -212,15 +205,15 @@ class Task:
         Returns:
             np.ndarray: array of outputs.
         """
-        y = np.zeros((batch_size, len(self.t), self.n_out), dtype=np.float32)
+        y = np.zeros((batch_size, len(self.t), len(self.value_out)), dtype=np.float32)
         for i in range(batch_size):
             if self.inter_trial is not None:
-                y[i, phases["inter_trial"], :] = self.low_out
+                y[i, phases["inter_trial"], :] = min(self.value_out)
             if self.t_fixation is not None:
-                y[i, phases["t_fixation"], :] = self.low_out
+                y[i, phases["t_fixation"], :] = min(self.value_out)
 
-            y[i, phases["input"], choice[i]] = self.high_out
-            y[i, phases["input"], 1 - choice[i]] = self.low_out
+            y[i, phases["input"], choice[i]] = max(self.value_out)
+            y[i, phases["input"], 1 - choice[i]] = min(self.value_out)
 
         return y
 
@@ -253,6 +246,7 @@ class Task:
         choice = (modality_seq != "catch").astype(np.int_)
 
         # Trial Info
+        self.trials = {"name": self.name}
         self.trials["modality_seq"] = modality_seq
         self.trials["choice"] = choice
         self.trials["phases"] = phases
@@ -291,12 +285,12 @@ class Task:
         showlegend = True
         colors = [
             "#{:02x}{:02x}{:02x}".format(
-                *tuple(int(c * 255) for c in colorsys.hsv_to_rgb(i / len(self.modality_idx), 1.0, 1.0))
+                *tuple(int(c * 255) for c in colorsys.hsv_to_rgb(i / self.n_modalities, 1.0, 1.0))
             )
-            for i in range(len(self.modality_idx))
+            for i in range(self.n_modalities)
         ]
         for i in range(n):
-            for m, idx in self.modality_idx.items():
+            for idx, m in enumerate(self.modalities):
                 fig.add_trace(
                     go.Scatter(
                         name=m,
@@ -316,7 +310,7 @@ class Task:
                     name="START",
                     mode="markers+lines",
                     x=self.trials["t"],
-                    y=self.trials["inputs"][i][:, len(self.modality_idx)],
+                    y=self.trials["inputs"][i][:, self.n_modalities],
                     marker_symbol="star",
                     legendgroup="START",
                     showlegend=showlegend,
