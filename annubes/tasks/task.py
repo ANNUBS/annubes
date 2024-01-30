@@ -1,5 +1,6 @@
 import colorsys
 import random
+import warnings
 from dataclasses import dataclass, field
 
 import numpy as np
@@ -46,7 +47,7 @@ class Task:
     ordered: bool = False
     t_in: int = 1000
     value_in: list[float] = field(default_factory=lambda: [0.8, 0.9, 1])
-    coeff: float | None = None
+    coeff: float = 0
     t_fixation: int | None = 100
     value_fixation: float | None = None
     max_sequential: int | None = None
@@ -67,10 +68,8 @@ class Task:
             self.session_in[i] = self.session_in[i] / sum_session_in
         self.value_in.sort()
         self.value_out.sort()
-        if (self.value_fixation is not None) and (self.coeff is not None):
-            self.value_fixation = self._scale_input(
-                self.value_fixation, self.coeff, min(self.value_in), max(self.value_in)
-            )
+        if self.value_fixation is not None:
+            self.value_fixation = self._rescale(self.value_fixation)
 
         # Derived attributes
         self.modalities = list(dict.fromkeys(char for string in self.session_in for char in string))
@@ -78,25 +77,35 @@ class Task:
         duration = self.inter_trial + self.t_fixation + self.t_in
         self.t = np.linspace(0, duration, int((duration + self.dt) / self.dt))  # TODO: rename attribute
 
-    def _scale_input(
+    def _rescale(
         self,
-        f: float,
-        coeff: float,
-        min_intensity: float,
-        max_intensity: float,
+        input_: float,
+        min_intensity: float | None = None,
+        max_intensity: float | None = None,
     ) -> float:
-        """Internal method for scaling input.
+        """Rescale `input_` value if `self.coeff` is non-zero.
 
         Args:
-            f (float): input value.
-            coeff (float): coefficient for scaling the input.
-            min_intensity (float) : minimum value of the input intensities.
-            max_intensity (float): maximum value of the input intensities.
+            input_ (float): Value that will be rescaled.
+            min_intensity (float): Minimum value of the input intensities. Defaults to `min(self.value_in)`
+            max_intensity (float): Maximum value of the input intensities. Defaults to `max(self.value_in)`
 
         Returns:
             float: scaled input value.
         """
-        return coeff * (f - min_intensity) / (max_intensity - min_intensity)
+        if not self.coeff:
+            return input_
+
+        if min_intensity is None:
+            min_intensity = min(self.value_in)
+        if max_intensity is None:
+            max_intensity = max(self.value_in)
+
+        try:
+            return self.coeff * (input_ - min_intensity) / (max_intensity - min_intensity)
+        except ZeroDivisionError:
+            warnings.warn("Identical max and min intensities while rescaling. Returning unmodified input value.")
+            return input_
 
     def _build_trials_seq(
         self,
@@ -172,10 +181,7 @@ class Task:
             for idx, m in enumerate(self.modalities):
                 if (modality_seq[n] != "catch") and (m in modality_seq[n]):
                     sel_value_in[n, idx] = rng.choice(self.value_in[1:], 1)
-                if self.coeff is not None:
-                    sel_value_in[n, idx] = self._scale_input(
-                        sel_value_in[n, idx], self.coeff, min(self.value_in), max(self.value_in)
-                    )
+                sel_value_in[n, idx] = self._rescale(sel_value_in[n, idx])
                 x[n, phases["input"], idx] = sel_value_in[n, idx]
                 x[n, phases["t_fixation"], idx] = self.value_fixation
             x[n, phases["input"], self.n_modalities] = 1  # start cue
