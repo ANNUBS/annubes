@@ -261,28 +261,24 @@ class Task:
 
         return y
 
-    def plot_trials(self, n: int = 1) -> go.Figure:
+    def plot_trials(self, n_plots: int = 1) -> go.Figure:
         """Method for plotting generated trials.
 
         Args:
-            n (int, optional): number of trials to plot. Defaults to 1.
-
-        Raises:
-            ValueError: if `n` is greater than the number of trials generated.
+            n_plots: number of trials to plot (capped by number of trials generated). Defaults to 1.
 
         Returns:
-            go.Figure: plotly figure.
+            go.Figure: Plotly figure of trial results.
         """
-        if n > self.trials["inputs"].shape[0]:
-            raise ValueError("n cannot be greater than the number of trials generated.")
+        n_plots = max(n_plots, self._ntrials)
 
         fig = make_subplots(
-            rows=n,
+            rows=n_plots,
             cols=1,
             shared_xaxes=True,
-            vertical_spacing=0.5 / n,
+            vertical_spacing=0.5 / n_plots,
             subplot_titles=[
-                "Trial " + str(i + 1) + " - modality " + str(self.trials["modality_seq"][i]) for i in range(n)
+                "Trial " + str(i + 1) + " - modality " + str(self.trials["modality_seq"][i]) for i in range(n_plots)
             ],
         )
         showlegend = True
@@ -292,7 +288,7 @@ class Task:
             )
             for i in range(self.n_modalities)
         ]
-        for i in range(n):
+        for i in range(n_plots):
             for idx, m in enumerate(self.modalities):
                 fig.add_trace(
                     go.Scatter(
