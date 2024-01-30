@@ -33,9 +33,6 @@ class Task:
             Defaults to 0.
         fix_value: Intensity during fixation.
             Defaults to None.  #TODO: How is `None` treated in the trials? Can it be set/default to 0 instead?
-        rescaling_coeff: Rescaling coefficient for `stim_intensities` and `fix_value`. If set to non-zero value, these
-            values are linearly rescaled along (0, rescaling_coeff).
-            Defaults to 0 (i.e. no rescaling).
         dt: Time step in ms.  #TODO: clarify: time step of what? the graph?
             Defaults to 20.
 
@@ -52,7 +49,6 @@ class Task:
     fix_time: int | None = 100
     delay: int = 0
     fix_value: float | None = None
-    rescaling_coeff: float = 0
     dt: int = 20
 
     def __post_init__(self):
@@ -64,8 +60,6 @@ class Task:
             self.session[i] = self.session[i] / sum_session_vals
         self.stim_intensities.sort()
         self.outputs.sort()
-        if self.fix_value is not None:
-            self.fix_value = self._rescale(self.fix_value)
 
         # Derived attributes
         self.modalities = list(dict.fromkeys(char for string in self.session for char in string))
@@ -73,44 +67,12 @@ class Task:
         trial_duration = self.delay + self.fix_time + self.stim_time
         self.t = np.linspace(0, trial_duration, int((trial_duration + self.dt) / self.dt))  # TODO: rename attribute
 
-    def _rescale(
-        self,
-        input_: float,
-        min_intensity: float | None = None,
-        max_intensity: float | None = None,
-    ) -> float:
-        """Rescale `input_` value along (0,`self.rescaling_coeff`) if `self.rescaling_coeff` is non-zero.
-
-        Rescaling happens as follows:
-            self.rescaling_coeff * (input_ - min_intensity) / (max_intensity - min_intensity)
-
-        Args:
-            input_: Value that will be rescaled.
-            min_intensity: Minimum value of the input intensities. Defaults to `min(self.stim_intensities)`
-            max_intensity: Maximum value of the input intensities. Defaults to `max(self.stim_intensities)`
-
-        Returns:
-            float: Rescaled input value.
-        """
-        if not self.rescaling_coeff:
-            return input_
-
-        if min_intensity is None:
-            min_intensity = min(self.stim_intensities)
-        if max_intensity is None:
-            max_intensity = max(self.stim_intensities)
-
-        try:
-            return self.rescaling_coeff * (input_ - min_intensity) / (max_intensity - min_intensity)
-        except ZeroDivisionError:
-            warnings.warn("Identical max and min intensities while rescaling. Returning unmodified input value.")
-            return input_
-
     def generate_trials(
         self,
         ntrials: int = 20,
         shuffle: bool = True,
         max_sequential: int = 0,
+        rescaling_coeff: float = 0,
         input_baseline: float = 0.2,
         tau: int = 100,
         noise_std: float = 0.01,
@@ -124,6 +86,9 @@ class Task:
                 Defaults to True.
             max_sequential: Maximum number of sequential trials of the same modality. Only used if shuffle is True.
                 Defaults to 0 (no maximum).
+            rescaling_coeff: Rescaling coefficient for `self.stim_intensities` and `self.fix_value`. If set to non-zero
+                value, these values are linearly rescaled along (0, rescaling_coeff).
+                Defaults to 0 (i.e. no rescaling).
             input_baseline: Baseline input for all neurons.
                 Defaults to 0.2.
             tau: Time constant in ms.  # TODO: needs better clarification
@@ -152,13 +117,47 @@ class Task:
         self.trials["choice"] = choice
         self.trials["phases"] = phases
         self.trials["t"] = self.t
-        self.trials["fix_value"] = self.fix_value
+        self.trials["fix_value"] = self._rescale(self.fix_value, rescaling_coeff)
 
         # Generate and store inputs and outputs
         alpha = self.dt / tau
         noise_factor = noise_std * np.sqrt(2 * alpha) / alpha
-        self.trials["inputs"] = self._build_trials_inputs(input_baseline, noise_factor, rng)
+        self.trials["inputs"] = self._build_trials_inputs(rescaling_coeff, input_baseline, noise_factor, rng)
         self.trials["outputs"] = self._build_trials_outputs()
+
+    def _rescale(
+        self,
+        input_: float,
+        coeff: float,
+        min_intensity: float | None = None,
+        max_intensity: float | None = None,
+    ) -> float:
+        """Rescale `input_` value along (0,`coeff`) if `coeff` is non-zero.
+
+        Rescaling happens as follows:
+            coeff * (input_ - min_intensity) / (max_intensity - min_intensity)
+
+        Args:
+            input_: Value that will be rescaled.
+            coeff: Maximum value after rescaling. If set to 0, `input_` is returned unmodified.
+            min_intensity: Minimum value of the input intensities. Defaults to `min(self.stim_intensities)`
+            max_intensity: Maximum value of the input intensities. Defaults to `max(self.stim_intensities)`
+
+        Returns:
+            float: Rescaled input value.
+        """
+        if not coeff or input_ is None:
+            return input_
+        if min_intensity is None:
+            min_intensity = min(self.stim_intensities)
+        if max_intensity is None:
+            max_intensity = max(self.stim_intensities)
+
+        try:
+            return coeff * (input_ - min_intensity) / (max_intensity - min_intensity)
+        except ZeroDivisionError:
+            warnings.warn("Identical max and min intensities while rescaling. Returning unmodified input value.")
+            return input_
 
     def _build_trials_seq(
         self,
@@ -207,6 +206,7 @@ class Task:
 
     def _build_trials_inputs(
         self,
+        rescaling_coeff: float,
         input_baseline: float,
         noise_factor: float,
         rng: np.random.Generator,
@@ -229,9 +229,9 @@ class Task:
             for idx, m in enumerate(self.modalities):
                 if (modality_seq[n] != "catch") and (m in modality_seq[n]):
                     sel_value_in[n, idx] = rng.choice(self.stim_intensities[1:], 1)
-                sel_value_in[n, idx] = self._rescale(sel_value_in[n, idx])
+                sel_value_in[n, idx] = self._rescale(sel_value_in[n, idx], rescaling_coeff)
                 x[n, phases["input"], idx] = sel_value_in[n, idx]
-                x[n, phases["fix_time"], idx] = self.fix_value
+                x[n, phases["fix_time"], idx] = self._rescale(self.fix_value, rescaling_coeff)
             x[n, phases["input"], self.n_modalities] = 1  # start cue
 
         # Store intensities in trials
