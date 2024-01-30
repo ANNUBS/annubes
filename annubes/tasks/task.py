@@ -19,25 +19,25 @@ class Task:
             represented by the character combination of those trials. Values are relative to one another, such that e.g.
             `{'v':0.25, 'a': 0.75}` is identical to `{'v': 1, 'a': 3}`.
             Defaults to {'v': 0.5, 'a': 0.5}.
-        stim_time: Duration of each stimulus in ms.
-            Defaults to 1000.
+        catch_prob: probability of catch trials in the session, between 0 and 1.
+            Defaults to 0.5.
         stim_intensities: list of possible intensities of each stimulus. Note that this
             attribute will be sorted smallest to largest. Defaults to [0.8, 0.9, 1].
+        outputs: List of output signals. Note that this attribute will be sorted smallest to largest.
+            Defaults to [0, 1].
+        stim_time: Duration of each stimulus in ms.
+            Defaults to 1000.
+        fix_time: Fixation time in ms.
+            Defaults to 100.
+        delay: Time delay in between sequential trials in ms.
+            Defaults to 0.
+        fix_value: Intensity during fixation.
+            Defaults to None.  #TODO: How is `None` treated in the trials? Can it be set/default to 0 instead?
         rescaling_coeff: Rescaling coefficient for `stim_intensities` and `fix_value`. If set to non-zero value, these
             values are linearly rescaled along (0, rescaling_coeff).
             Defaults to 0 (i.e. no rescaling).
-        fix_time: Fixation time in ms.
-            Defaults to 100.
-        fix_value: Intensity during fixation.
-            Defaults to None.  #TODO: How is `None` treated in the trials? Can it be set/default to 0 instead?
-        catch_prob: probability of catch trials in the session, between 0 and 1.
-            Defaults to 0.5.
-        delay: Time delay in between sequential trials in ms.
-            Defaults to 0.
         dt: Time step in ms.  #TODO: clarify: time step of what? the graph?
             Defaults to 20.
-        outputs: List of output signals. Note that this attribute will be sorted smallest to largest.
-            Defaults to [0, 1].
 
     Raises:
         ValueError: if `catch_prob` is not between 0 and 1.
@@ -45,15 +45,15 @@ class Task:
 
     name: str
     session: dict[str, float] = field(default_factory=lambda: {"v": 0.5, "a": 0.5})
-    stim_time: int = 1000
-    stim_intensities: list[float] = field(default_factory=lambda: [0.8, 0.9, 1])
-    rescaling_coeff: float = 0
-    fix_time: int | None = 100
-    fix_value: float | None = None
     catch_prob: float = 0
-    delay: int = 0
-    dt: int = 20
+    stim_intensities: list[float] = field(default_factory=lambda: [0.8, 0.9, 1])
     outputs: list[float] = field(default_factory=lambda: [0, 1])
+    stim_time: int = 1000
+    fix_time: int | None = 100
+    delay: int = 0
+    fix_value: float | None = None
+    rescaling_coeff: float = 0
+    dt: int = 20
 
     def __post_init__(self):
         if not self.catch_prob >= 0 and self.catch_prob < 1:
