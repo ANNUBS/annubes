@@ -13,32 +13,30 @@ class Task:
     """General class for defining a task.
 
     Args:
-        name (str): name of the task.
-        session (dict[str, float], optional): Dictionary representing the ratio (values) of the different trials (keys)
-            within the task. Trials with a single modality must be represented by single characters, while trials with
-            multiple modalities are represented by the character combination of those trials. Values are relative to one
-            another, such that e.g. `{'v':0.25, 'a': 0.75}` is identical to `{'v': 1, 'a': 3}`.
+        name: Name of the task.
+        session: Dictionary representing the ratio (values) of the different trials (keys) within the task. Trials with
+            a single modality must be represented by single characters, while trials with multiple modalities are
+            represented by the character combination of those trials. Values are relative to one another, such that e.g.
+            `{'v':0.25, 'a': 0.75}` is identical to `{'v': 1, 'a': 3}`.
             Defaults to {'v': 0.5, 'a': 0.5}.
-        stim_time (int, optional): Duration of each stimulus in ms.
+        stim_time: Duration of each stimulus in ms.
             Defaults to 1000.
-        stim_intensities (list[float], optional): list of possible intensities of each stimulus. Note that this
-            attribute will be sorted smallest to largest.
-            Defaults to [0.8, 0.9, 1].
-        rescaling_coeff (float | None, optional): Rescaling coefficient.
-            Defaults to 0, meaning no rescaling.
-            #TODO: Needs better explanation of the exact type of rescaling that occurs and which values are rescaled.
-        fix_time (int | None, optional): Fixation time in ms.
+        stim_intensities: list of possible intensities of each stimulus. Note that this
+            attribute will be sorted smallest to largest. Defaults to [0.8, 0.9, 1].
+        rescaling_coeff: Rescaling coefficient for `stim_intensities` and `fix_value`. If set to non-zero value, these
+            values are linearly rescaled along (0, rescaling_coeff).
+            Defaults to 0 (i.e. no rescaling).
+        fix_time: Fixation time in ms.
             Defaults to 100.
-        fix_value (float | None, optional): Intensity during fixation.
-            Defaults to None.  #TODO: How is `None` treated in the trials? Why not set/default to 0 instead?
-        catch_prob (float, optional): probability of catch trials in the session, between 0 and 1.
+        fix_value: Intensity during fixation.
+            Defaults to None.  #TODO: How is `None` treated in the trials? Can it be set/default to 0 instead?
+        catch_prob: probability of catch trials in the session, between 0 and 1.
             Defaults to 0.5.
-        delay (int, optional): inter-trial interval in ms.
+        delay: Time delay in between sequential trials in ms.
             Defaults to 0.
-        dt (int, optional): time step in ms.  #TODO: clarify: time step of what? the graph?
+        dt: Time step in ms.  #TODO: clarify: time step of what? the graph?
             Defaults to 20.
-        outputs (list[float], optional): low and high intensity values for the output signals. Note that this
-            attribute will be sorted smallest to largest.
+        outputs: List of output signals. Note that this attribute will be sorted smallest to largest.
             Defaults to [0, 1].
 
     Raises:
@@ -83,10 +81,13 @@ class Task:
     ) -> float:
         """Rescale `input_` value along (0,`self.rescaling_coeff`) if `self.rescaling_coeff` is non-zero.
 
+        Rescaling happens as follows:
+            self.rescaling_coeff * (input_ - min_intensity) / (max_intensity - min_intensity)
+
         Args:
-            input_ (float): Value that will be rescaled.
-            min_intensity (float): Minimum value of the input intensities. Defaults to `min(self.stim_intensities)`
-            max_intensity (float): Maximum value of the input intensities. Defaults to `max(self.stim_intensities)`
+            input_: Value that will be rescaled.
+            min_intensity: Minimum value of the input intensities. Defaults to `min(self.stim_intensities)`
+            max_intensity: Maximum value of the input intensities. Defaults to `max(self.stim_intensities)`
 
         Returns:
             float: Rescaled input value.
@@ -123,14 +124,14 @@ class Task:
                 Defaults to True.
             max_sequential: Maximum number of sequential trials of the same modality. Only used if shuffle is True.
                 Defaults to 0 (no maximum).
-            input_baseline (float, optional): Baseline input for all neurons.
+            input_baseline: Baseline input for all neurons.
                 Defaults to 0.2.
-            tau (int, optional): Time constant in ms.  # TODO: needs better clarification
+            tau: Time constant in ms.  # TODO: needs better clarification
                 Defaults to 100.
-            noise_std (float, optional): Standard deviation of input noise.
+            noise_std: Standard deviation of input noise.
                 Defaults to 0.01.
             random_seed: Seed for numpy random number generator (rng).
-                Defaults to None (random seed).
+                Defaults to None (i.e. a random seed).
         """
         self._ntrials = ntrials
         rng = np.random.default_rng(random_seed)
@@ -239,7 +240,7 @@ class Task:
         noise = noise_factor * rng.normal(loc=0, scale=1, size=x.shape)
         return x + input_baseline + noise
 
-    def _build_trials_outputs(self) -> NDArray:
+    def _build_trials_outputs(self) -> NDArray[np.float32]:
         """Generate trial outputs.
 
         Returns:
