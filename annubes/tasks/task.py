@@ -107,6 +107,47 @@ class Task:
             warnings.warn("Identical max and min intensities while rescaling. Returning unmodified input value.")
             return input_
 
+    def generate_trials(
+        self,
+        batch_size: int = 20,
+        numpy_seed: int | None = None,
+    ) -> None:
+        """Method for generating trials. It populates the `trials` attribute.
+
+        Args:
+            batch_size (int, optional): number of trials to generate. Defaults to 20.
+            numpy_seed (int, optional): seed for numpy random number generator. Defaults to None.
+        """
+        # Set the seed for reproducibility
+        if numpy_seed is None:
+            numpy_seed = random.randrange(2**32 - 1)
+        self.trials["numpy_seed"] = numpy_seed
+        rng = np.random.default_rng(numpy_seed)
+        np.random.seed(numpy_seed)  # noqa: NPY002
+
+        # Generate sequence of modalities
+        modality_seq = self._build_trials_seq(batch_size, rng)
+
+        # Setup phases of trial
+        phases = {}
+        phases["inter_trial"] = np.where(self.t <= self.inter_trial)[0]
+        phases["t_fixation"] = np.where((self.t > self.inter_trial) & (self.t <= self.inter_trial + self.t_fixation))[0]
+        phases["input"] = np.where(self.t > self.inter_trial + self.t_fixation)[0]
+        choice = (modality_seq != "catch").astype(np.int_)
+
+        # Trial Info
+        self.trials = {"name": self.name}
+        self.trials["modality_seq"] = modality_seq
+        self.trials["choice"] = choice
+        self.trials["phases"] = phases
+        self.trials["t"] = self.t
+        self.trials["value_fixation"] = self.value_fixation
+
+        # Generate and store inputs
+        self.trials["inputs"] = self._build_trials_inputs(batch_size, modality_seq, rng, phases)
+        # Generate and store outputs
+        self.trials["outputs"] = self._build_trials_outputs(batch_size, phases, choice)
+
     def _build_trials_seq(
         self,
         batch_size: int,
@@ -222,47 +263,6 @@ class Task:
             y[i, phases["input"], 1 - choice[i]] = min(self.value_out)
 
         return y
-
-    def generate_trials(
-        self,
-        batch_size: int = 20,
-        numpy_seed: int | None = None,
-    ) -> None:
-        """Method for generating trials. It populates the `trials` attribute.
-
-        Args:
-            batch_size (int, optional): number of trials to generate. Defaults to 20.
-            numpy_seed (int, optional): seed for numpy random number generator. Defaults to None.
-        """
-        # Set the seed for reproducibility
-        if numpy_seed is None:
-            numpy_seed = random.randrange(2**32 - 1)
-        self.trials["numpy_seed"] = numpy_seed
-        rng = np.random.default_rng(numpy_seed)
-        np.random.seed(numpy_seed)  # noqa: NPY002
-
-        # Generate sequence of modalities
-        modality_seq = self._build_trials_seq(batch_size, rng)
-
-        # Setup phases of trial
-        phases = {}
-        phases["inter_trial"] = np.where(self.t <= self.inter_trial)[0]
-        phases["t_fixation"] = np.where((self.t > self.inter_trial) & (self.t <= self.inter_trial + self.t_fixation))[0]
-        phases["input"] = np.where(self.t > self.inter_trial + self.t_fixation)[0]
-        choice = (modality_seq != "catch").astype(np.int_)
-
-        # Trial Info
-        self.trials = {"name": self.name}
-        self.trials["modality_seq"] = modality_seq
-        self.trials["choice"] = choice
-        self.trials["phases"] = phases
-        self.trials["t"] = self.t
-        self.trials["value_fixation"] = self.value_fixation
-
-        # Generate and store inputs
-        self.trials["inputs"] = self._build_trials_inputs(batch_size, modality_seq, rng, phases)
-        # Generate and store outputs
-        self.trials["outputs"] = self._build_trials_outputs(batch_size, phases, choice)
 
     def plot_trials(self, n: int = 1) -> go.Figure:
         """Method for plotting generated trials.
