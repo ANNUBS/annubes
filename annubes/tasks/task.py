@@ -14,62 +14,66 @@ class Task:
 
     Args:
         name (str): name of the task.
-        session_in (dict[str, float], optional): Dictionary representing the session. Keys are the modalities
-            and values are the probabilities. If order matters, put the modalities in the right order.
+        session (dict[str, float], optional): Dictionary representing the ratio (values) of the different trials (keys)
+            within the task. Trials with a single modality must be represented by single characters, while trials with
+            multiple modalities are represented by the character combination of those trials. Values are relative to one
+            another, such that e.g. `{'v':0.25, 'a': 0.75}` is identical to `{'v': 1, 'a': 3}`.
             Defaults to {'v': 0.5, 'a': 0.5}.
-        ordered (bool, optional): True if you want to keep the order of the modalities. Defaults to False.
-        t_in (int, optional): time for each stimulus in ms. Defaults to 1000.
-        value_in (list[float], optional): intensity values for each stimulus. Defaults to [.8, .9, 1].
-        scaling (bool, optional): True if you want to scale the input. Defaults to False.
-        t_fixation (int | None, optional): time for fixation in ms. Defaults to 100.
-        value_fixation (float | None, optional): intensity value for fixation. Defaults to None.
-        max_sequential (int | None, optional): maximum number of sequential trials of the same modality.
-            Defaults to None.
+        stim_time (int, optional): Duration of each stimulus in ms.
+            Defaults to 1000.
+        stim_intensities (list[float], optional): list of possible intensities of each stimulus. Note that this
+            attribute will be sorted smallest to largest.
+            Defaults to [0.8, 0.9, 1].
+        rescaling_coeff (float | None, optional): Rescaling coefficient.
+            Defaults to 0, meaning no rescaling.
+            #TODO: Needs better explanation of the exact type of rescaling that occurs and which values are rescaled.
+        fix_time (int | None, optional): Fixation time in ms.
+            Defaults to 100.
+        fix_value (float | None, optional): Intensity during fixation.
+            Defaults to None.  #TODO: How is `None` treated in the trials? Why not set/default to 0 instead?
         catch_prob (float, optional): probability of catch trials in the session, between 0 and 1.
+            Defaults to 0.5.
+        delay (int, optional): inter-trial interval in ms.
             Defaults to 0.
-        inter_trial (int, optional): inter-trial interval in ms. Defaults to 0.
-        dt (int, optional): time step in ms. Defaults to 20.
-        tau (int, optional): time constant in ms. Defaults to 100.
-        std_inp_noise (float, optional): standard deviation for input noise. Defaults to 0.01.
-        baseline_inp (float, optional): baseline input for all neurons. Defaults to 0.2.
-        n_out (int, optional): number of outputs. Defaults to 2.
-        value_out (list[float], optional): low and high intensity values for the output signals.
+        dt (int, optional): time step in ms.  #TODO: clarify: time step of what? the graph?
+            Defaults to 20.
+        outputs (list[float], optional): low and high intensity values for the output signals. Note that this
+            attribute will be sorted smallest to largest.
             Defaults to [0, 1].
 
     Raises:
-        ValueError: if the sum of the probabilities of `session_in` is not 1.
-        ValueError: if `catch_prob` is not between 0 (included) and 1 (excluded).
+        ValueError: if `catch_prob` is not between 0 and 1.
     """
 
     name: str
-    session_in: dict[str, float] = field(default_factory=lambda: {"v": 0.5, "a": 0.5})
-    t_in: int = 1000
-    value_in: list[float] = field(default_factory=lambda: [0.8, 0.9, 1])
-    coeff: float = 0
-    t_fixation: int | None = 100
-    value_fixation: float | None = None
+    session: dict[str, float] = field(default_factory=lambda: {"v": 0.5, "a": 0.5})
+    stim_time: int = 1000
+    stim_intensities: list[float] = field(default_factory=lambda: [0.8, 0.9, 1])
+    rescaling_coeff: float = 0
+    fix_time: int | None = 100
+    fix_value: float | None = None
     catch_prob: float = 0
-    inter_trial: int = 0
+    delay: int = 0
     dt: int = 20
-    value_out: list[float] = field(default_factory=lambda: [0, 1])
+    outputs: list[float] = field(default_factory=lambda: [0, 1])
 
     def __post_init__(self):
         if not self.catch_prob >= 0 and self.catch_prob < 1:
             raise ValueError("`catch_prob` must be higher or equal to 0, or lower than 1.")
 
-        sum_session_in = sum(self.session_in.values())
-        for i in self.session_in:
-            self.session_in[i] = self.session_in[i] / sum_session_in
-        self.value_in.sort()
-        self.value_out.sort()
-        if self.value_fixation is not None:
-            self.value_fixation = self._rescale(self.value_fixation)
+        sum_session_vals = sum(self.session.values())
+        for i in self.session:
+            self.session[i] = self.session[i] / sum_session_vals
+        self.stim_intensities.sort()
+        self.outputs.sort()
+        if self.fix_value is not None:
+            self.fix_value = self._rescale(self.fix_value)
 
         # Derived attributes
-        self.modalities = list(dict.fromkeys(char for string in self.session_in for char in string))
+        self.modalities = list(dict.fromkeys(char for string in self.session for char in string))
         self.n_modalities = len(self.modalities)  # does not include start cue
-        duration = self.inter_trial + self.t_fixation + self.t_in
-        self.t = np.linspace(0, duration, int((duration + self.dt) / self.dt))  # TODO: rename attribute
+        trial_duration = self.delay + self.fix_time + self.stim_time
+        self.t = np.linspace(0, trial_duration, int((trial_duration + self.dt) / self.dt))  # TODO: rename attribute
 
     def _rescale(
         self,
@@ -77,26 +81,26 @@ class Task:
         min_intensity: float | None = None,
         max_intensity: float | None = None,
     ) -> float:
-        """Rescale `input_` value if `self.coeff` is non-zero.
+        """Rescale `input_` value along (0,`self.rescaling_coeff`) if `self.rescaling_coeff` is non-zero.
 
         Args:
             input_ (float): Value that will be rescaled.
-            min_intensity (float): Minimum value of the input intensities. Defaults to `min(self.value_in)`
-            max_intensity (float): Maximum value of the input intensities. Defaults to `max(self.value_in)`
+            min_intensity (float): Minimum value of the input intensities. Defaults to `min(self.stim_intensities)`
+            max_intensity (float): Maximum value of the input intensities. Defaults to `max(self.stim_intensities)`
 
         Returns:
-            float: scaled input value.
+            float: Rescaled input value.
         """
-        if not self.coeff:
+        if not self.rescaling_coeff:
             return input_
 
         if min_intensity is None:
-            min_intensity = min(self.value_in)
+            min_intensity = min(self.stim_intensities)
         if max_intensity is None:
-            max_intensity = max(self.value_in)
+            max_intensity = max(self.stim_intensities)
 
         try:
-            return self.coeff * (input_ - min_intensity) / (max_intensity - min_intensity)
+            return self.rescaling_coeff * (input_ - min_intensity) / (max_intensity - min_intensity)
         except ZeroDivisionError:
             warnings.warn("Identical max and min intensities while rescaling. Returning unmodified input value.")
             return input_
@@ -115,7 +119,7 @@ class Task:
 
         Args:
             ntrials: Number of trials to generate. Defaults to 20.
-            shuffle: `False` will maintain the order of `self.session_in`. `True` will shuffle the order of the trials.
+            shuffle: `False` will maintain the order of `self.session`. `True` will shuffle the order of the trials.
                 Defaults to True.
             max_sequential: Maximum number of sequential trials of the same modality. Only used if shuffle is True.
                 Defaults to 0 (no maximum).
@@ -136,9 +140,9 @@ class Task:
 
         # Setup phases of trial
         phases = {}
-        phases["inter_trial"] = np.where(self.t <= self.inter_trial)[0]
-        phases["t_fixation"] = np.where((self.t > self.inter_trial) & (self.t <= self.inter_trial + self.t_fixation))[0]
-        phases["input"] = np.where(self.t > self.inter_trial + self.t_fixation)[0]
+        phases["delay"] = np.where(self.t <= self.delay)[0]
+        phases["fix_time"] = np.where((self.t > self.delay) & (self.t <= self.delay + self.fix_time))[0]
+        phases["input"] = np.where(self.t > self.delay + self.fix_time)[0]
         choice = (modality_seq != "catch").astype(np.int_)
 
         # Trial Info
@@ -147,7 +151,7 @@ class Task:
         self.trials["choice"] = choice
         self.trials["phases"] = phases
         self.trials["t"] = self.t
-        self.trials["value_fixation"] = self.value_fixation
+        self.trials["fix_value"] = self.fix_value
 
         # Generate and store inputs and outputs
         alpha = self.dt / tau
@@ -167,8 +171,8 @@ class Task:
             NDarray[str]: list of modalities.
         """
         # Extract keys and probabilities from the dictionary
-        scenarios = list(self.session_in.keys())
-        probabilities = np.array(list(self.session_in.values()))
+        scenarios = list(self.session.keys())
+        probabilities = np.array(list(self.session.values()))
         # Generate random numbers of samples based on the probabilities
         prob_samples = rng.multinomial(self._ntrials, probabilities)
         # Create a dictionary to store the results
@@ -215,7 +219,7 @@ class Task:
             (self._ntrials, len(self.t), self.n_modalities + 1), dtype=np.float32
         )  # n_modalities+1 for start cue
         sel_value_in = np.full(
-            (self._ntrials, self.n_modalities), min(self.value_in), dtype=np.float32
+            (self._ntrials, self.n_modalities), min(self.stim_intensities), dtype=np.float32
         )  # TODO: needs a better name
 
         modality_seq = self.trials["modality_seq"]
@@ -223,10 +227,10 @@ class Task:
         for n in range(self._ntrials):
             for idx, m in enumerate(self.modalities):
                 if (modality_seq[n] != "catch") and (m in modality_seq[n]):
-                    sel_value_in[n, idx] = rng.choice(self.value_in[1:], 1)
+                    sel_value_in[n, idx] = rng.choice(self.stim_intensities[1:], 1)
                 sel_value_in[n, idx] = self._rescale(sel_value_in[n, idx])
                 x[n, phases["input"], idx] = sel_value_in[n, idx]
-                x[n, phases["t_fixation"], idx] = self.value_fixation
+                x[n, phases["fix_time"], idx] = self.fix_value
             x[n, phases["input"], self.n_modalities] = 1  # start cue
 
         # Store intensities in trials
@@ -244,15 +248,15 @@ class Task:
         phases = self.trials["phases"]
         choice = self.trials["choice"]
 
-        y = np.zeros((self._ntrials, len(self.t), len(self.value_out)), dtype=np.float32)
+        y = np.zeros((self._ntrials, len(self.t), len(self.outputs)), dtype=np.float32)
         for i in range(self._ntrials):
-            if self.inter_trial is not None:
-                y[i, phases["inter_trial"], :] = min(self.value_out)
-            if self.t_fixation is not None:
-                y[i, phases["t_fixation"], :] = min(self.value_out)
+            if self.delay is not None:
+                y[i, phases["delay"], :] = min(self.outputs)
+            if self.fix_time is not None:
+                y[i, phases["fix_time"], :] = min(self.outputs)
 
-            y[i, phases["input"], choice[i]] = max(self.value_out)
-            y[i, phases["input"], 1 - choice[i]] = min(self.value_out)
+            y[i, phases["input"], choice[i]] = max(self.outputs)
+            y[i, phases["input"], 1 - choice[i]] = min(self.outputs)
 
         return y
 
@@ -343,7 +347,7 @@ class Task:
                 row=i + 1,
                 col=1,
             )
-            fig.add_vline(x=self.inter_trial + self.t_fixation, line_width=3, line_dash="dash", line_color="red")
+            fig.add_vline(x=self.delay + self.fix_time, line_width=3, line_dash="dash", line_color="red")
             showlegend = False
         fig.update_layout(height=1300, width=900, title_text="Trials")
         return fig
