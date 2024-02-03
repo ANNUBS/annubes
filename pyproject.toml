@@ -72,77 +72,22 @@ extras = dev
 
 [tool.ruff]
 line-length = 120
-select = [
-    "F",      # Pyflakes
-    "E",      # pycodestyle (error)
-    "W",      # pycodestyle (warning)
-    "I",      # isort
-    "D",      # pydocstyle
-    "UP",     # pyupgrade
-    "SIM",    # simplify
-    "C4",     # flake8-comprehensions
-    "S",      # flake8-bandit
-    "PGH",    # pygrep-hooks
-    "BLE",    # blind-except
-    "FBT003", # boolean-positional-value-in-call
-    "B",      # flake8-bugbear
-    "Q",      # flake8-quotes
-    "PLR",    # pylint refactoring
-    "ARG",    # flake8-unused-arguments
-    "SLF001", # Private member accessed
-    "PIE",    # flake8-pie
-    "RET",    # flaske8-return
-    "PT",     # pytest
-    "TID",    # imports
-    "TCH",    # imports
-    "PD",     # pandas
-    "NPY",    # numpy
-    "PL",     # pylint
-    "RUF",    # ruff rtecommendations
-    "PERF",   # performance
-    "TRY",    # try blocks
-    "ERA",    # commented out code
-    "PTH",    # flake8-use-pathlib
-    "N",      # naming conventions
-    "C901",   # mccabe complexity
-    # The type annotation module is quite strict, we might have to disable it
-    "ANN", # type annotations
-    # other linting conventions
-    "FLY",
-    "AIR",
-    "YTT",
-    "ASYNC",
-    "A",
-    "DTZ",
-    "DJ",
-    "FA",
-    "ISC",
-    "ICN",
-    "G",
-    "INP",
-    "PYI",
-    "Q",
-    "RSE102",
-    "SLOT",
-    "INT",
-]
+select = ["ALL"]
 ignore = [
-    "PLR0912", # Too many branches,
-    "PLR0913", #Too many arguments in function definition
-    "B028",    # No explicit `stacklevel` keyword argument found in
-    "PLR2004", # Magic value used in comparison
-    "S105",    # Possible hardcoded password
-    "S311",    # insecure random generators
-    "PT011",   # pytest-raises-too-broad
-    "SIM108",  # Use ternary operator
-    "TRY003",  # Long error messages
-    "ANN101",  # Missing type annotation for `self` in method
-    "ANN204",  # Missing return type annotation for special method `__init__`
-    # Missing docstrings Documentation
+    # Unwanted (potentially)
+    "FBT",    # Using boolean arguments
+    "ANN101", # Missing type annotation for `self` in method
+    "ANN102", # Missing type annotation for `cls` in classmethod
+    "ANN204", # Missing return type annotation for special (dunder) method
+    "S105",   # Possible hardcoded password
+    "S311",   # insecure random generators
+    "PT011",  # pytest-raises-too-broad
+    "TD",     # TODOs
+    "FIX002", # Resolve TODOs
+    "B028",   # No explicit `stacklevel` keyword argument found in warning
+    # "SIM108", # Use ternary operator (not sure if we want to ignore this)
+    # Unneeded docstrings
     "D100", # Missing module docstring
-    "D101", # Missing docstring in public class
-    "D102", # Missing docstring in public method
-    "D103", # Missing docstring in public function
     "D104", # Missing public package docstring
     "D105", # Missing docstring in magic method
     "D107", # Missing docstring in `__init__`
@@ -168,7 +113,11 @@ unfixable = ["F401"] # unused imports (should not disappear while editing)
 
 [tool.ruff.lint.per-file-ignores]
 "*.ipynb" = ["ERA001"] # Commented out code
-"tests/*" = ["S101"]   # Use of `assert` detected
+"tests/*" = [
+    "S101",   # Use of `assert` detected
+    "ANN201", # Missing return type
+    "D103",   # Missing function docstring
+]
 "docs/*" = ["ALL"]
 
 
@@ -177,8 +126,11 @@ extend-safe-fixes = [
     "D415",   # First line should end with a period, question mark, or exclamation point
     "D300",   # Use triple double quotes `"""`
     "D200",   # One-line docstring should fit on one line
-    "TCH",    # type checking only imports
-    "ISC001", # implicitly concatenated strings on a single line
+    "TCH",    # Format type checking only imports
+    "ISC001", # Implicitly concatenated strings on a single line
+    "EM",     # Exception message variables
+    "RUF013", # Implicit Optional
+    "B006",   # Mutable default argument
 ]
 
 [tool.ruff.isort]

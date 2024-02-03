@@ -4,8 +4,12 @@ import torch
 from numpy.typing import NDArray
 from torch import nn
 
+# ruff: noqa: EXE003, EXE005
+
 
 class CustomRNN(nn.Module):
+    """Custom Recurrent Neural Network."""
+
     def __init__(  # TODO: fix type annotations, these are guesses
         self,
         input_size: int,
@@ -47,14 +51,14 @@ class CustomRNN(nn.Module):
         self.noise = torch.distributions.normal.Normal(0, 1)
         self.set_weights()
 
-    def set_weights(self) -> None:
+    def set_weights(self) -> None:  # noqa: D102
         with torch.no_grad():
             # constrain inhibitory weights to have negative values
             torch.clamp(self.h2h.weight[:, : self.n_in], max=0, out=self.h2h.weight[:, : self.n_in])
             # constrain excitatory weights to have positive values
             torch.clamp(self.h2h.weight[:, self.n_in :], min=0, out=self.h2h.weight[:, self.n_in :])
 
-    def forward(  # TODO: fix type annotations, these are guesses
+    def forward(  # noqa: D102, TODO: fix type annotations, these are guesses
         self,
         x: NDArray,
         tau: float,
@@ -85,7 +89,8 @@ class CustomRNN(nn.Module):
             network_output_t = self.h2o(rnn_output_t_ex)
 
             rnn_input = torch.cat(
-                [rnn_input, rnn_input_t[:, None, :]], dim=1
+                [rnn_input, rnn_input_t[:, None, :]],
+                dim=1,
             )  #! Appends along time axis, such that next iteration has access at [:,t,:] to basically [:,t-1,:]
             rnn_output = torch.cat([rnn_output, rnn_output_t[:, None, :]], dim=1)
             network_output = torch.cat([network_output, network_output_t[:, None, :]], dim=1)
