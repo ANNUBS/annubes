@@ -53,7 +53,8 @@ class Task:
 
     def __post_init__(self):
         if not self.catch_prob >= 0 and self.catch_prob < 1:
-            raise ValueError("`catch_prob` must be higher or equal to 0, or lower than 1.")
+            msg = "`catch_prob` must be between 0 and 1."
+            raise ValueError(msg)
 
         sum_session_vals = sum(self.session.values())
         for i in self.session:
@@ -67,7 +68,7 @@ class Task:
         trial_duration = self.delay + self.fix_time + self.stim_time
         self.t = np.linspace(0, trial_duration, int((trial_duration + self.dt) / self.dt))  # TODO: rename attribute
 
-    def generate_trials(
+    def generate_trials(  # noqa: PLR0913 (too many arguments)
         self,
         ntrials: int = 20,
         shuffle: bool = True,
@@ -156,7 +157,10 @@ class Task:
         try:
             return coeff * (input_ - min_intensity) / (max_intensity - min_intensity)
         except ZeroDivisionError:
-            warnings.warn("Identical max and min intensities while rescaling. Returning unmodified input value.")
+            warnings.warn(
+                "Identical max and min intensities while rescaling. Returning unmodified input value.",
+                stacklevel=2,
+            )
             return input_
 
     def _build_trials_seq(
@@ -217,10 +221,13 @@ class Task:
             NDarray[np.float32]: array of inputs.
         """
         x = np.zeros(
-            (self._ntrials, len(self.t), self.n_modalities + 1), dtype=np.float32
+            (self._ntrials, len(self.t), self.n_modalities + 1),
+            dtype=np.float32,
         )  # n_modalities+1 for start cue
         sel_value_in = np.full(
-            (self._ntrials, self.n_modalities), min(self.stim_intensities), dtype=np.float32
+            (self._ntrials, self.n_modalities),
+            min(self.stim_intensities),
+            dtype=np.float32,
         )  # TODO: needs a better name
 
         modality_seq = self.trials["modality_seq"]
@@ -284,7 +291,7 @@ class Task:
         showlegend = True
         colors = [
             "#{:02x}{:02x}{:02x}".format(
-                *tuple(int(c * 255) for c in colorsys.hsv_to_rgb(i / self.n_modalities, 1.0, 1.0))
+                *tuple(int(c * 255) for c in colorsys.hsv_to_rgb(i / self.n_modalities, 1.0, 1.0)),
             )
             for i in range(self.n_modalities)
         ]
