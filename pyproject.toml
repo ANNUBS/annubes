@@ -18,7 +18,7 @@ classifiers = [
     "Natural Language :: English",
     "Programming Language :: Python :: 3.11",
 ]
-dependencies = ["numpy >= 1.26.2", "ruff >= 0.1.13"]
+dependencies = ["numpy >= 1.26.2", "ruff >= 0.1.13", "plotly", "tqdm"]
 description = "ANNUBeS: training Artificial Neural Networks to Uncover Behavioral Strategies in neuroscience"
 keywords = ["neuroscience", "neural networks"]
 license = { file = "LICENSE" }
@@ -34,7 +34,6 @@ dev = [
     "coverage [toml]",
     "pytest",
     "pytest-cov",
-    "ruff",
     "sphinx",
     "sphinx_rtd_theme",
     "sphinx-autoapi",
@@ -168,8 +167,10 @@ fixable = ["ALL"]
 unfixable = ["F401"] # unused imports (should not disappear while editing)
 
 [tool.ruff.lint.per-file-ignores]
-"tests/*" = ["S101"] # Use of `assert` detected
+"*.ipynb" = ["ERA001"] # Commented out code
+"tests/*" = ["S101"]   # Use of `assert` detected
 "docs/*" = ["ALL"]
+
 
 [tool.ruff.lint]
 extend-safe-fixes = [
