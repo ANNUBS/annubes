@@ -21,10 +21,12 @@ class Task:
             maintained such that `{"v": 0.5, "a": 0.5}` == `{"a": 0.5, "v": 0.5}` is False. Note also that values are
             read relative to each other, such that e.g. `{"v": 0.25, "a": 0.75}` == `{"v": 1, "a": 3}` is True.
             Defaults to {"v": 0.5, "a": 0.5}.
+        stim_intensities: List of possible intensities of each stimulus. Note that this
+            attribute will be sorted smallest to largest. Defaults to [0.8, 0.9, 1].
         catch_prob: probability of catch trials in the session, between 0 and 1.
             Defaults to 0.5.
-        stim_intensities: list of possible intensities of each stimulus. Note that this
-            attribute will be sorted smallest to largest. Defaults to [0.8, 0.9, 1].
+        catch_intensity: Intensity value during a catch trial.
+            Defaults to 0.
         shuffle: `False` will maintain the order of `self.session`. `True` will shuffle the order of the trials.
             Defaults to True.
         max_sequential: Maximum number of sequential trials of the same modality. Only used if shuffle is True.
@@ -59,8 +61,9 @@ class Task:
 
     name: str
     session: OrderedDict[str, float] | dict[str, float] = field(default_factory=lambda: {"v": 0.5, "a": 0.5})
-    catch_prob: float = 0
     stim_intensities: list[float] = field(default_factory=lambda: [0.8, 0.9, 1])
+    catch_prob: float = 0.5
+    catch_intensity: float = 0
     shuffle: bool = True
     max_sequential: int = 0
     n_outputs: int = 2
@@ -273,12 +276,12 @@ class Task:
         y = np.zeros((self._ntrials, len(self.t), self.n_outputs), dtype=np.float32)
         for i in range(self._ntrials):
             if self.delay is not None:
-                y[i, phases["delay"], :] = min(self.output_values)
+                y[i, phases["delay"], :] = self.catch_intensity
             if self.fix_time is not None:
-                y[i, phases["fix_time"], :] = min(self.output_values)
+                y[i, phases["fix_time"], :] = self.catch_intensity
 
             y[i, phases["input"], choice[i]] = max(self.output_values)
-            y[i, phases["input"], 1 - choice[i]] = min(self.output_values)
+            y[i, phases["input"], 1 - choice[i]] = self.catch_intensity
 
         return y
 
