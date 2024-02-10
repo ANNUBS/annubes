@@ -96,18 +96,26 @@ class Task:
     def generate_trials(
         self,
         ntrials: int = 20,
-        random_seed: int | None = None,
+        random_seed: int | dict | None = None,
     ) -> None:
         """Method for generating trials. It populates the `trials` attribute.
 
         Args:
             ntrials: Number of trials to generate.
                 Defaults to 20.
-            random_seed: Seed for numpy random number generator (rng).
-                Defaults to None (i.e. a random seed).
+            random_seed: Seed for numpy random number generator (rng). If an int is given, it will be used as the seed
+                for `np.random.default_rng`. If a dict is given, it must be in the form of a random state as given by
+                `rng.__getstate__()` (previous runs will have stored this value as `self.trials["random_state"]`).
+                Defaults to None (i.e. the initial state itself is random).
         """
         self._ntrials = ntrials
-        rng = np.random.default_rng(random_seed)
+
+        # Set random state
+        if isinstance(random_seed, dict):
+            np.random.default_rng().__setstate__(random_seed)
+        else:
+            rng = np.random.default_rng(random_seed)
+        self._random_state = rng.__getstate__()
 
         # Generate sequence of modalities
         modality_seq = self._build_trials_seq(rng)
@@ -126,6 +134,7 @@ class Task:
         self.trials["phases"] = phases
         self.trials["t"] = self.t
         self.trials["fix_value"] = self._rescale(self.fix_value, self.rescaling_coeff)
+        self.trials["random_state"] = self._random_state
 
         # Generate and store inputs and outputs
         self.trials["inputs"] = self._build_trials_inputs(rng)
