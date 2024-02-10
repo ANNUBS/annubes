@@ -1,5 +1,6 @@
 import colorsys
 import warnings
+from collections import OrderedDict
 from dataclasses import dataclass, field
 
 import numpy as np
@@ -16,9 +17,10 @@ class Task:
         name: Name of the task.
         session: Dictionary representing the ratio (values) of the different trials (keys) within the task. Trials with
             a single modality must be represented by single characters, while trials with multiple modalities are
-            represented by the character combination of those trials. Values are relative to one another, such that e.g.
-            `{'v':0.25, 'a': 0.75}` is identical to `{'v': 1, 'a': 3}`.
-            Defaults to {'v': 0.5, 'a': 0.5}.
+            represented by the character combination of those trials. Note that the order of the dictionary is
+            maintained such that `{"v": 0.5, "a": 0.5}` == `{"a": 0.5, "v": 0.5}` is False. Note also that values are
+            read relative to each other, such that e.g. `{"v": 0.25, "a": 0.75}` == `{"v": 1, "a": 3}` is True.
+            Defaults to {"v": 0.5, "a": 0.5}.
         catch_prob: probability of catch trials in the session, between 0 and 1.
             Defaults to 0.5.
         stim_intensities: list of possible intensities of each stimulus. Note that this
@@ -56,7 +58,7 @@ class Task:
     """
 
     name: str
-    session: dict[str, float] = field(default_factory=lambda: {"v": 0.5, "a": 0.5})
+    session: OrderedDict[str, float] | dict[str, float] = field(default_factory=lambda: {"v": 0.5, "a": 0.5})
     catch_prob: float = 0
     stim_intensities: list[float] = field(default_factory=lambda: [0.8, 0.9, 1])
     shuffle: bool = True
@@ -81,6 +83,7 @@ class Task:
         sum_session_vals = sum(self.session.values())
         for i in self.session:
             self.session[i] = self.session[i] / sum_session_vals
+        self.session = OrderedDict(self.session)
         self.stim_intensities.sort()
         self.output_values.sort()
 
