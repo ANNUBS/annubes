@@ -27,7 +27,9 @@ class Task:
             Defaults to True.
         max_sequential: Maximum number of sequential trials of the same modality. Only used if shuffle is True.
             Defaults to 0 (no maximum).
-        outputs: List of output signals. Note that this attribute will be sorted smallest to largest.
+        n_outputs: Number of output signals that will be generated.
+            Defaults to 2.
+        output_values: List of output signals. Note that this attribute will be sorted smallest to largest.
             Defaults to [0, 1].
         stim_time: Duration of each stimulus in ms.
             Defaults to 1000.
@@ -59,7 +61,8 @@ class Task:
     stim_intensities: list[float] = field(default_factory=lambda: [0.8, 0.9, 1])
     shuffle: bool = True
     max_sequential: int = 0
-    outputs: list[float] = field(default_factory=lambda: [0, 1])
+    n_outputs: int = 2
+    output_values: list[float] = field(default_factory=lambda: [0, 1])
     stim_time: int = 1000
     fix_value: float | None = None
     fix_time: int | None = 100
@@ -79,7 +82,7 @@ class Task:
         for i in self.session:
             self.session[i] = self.session[i] / sum_session_vals
         self.stim_intensities.sort()
-        self.outputs.sort()
+        self.output_values.sort()
 
         # Derived attributes
         self.modalities = list(dict.fromkeys(char for string in self.session for char in string))
@@ -253,15 +256,15 @@ class Task:
         phases = self.trials["phases"]
         choice = self.trials["choice"]
 
-        y = np.zeros((self._ntrials, len(self.t), len(self.outputs)), dtype=np.float32)
+        y = np.zeros((self._ntrials, len(self.t), self.n_outputs), dtype=np.float32)
         for i in range(self._ntrials):
             if self.delay is not None:
-                y[i, phases["delay"], :] = min(self.outputs)
+                y[i, phases["delay"], :] = min(self.output_values)
             if self.fix_time is not None:
-                y[i, phases["fix_time"], :] = min(self.outputs)
+                y[i, phases["fix_time"], :] = min(self.output_values)
 
-            y[i, phases["input"], choice[i]] = max(self.outputs)
-            y[i, phases["input"], 1 - choice[i]] = min(self.outputs)
+            y[i, phases["input"], choice[i]] = max(self.output_values)
+            y[i, phases["input"], 1 - choice[i]] = min(self.output_values)
 
         return y
 
