@@ -23,18 +23,31 @@ class Task:
             Defaults to 0.5.
         stim_intensities: list of possible intensities of each stimulus. Note that this
             attribute will be sorted smallest to largest. Defaults to [0.8, 0.9, 1].
+        shuffle: `False` will maintain the order of `self.session`. `True` will shuffle the order of the trials.
+            Defaults to True.
+        max_sequential: Maximum number of sequential trials of the same modality. Only used if shuffle is True.
+            Defaults to 0 (no maximum).
         outputs: List of output signals. Note that this attribute will be sorted smallest to largest.
             Defaults to [0, 1].
         stim_time: Duration of each stimulus in ms.
             Defaults to 1000.
-        fix_time: Fixation time in ms.
-            Defaults to 100.
-        delay: Time delay in between sequential trials in ms.
-            Defaults to 0.
         fix_value: Intensity during fixation.
             Defaults to None.  #TODO: How is `None` treated in the trials? Can it be set/default to 0 instead?
+        fix_time: Fixation time in ms.
+            Defaults to 100.
+        input_baseline: Baseline input for all neurons.
+            Defaults to 0.2.
+        delay: Time delay in between sequential trials in ms.
+            Defaults to 0.
         dt: Time step in ms.  #TODO: clarify: time step of what? the graph?
             Defaults to 20.
+        tau: Time constant in ms.  # TODO: needs better clarification
+            Defaults to 100.
+        rescaling_coeff: Rescaling coefficient for `self.stim_intensities` and `self.fix_value`. If set to non-zero
+            value, these values are linearly rescaled along (0, rescaling_coeff).
+            Defaults to 0 (i.e. no rescaling).
+        noise_std: Standard deviation of input noise.
+            Defaults to 0.01.
 
     Raises:
         ValueError: if `catch_prob` is not between 0 and 1.
@@ -44,12 +57,18 @@ class Task:
     session: dict[str, float] = field(default_factory=lambda: {"v": 0.5, "a": 0.5})
     catch_prob: float = 0
     stim_intensities: list[float] = field(default_factory=lambda: [0.8, 0.9, 1])
+    shuffle: bool = True
+    max_sequential: int = 0
     outputs: list[float] = field(default_factory=lambda: [0, 1])
     stim_time: int = 1000
-    fix_time: int | None = 100
-    delay: int = 0
     fix_value: float | None = None
+    fix_time: int | None = 100
+    input_baseline: float = 0.2
+    delay: int = 0
     dt: int = 20
+    tau: int = 100
+    noise_std: float = 0.01
+    rescaling_coeff: float = 0
 
     def __post_init__(self):
         if not self.catch_prob >= 0 and self.catch_prob < 1:
@@ -68,34 +87,16 @@ class Task:
         trial_duration = self.delay + self.fix_time + self.stim_time
         self.t = np.linspace(0, trial_duration, int((trial_duration + self.dt) / self.dt))  # TODO: rename attribute
 
-    def generate_trials(  # noqa: PLR0913 (too many arguments)
+    def generate_trials(
         self,
         ntrials: int = 20,
-        shuffle: bool = True,
-        max_sequential: int = 0,
-        rescaling_coeff: float = 0,
-        input_baseline: float = 0.2,
-        tau: int = 100,
-        noise_std: float = 0.01,
         random_seed: int | None = None,
     ) -> None:
         """Method for generating trials. It populates the `trials` attribute.
 
         Args:
-            ntrials: Number of trials to generate. Defaults to 20.
-            shuffle: `False` will maintain the order of `self.session`. `True` will shuffle the order of the trials.
-                Defaults to True.
-            max_sequential: Maximum number of sequential trials of the same modality. Only used if shuffle is True.
-                Defaults to 0 (no maximum).
-            rescaling_coeff: Rescaling coefficient for `self.stim_intensities` and `self.fix_value`. If set to non-zero
-                value, these values are linearly rescaled along (0, rescaling_coeff).
-                Defaults to 0 (i.e. no rescaling).
-            input_baseline: Baseline input for all neurons.
-                Defaults to 0.2.
-            tau: Time constant in ms.  # TODO: needs better clarification
-                Defaults to 100.
-            noise_std: Standard deviation of input noise.
-                Defaults to 0.01.
+            ntrials: Number of trials to generate.
+                Defaults to 20.
             random_seed: Seed for numpy random number generator (rng).
                 Defaults to None (i.e. a random seed).
         """
@@ -103,7 +104,7 @@ class Task:
         rng = np.random.default_rng(random_seed)
 
         # Generate sequence of modalities
-        modality_seq = self._build_trials_seq(shuffle, max_sequential, rng)
+        modality_seq = self._build_trials_seq(rng)
 
         # Setup phases of trial
         phases = {}
@@ -118,12 +119,10 @@ class Task:
         self.trials["choice"] = choice
         self.trials["phases"] = phases
         self.trials["t"] = self.t
-        self.trials["fix_value"] = self._rescale(self.fix_value, rescaling_coeff)
+        self.trials["fix_value"] = self._rescale(self.fix_value, self.rescaling_coeff)
 
         # Generate and store inputs and outputs
-        alpha = self.dt / tau
-        noise_factor = noise_std * np.sqrt(2 * alpha) / alpha
-        self.trials["inputs"] = self._build_trials_inputs(rescaling_coeff, input_baseline, noise_factor, rng)
+        self.trials["inputs"] = self._build_trials_inputs(rng)
         self.trials["outputs"] = self._build_trials_outputs()
 
     def _rescale(
@@ -165,8 +164,6 @@ class Task:
 
     def _build_trials_seq(
         self,
-        shuffle: bool,
-        max_sequential: int,
         rng: np.random.Generator,
     ) -> NDArray:
         """Generate a sequence of modalities.
@@ -190,9 +187,9 @@ class Task:
             temp_seq = session_in_samples[m][0] * [m] + session_in_samples[m][1] * ["catch"]
             rng.shuffle(temp_seq)
             modality_seq += list(temp_seq)
-        if shuffle:
+        if self.shuffle:
             rng.shuffle(modality_seq)
-            if max_sequential:
+            if self.max_sequential:
                 # Shuffle the list using Fisher-Yates algorithm with consecutive constraint
                 i = len(modality_seq) - 1
                 while i > 0:
@@ -203,16 +200,12 @@ class Task:
                     i -= 1
                     # Check and fix the consecutive constraint
                     count = 1
-                    while i > 0 and modality_seq[i] == modality_seq[i - 1] and count >= max_sequential:
+                    while i > 0 and modality_seq[i] == modality_seq[i - 1] and count >= self.max_sequential:
                         i -= 1
-
         return np.array(modality_seq)
 
     def _build_trials_inputs(
         self,
-        rescaling_coeff: float,
-        input_baseline: float,
-        noise_factor: float,
         rng: np.random.Generator,
     ) -> NDArray[np.float32]:
         """Generate trial inputs.
@@ -236,16 +229,20 @@ class Task:
             for idx, m in enumerate(self.modalities):
                 if (modality_seq[n] != "catch") and (m in modality_seq[n]):
                     sel_value_in[n, idx] = rng.choice(self.stim_intensities[1:], 1)
-                sel_value_in[n, idx] = self._rescale(sel_value_in[n, idx], rescaling_coeff)
+                sel_value_in[n, idx] = self._rescale(sel_value_in[n, idx], self.rescaling_coeff)
                 x[n, phases["input"], idx] = sel_value_in[n, idx]
-                x[n, phases["fix_time"], idx] = self._rescale(self.fix_value, rescaling_coeff)
+                x[n, phases["fix_time"], idx] = self._rescale(self.fix_value, self.rescaling_coeff)
             x[n, phases["input"], self.n_modalities] = 1  # start cue
 
         # Store intensities in trials
         self.trials["sel_value_in"] = sel_value_in
 
+        # generate noise
+        alpha = self.dt / self.tau
+        noise_factor = self.noise_std * np.sqrt(2 * alpha) / alpha
         noise = noise_factor * rng.normal(loc=0, scale=1, size=x.shape)
-        return x + input_baseline + noise
+
+        return x + self.input_baseline + noise
 
     def _build_trials_outputs(self) -> NDArray[np.float32]:
         """Generate trial outputs.
