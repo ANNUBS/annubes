@@ -134,6 +134,8 @@ class Task:
         self.trials["phases"] = phases
         self.trials["t"] = self.t
         self.trials["fix_value"] = self._rescale(self.fix_value, self.rescaling_coeff)
+        self.trials["ntrials"] = self._ntrials
+        self.trials["max_sequential"] = self.max_sequential
         self.trials["random_state"] = self._random_state
 
         # Generate and store inputs and outputs
