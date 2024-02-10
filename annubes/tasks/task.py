@@ -36,7 +36,7 @@ class Task:
         stim_time: Duration of each stimulus in ms.
             Defaults to 1000.
         fix_value: Intensity during fixation.
-            Defaults to None.  #TODO: How is `None` treated in the trials? Can it be set/default to 0 instead?
+            Defaults to 0.
         fix_time: Fixation time in ms.
             Defaults to 100.
         input_baseline: Baseline input for all neurons.
@@ -66,7 +66,7 @@ class Task:
     n_outputs: int = 2
     output_values: list[float] = field(default_factory=lambda: [0, 1])
     stim_time: int = 1000
-    fix_value: float | None = None
+    fix_value: float = 0
     fix_time: int | None = 100
     input_baseline: float = 0.2
     delay: int = 0
@@ -133,7 +133,7 @@ class Task:
         self.trials["choice"] = choice
         self.trials["phases"] = phases
         self.trials["t"] = self.t
-        self.trials["fix_value"] = self._rescale(self.fix_value, self.rescaling_coeff)
+        self.trials["fix_value"] = self.fix_value
         self.trials["ntrials"] = self._ntrials
         self.trials["max_sequential"] = self.max_sequential
         self.trials["random_state"] = self._random_state
@@ -163,7 +163,7 @@ class Task:
         Returns:
             float: Rescaled input value.
         """
-        if not coeff or input_ is None:
+        if not coeff:
             return input_
         if min_intensity is None:
             min_intensity = min(self.stim_intensities)
