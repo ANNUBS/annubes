@@ -86,7 +86,7 @@ class Task:
 
         # Derived attributes
         self.modalities = list(dict.fromkeys(char for string in self.session for char in string))
-        self.n_modalities = len(self.modalities)  # does not include start cue
+        self.n_inputs = len(self.modalities) + 1  # includes start cue
         trial_duration = self.delay + self.fix_time + self.stim_time
         self.t = np.linspace(0, trial_duration, int((trial_duration + self.dt) / self.dt))  # TODO: rename attribute
 
@@ -217,11 +217,11 @@ class Task:
             NDarray[np.float32]: array of inputs.
         """
         x = np.zeros(
-            (self._ntrials, len(self.t), self.n_modalities + 1),
+            (self._ntrials, len(self.t), self.n_inputs),
             dtype=np.float32,
-        )  # n_modalities+1 for start cue
+        )
         sel_value_in = np.full(
-            (self._ntrials, self.n_modalities),
+            (self._ntrials, self.n_inputs - 1),  # should not include start cue
             min(self.stim_intensities),
             dtype=np.float32,
         )  # TODO: needs a better name
@@ -235,7 +235,7 @@ class Task:
                 sel_value_in[n, idx] = self._rescale(sel_value_in[n, idx], self.rescaling_coeff)
                 x[n, phases["input"], idx] = sel_value_in[n, idx]
                 x[n, phases["fix_time"], idx] = self._rescale(self.fix_value, self.rescaling_coeff)
-            x[n, phases["input"], self.n_modalities] = 1  # start cue
+            x[n, phases["input"], self.n_inputs - 1] = 1  # start cue
 
         # Store intensities in trials
         self.trials["sel_value_in"] = sel_value_in
@@ -291,9 +291,11 @@ class Task:
         showlegend = True
         colors = [
             "#{:02x}{:02x}{:02x}".format(
-                *tuple(int(c * 255) for c in colorsys.hsv_to_rgb(i / self.n_modalities, 1.0, 1.0)),
+                *tuple(
+                    int(c * 255) for c in colorsys.hsv_to_rgb(i / self.n_inputs - 1, 1.0, 1.0)
+                ),  # should not include start cue
             )
-            for i in range(self.n_modalities)
+            for i in range(self.n_inputs - 1)
         ]
         for i in range(n_plots):
             for idx, m in enumerate(self.modalities):
@@ -316,7 +318,7 @@ class Task:
                     name="START",
                     mode="markers+lines",
                     x=self.trials["t"],
-                    y=self.trials["inputs"][i][:, self.n_modalities],
+                    y=self.trials["inputs"][i][:, self.n_inputs],  # not for start cue
                     marker_symbol="star",
                     legendgroup="START",
                     showlegend=showlegend,
