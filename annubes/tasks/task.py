@@ -291,7 +291,10 @@ class Task:
         Returns:
             go.Figure: Plotly figure of trial results.
         """
-        n_plots = max(n_plots, self._ntrials)
+        if (p := n_plots) > (t := self._ntrials):
+            msg = f"Number of plots requested ({p}) exceeds number of trials ({t}). Will plot all trials."
+            warnings.warn(msg, stacklevel=2)
+            n_plots = self._ntrials
 
         fig = make_subplots(
             rows=n_plots,
