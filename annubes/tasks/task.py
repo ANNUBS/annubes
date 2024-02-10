@@ -33,11 +33,12 @@ class Task:
             Defaults to 0 (no maximum).
         n_outputs: Number of output signals that will be generated.
             Defaults to 2.
-        output_values: List of output signals. Note that this attribute will be sorted smallest to largest.
+        output_intensities: List of output signals. Note that this attribute will be sorted smallest to largest.
+            Currently only the smallest and largest value of this list are used.
             Defaults to [0, 1].
         stim_time: Duration of each stimulus in ms.
             Defaults to 1000.
-        fix_value: Intensity during fixation.
+        fix_intensity: Intensity during fixation.
             Defaults to 0.
         fix_time: Fixation time in ms.
             Defaults to 100.
@@ -49,7 +50,7 @@ class Task:
             Defaults to 20.
         tau: Time constant in ms.  # TODO: needs better clarification
             Defaults to 100.
-        rescaling_coeff: Rescaling coefficient for `self.stim_intensities` and `self.fix_value`. If set to non-zero
+        rescaling_coeff: Rescaling coefficient for `self.stim_intensities` and `self.fix_intensity`. If set to non-zero
             value, these values are linearly rescaled along (0, rescaling_coeff).
             Defaults to 0 (i.e. no rescaling).
         noise_std: Standard deviation of input noise.
@@ -67,9 +68,9 @@ class Task:
     shuffle: bool = True
     max_sequential: int = 0
     n_outputs: int = 2
-    output_values: list[float] = field(default_factory=lambda: [0, 1])
+    output_intensities: list[float] = field(default_factory=lambda: [0, 1])
     stim_time: int = 1000
-    fix_value: float = 0
+    fix_intensity: float = 0
     fix_time: int | None = 100
     input_baseline: float = 0.2
     delay: int = 0
@@ -88,7 +89,7 @@ class Task:
             self.session[i] = self.session[i] / sum_session_vals
         self.session = OrderedDict(self.session)
         self.stim_intensities.sort()
-        self.output_values.sort()
+        self.output_intensities.sort()
 
         # Derived attributes
         self.modalities = list(dict.fromkeys(char for string in self.session for char in string))
@@ -136,7 +137,7 @@ class Task:
         self.trials["choice"] = choice
         self.trials["phases"] = phases
         self.trials["t"] = self.t
-        self.trials["fix_value"] = self.fix_value
+        self.trials["fix_intensity"] = self.fix_intensity
         self.trials["ntrials"] = self._ntrials
         self.trials["max_sequential"] = self.max_sequential
         self.trials["random_state"] = self._random_state
@@ -251,7 +252,7 @@ class Task:
                     sel_value_in[n, idx] = rng.choice(self.stim_intensities[1:], 1)
                 sel_value_in[n, idx] = self._rescale(sel_value_in[n, idx], self.rescaling_coeff)
                 x[n, phases["input"], idx] = sel_value_in[n, idx]
-                x[n, phases["fix_time"], idx] = self._rescale(self.fix_value, self.rescaling_coeff)
+                x[n, phases["fix_time"], idx] = self._rescale(self.fix_intensity, self.rescaling_coeff)
             x[n, phases["input"], self.n_inputs - 1] = 1  # start cue
 
         # Store intensities in trials
@@ -280,7 +281,7 @@ class Task:
             if self.fix_time is not None:
                 y[i, phases["fix_time"], :] = self.catch_intensity
 
-            y[i, phases["input"], choice[i]] = max(self.output_values)
+            y[i, phases["input"], choice[i]] = max(self.output_intensities)
             y[i, phases["input"], 1 - choice[i]] = self.catch_intensity
 
         return y
