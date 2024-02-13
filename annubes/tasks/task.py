@@ -39,17 +39,17 @@ class Task:
             Defaults to [0, 1].
         stim_time: Duration of each stimulus in ms.
             Defaults to 1000.
-        fix_intensity: Intensity during fixation.
+        fix_intensity: Input signal intensity during fixation.
             Defaults to 0.
-        fix_time: Fixation time in ms.
+        fix_time: Fixation time in ms. Note that the duration of each input and output signal is increased by this time.
             Defaults to 100.
         input_baseline: Baseline input for all neurons.
             Defaults to 0.2.
         delay: Time delay in between sequential trials in ms.
             Defaults to 0.
-        dt: Time step in ms.  #TODO: clarify: time step of what? the graph?
+        dt: Sampling interval (inverted sampling frequency) in ms.
             Defaults to 20.
-        tau: Time constant in ms.  # TODO: needs better clarification
+        tau: Time constant in ms.
             Defaults to 100.
         rescaling_coeff: Rescaling coefficient for `self.stim_intensities` and `self.fix_intensity`. If set to non-zero
             value, these values are linearly rescaled along (0, rescaling_coeff).
@@ -102,7 +102,9 @@ class Task:
         ntrials: int = 20,
         random_seed: int | dict | None = None,
     ) -> None:
-        """Method for generating trials. It populates the `trials` attribute.
+        """Method for generating trials.
+
+        This method also populates the `self.trials` library, which stores information about the current state.
 
         Args:
             ntrials: Number of trials to generate.
@@ -287,9 +289,7 @@ class Task:
             cols=1,
             shared_xaxes=True,
             vertical_spacing=0.5 / n_plots,
-            subplot_titles=[
-                "Trial " + str(i + 1) + " - modality " + str(self.trials["modality_seq"][i]) for i in range(n_plots)
-            ],
+            subplot_titles=[f"Trial {i + 1}  - modality {self.trials['modality_seq'][i]}" for i in range(n_plots)],
         )
         showlegend = True
         colors = [
