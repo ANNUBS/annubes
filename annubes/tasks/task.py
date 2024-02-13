@@ -107,8 +107,8 @@ class Task:
         Args:
             ntrials: Number of trials to generate.
                 Defaults to 20.
-            random_seed: Seed for numpy random number generator (rng). If an int is given, it will be used as the seed
-                for `np.random.default_rng`. If a dict is given, it must be in the form of a random state as given by
+            random_seed: Seed for numpy's random number generator (rng). If an int is given, it will be used as the seed
+                for `np.random.default_rng()`. If a dict is given, it must be in the form of a random state as given by
                 `rng.__getstate__()` (previous runs will have stored this value as `self.trials["random_state"]`).
                 Defaults to None (i.e. the initial state itself is random).
         """
@@ -118,11 +118,11 @@ class Task:
         if isinstance(random_seed, dict):
             np.random.default_rng().__setstate__(random_seed)
         else:
-            rng = np.random.default_rng(random_seed)
-        self._random_state = rng.__getstate__()
+            self._rng = np.random.default_rng(random_seed)
+        self._random_state = self._rng.__getstate__()
 
         # Generate sequence of modalities
-        modality_seq = self._build_trials_seq(rng)
+        modality_seq = self._build_trials_seq()
 
         # Setup phases of trial
         phases = {}
@@ -143,7 +143,7 @@ class Task:
         self.trials["random_state"] = self._random_state
 
         # Generate and store inputs and outputs
-        self.trials["inputs"] = self._build_trials_inputs(rng)
+        self.trials["inputs"] = self._build_trials_inputs()
         self.trials["outputs"] = self._build_trials_outputs()
 
     def _rescale(
@@ -183,40 +183,33 @@ class Task:
             )
             return input_
 
-    def _build_trials_seq(
-        self,
-        rng: np.random.Generator,
-    ) -> NDArray:
-        """Generate a sequence of modalities.
-
-        Returns:
-            NDarray[str]: list of modalities.
-        """
+    def _build_trials_seq(self) -> NDArray:
+        """Generate a sequence of modalities."""
         # Extract keys and probabilities from the dictionary
         scenarios = list(self.session.keys())
         probabilities = np.array(list(self.session.values()))
         # Generate random numbers of samples based on the probabilities
-        prob_samples = rng.multinomial(self._ntrials, probabilities)
+        prob_samples = self._rng.multinomial(self._ntrials, probabilities)
         # Create a dictionary to store the results
         session_in_samples = {
-            scenario: rng.multinomial(prob_samples[i], [1 - self.catch_prob, self.catch_prob])
+            scenario: self._rng.multinomial(prob_samples[i], [1 - self.catch_prob, self.catch_prob])
             for i, scenario in enumerate(scenarios)
         }
         # Generate the sequence of modalities
         modality_seq = []
         for m in scenarios:
             temp_seq = session_in_samples[m][0] * [m] + session_in_samples[m][1] * ["catch"]
-            rng.shuffle(temp_seq)
+            self._rng.shuffle(temp_seq)
             modality_seq += list(temp_seq)
         if self.shuffle_trials:
-            rng.shuffle(modality_seq)
+            self._rng.shuffle(modality_seq)
             if self.max_sequential:
                 # Shuffle the list using Fisher-Yates algorithm with consecutive constraint
                 i = len(modality_seq) - 1
                 while i > 0:
                     # Picking j can't be fixed, otherwise the algorithm is not random
                     # We may want to change this in the future
-                    j = rng.integers(0, i)
+                    j = self._rng.integers(0, i)
                     modality_seq[i], modality_seq[j] = modality_seq[j], modality_seq[i]
                     i -= 1
                     # Check and fix the consecutive constraint
@@ -225,15 +218,8 @@ class Task:
                         i -= 1
         return np.array(modality_seq)
 
-    def _build_trials_inputs(
-        self,
-        rng: np.random.Generator,
-    ) -> NDArray[np.float32]:
-        """Generate trial inputs.
-
-        Returns:
-            NDarray[np.float32]: array of inputs.
-        """
+    def _build_trials_inputs(self) -> NDArray[np.float32]:
+        """Generate trial inputs."""
         x = np.zeros(
             (self._ntrials, len(self.t), self.n_inputs),
             dtype=np.float32,
@@ -249,7 +235,7 @@ class Task:
         for n in range(self._ntrials):
             for idx, m in enumerate(self.modalities):
                 if (modality_seq[n] != "catch") and (m in modality_seq[n]):
-                    sel_value_in[n, idx] = rng.choice(self.stim_intensities[1:], 1)
+                    sel_value_in[n, idx] = self._rng.choice(self.stim_intensities[1:], 1)
                 sel_value_in[n, idx] = self._rescale(sel_value_in[n, idx], self.rescaling_coeff)
                 x[n, phases["input"], idx] = sel_value_in[n, idx]
                 x[n, phases["fix_time"], idx] = self._rescale(self.fix_intensity, self.rescaling_coeff)
@@ -261,16 +247,12 @@ class Task:
         # generate noise
         alpha = self.dt / self.tau
         noise_factor = self.noise_std * np.sqrt(2 * alpha) / alpha
-        noise = noise_factor * rng.normal(loc=0, scale=1, size=x.shape)
+        noise = noise_factor * self._rng.normal(loc=0, scale=1, size=x.shape)
 
         return x + self.input_baseline + noise
 
     def _build_trials_outputs(self) -> NDArray[np.float32]:
-        """Generate trial outputs.
-
-        Returns:
-            NDarray[np.float32]: array of outputs.
-        """
+        """Generate trial outputs."""
         phases = self.trials["phases"]
         choice = self.trials["choice"]
 
