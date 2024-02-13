@@ -19,8 +19,8 @@ class Task:
             a single modality must be represented by single characters, while trials with multiple modalities are
             represented by the character combination of those trials. Note that values are read relative to each other,
             such that e.g. `{"v": 0.25, "a": 0.75}` == `{"v": 1, "a": 3}` is True. Defaults to {"v": 0.5, "a": 0.5}.
-        stim_intensities: List of possible intensities of each stimulus. Note that this
-            attribute will be sorted smallest to largest. Defaults to [0.8, 0.9, 1].
+        stim_intensities: List of possible intensities of each stimulus.
+            Defaults to [0.8, 0.9, 1].
         catch_prob: probability of catch trials in the session, between 0 and 1.
             Defaults to 0.5.
         catch_intensity: Intensity value during a catch trial.
@@ -34,8 +34,8 @@ class Task:
             Defaults to None (no maximum).
         n_outputs: Number of output signals that will be generated.
             Defaults to 2.
-        output_intensities: List of output signals. Note that this attribute will be sorted smallest to largest.
-            Currently only the smallest and largest value of this list are used.
+        output_intensities: List of possible intensities of the output signals. Currently only the smallest and largest
+            value of this list are used.
             Defaults to [0, 1].
         stim_time: Duration of each stimulus in ms.
             Defaults to 1000.
@@ -90,8 +90,6 @@ class Task:
             self.session[i] = self.session[i] / sum_session_vals
         if not self.shuffle_trials:
             self.session = OrderedDict(self.session)
-        self.stim_intensities.sort()
-        self.output_intensities.sort()
 
         # Derived attributes
         self.modalities = list(dict.fromkeys(char for string in self.session for char in string))
