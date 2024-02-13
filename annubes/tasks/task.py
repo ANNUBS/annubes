@@ -2,6 +2,7 @@ import colorsys
 import warnings
 from collections import OrderedDict
 from dataclasses import dataclass, field
+from typing import Any
 
 import numpy as np
 import plotly.graph_objects as go
@@ -101,10 +102,8 @@ class Task:
         self,
         ntrials: int = 20,
         random_seed: int | dict | None = None,
-    ) -> None:
+    ) -> dict[str, Any]:
         """Method for generating trials.
-
-        This method also populates the `self.trials` library, which stores information about the current state.
 
         Args:
             ntrials: Number of trials to generate.
@@ -113,6 +112,10 @@ class Task:
                 for `np.random.default_rng()`. If a dict is given, it must be in the form of a random state as given by
                 `rng.__getstate__()` (previous runs will have stored this value as `self.trials["random_state"]`).
                 Defaults to None (i.e. the initial state itself is random).
+
+        Returns:
+            dict containing all attributes of `Task`, including internal ones created in this method, as well as the
+            inputs and outputs of the generated trials.
         """
         self._ntrials = ntrials
 
@@ -124,29 +127,20 @@ class Task:
         self._random_state = self._rng.__getstate__()
 
         # Generate sequence of modalities
-        modality_seq = self._build_trials_seq()
+        self._modality_seq = self._build_trials_seq()
 
         # Setup phases of trial
-        phases = {}
-        phases["delay"] = np.where(self.t <= self.delay)[0]
-        phases["fix_time"] = np.where((self.t > self.delay) & (self.t <= self.delay + self.fix_time))[0]
-        phases["input"] = np.where(self.t > self.delay + self.fix_time)[0]
-        choice = (modality_seq != "catch").astype(np.int_)
+        self._phases = {}
+        self._phases["delay"] = np.where(self.t <= self.delay)[0]
+        self._phases["fix_time"] = np.where((self.t > self.delay) & (self.t <= self.delay + self.fix_time))[0]
+        self._phases["input"] = np.where(self.t > self.delay + self.fix_time)[0]
+        self._choice = (self._modality_seq != "catch").astype(np.int_)
 
-        # Trial Info
-        self.trials = {"name": self.name}
-        self.trials["modality_seq"] = modality_seq
-        self.trials["choice"] = choice
-        self.trials["phases"] = phases
-        self.trials["t"] = self.t
-        self.trials["fix_intensity"] = self.fix_intensity
-        self.trials["ntrials"] = self._ntrials
-        self.trials["max_sequential"] = self.max_sequential
-        self.trials["random_state"] = self._random_state
-
-        # Generate and store inputs and outputs
-        self.trials["inputs"] = self._build_trials_inputs()
-        self.trials["outputs"] = self._build_trials_outputs()
+        # Store and return trial data
+        trials = vars(self)  # TODO: add issue for attribute
+        trials["inputs"] = self._build_trials_inputs()
+        trials["outputs"] = self._build_trials_outputs()
+        return trials
 
     def _rescale(
         self,
@@ -222,29 +216,25 @@ class Task:
 
     def _build_trials_inputs(self) -> NDArray[np.float32]:
         """Generate trial inputs."""
-        x = np.zeros(
+        x = np.full(
             (self._ntrials, len(self.t), self.n_inputs),
+            self.catch_intensity,
             dtype=np.float32,
         )
-        sel_value_in = np.full(
+        sel_value_in = np.full(  # TODO: needs a better name
             (self._ntrials, self.n_inputs - 1),  # should not include start cue
             min(self.stim_intensities),
             dtype=np.float32,
-        )  # TODO: needs a better name
+        )
 
-        modality_seq = self.trials["modality_seq"]
-        phases = self.trials["phases"]
         for n in range(self._ntrials):
             for idx, m in enumerate(self.modalities):
-                if (modality_seq[n] != "catch") and (m in modality_seq[n]):
+                if (self._modality_seq[n] != "catch") and (m in self._modality_seq[n]):
                     sel_value_in[n, idx] = self._rng.choice(self.stim_intensities[1:], 1)
                 sel_value_in[n, idx] = self._rescale(sel_value_in[n, idx], self.rescaling_coeff)
-                x[n, phases["input"], idx] = sel_value_in[n, idx]
-                x[n, phases["fix_time"], idx] = self._rescale(self.fix_intensity, self.rescaling_coeff)
-            x[n, phases["input"], self.n_inputs - 1] = 1  # start cue
-
-        # Store intensities in trials
-        self.trials["sel_value_in"] = sel_value_in
+                x[n, self._phases["input"], idx] = sel_value_in[n, idx]
+                x[n, self._phases["fix_time"], idx] = self._rescale(self.fix_intensity, self.rescaling_coeff)
+            x[n, self._phases["input"], self.n_inputs - 1] = 1  # start cue
 
         # generate noise
         alpha = self.dt / self.tau
@@ -255,18 +245,15 @@ class Task:
 
     def _build_trials_outputs(self) -> NDArray[np.float32]:
         """Generate trial outputs."""
-        phases = self.trials["phases"]
-        choice = self.trials["choice"]
-
         y = np.zeros((self._ntrials, len(self.t), self.n_outputs), dtype=np.float32)
         for i in range(self._ntrials):
             if self.delay is not None:
-                y[i, phases["delay"], :] = self.catch_intensity
+                y[i, self._phases["delay"], :] = min(self.output_intensities)
             if self.fix_time is not None:
-                y[i, phases["fix_time"], :] = self.catch_intensity
+                y[i, self._phases["fix_time"], :] = min(self.output_intensities)
 
-            y[i, phases["input"], choice[i]] = max(self.output_intensities)
-            y[i, phases["input"], 1 - choice[i]] = self.catch_intensity
+            y[i, self._phases["input"], self._choice[i]] = max(self.output_intensities)
+            y[i, self._phases["input"], 1 - self._choice[i]] = min(self.output_intensities)
 
         return y
 
