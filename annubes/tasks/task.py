@@ -17,20 +17,21 @@ class Task:
         name: Name of the task.
         session: Dictionary representing the ratio (values) of the different trials (keys) within the task. Trials with
             a single modality must be represented by single characters, while trials with multiple modalities are
-            represented by the character combination of those trials. Note that the order of the dictionary is
-            maintained such that `{"v": 0.5, "a": 0.5}` == `{"a": 0.5, "v": 0.5}` is False. Note also that values are
-            read relative to each other, such that e.g. `{"v": 0.25, "a": 0.75}` == `{"v": 1, "a": 3}` is True.
-            Defaults to {"v": 0.5, "a": 0.5}.
+            represented by the character combination of those trials. Note that values are read relative to each other,
+            such that e.g. `{"v": 0.25, "a": 0.75}` == `{"v": 1, "a": 3}` is True. Defaults to {"v": 0.5, "a": 0.5}.
         stim_intensities: List of possible intensities of each stimulus. Note that this
             attribute will be sorted smallest to largest. Defaults to [0.8, 0.9, 1].
         catch_prob: probability of catch trials in the session, between 0 and 1.
             Defaults to 0.5.
         catch_intensity: Intensity value during a catch trial.
             Defaults to 0.
-        shuffle: `False` will maintain the order of `self.session`. `True` will shuffle the order of the trials.
-            Defaults to True.
+        shuffle_trials: If True (default), trial order will be randomized. If False, all trials of one modality are run
+            before any trial of the next modality starts, in the order defined in `session` followed by catch trials.
+            Note that in the latter case, `self.session` will be converted to an `OrderedDict`, such that e.g.,
+            `Task('a', session={"v": 1, "a": 1}, shuffle=True)` == `Task('a', session={"a": 1, "v": 1}, shuffle=True)`
+            returns False.
         max_sequential: Maximum number of sequential trials of the same modality. Only used if shuffle is True.
-            Defaults to 0 (no maximum).
+            Defaults to None (no maximum).
         n_outputs: Number of output signals that will be generated.
             Defaults to 2.
         output_intensities: List of output signals. Note that this attribute will be sorted smallest to largest.
@@ -61,12 +62,12 @@ class Task:
     """
 
     name: str
-    session: OrderedDict[str, float] | dict[str, float] = field(default_factory=lambda: {"v": 0.5, "a": 0.5})
+    session: dict[str, float] = field(default_factory=lambda: {"v": 0.5, "a": 0.5})
     stim_intensities: list[float] = field(default_factory=lambda: [0.8, 0.9, 1])
     catch_prob: float = 0.5
     catch_intensity: float = 0
-    shuffle: bool = True
-    max_sequential: int = 0
+    shuffle_trials: bool = True
+    max_sequential: int | None = None
     n_outputs: int = 2
     output_intensities: list[float] = field(default_factory=lambda: [0, 1])
     stim_time: int = 1000
@@ -87,7 +88,8 @@ class Task:
         sum_session_vals = sum(self.session.values())
         for i in self.session:
             self.session[i] = self.session[i] / sum_session_vals
-        self.session = OrderedDict(self.session)
+        if not self.shuffle_trials:
+            self.session = OrderedDict(self.session)
         self.stim_intensities.sort()
         self.output_intensities.sort()
 
@@ -208,7 +210,7 @@ class Task:
             temp_seq = session_in_samples[m][0] * [m] + session_in_samples[m][1] * ["catch"]
             rng.shuffle(temp_seq)
             modality_seq += list(temp_seq)
-        if self.shuffle:
+        if self.shuffle_trials:
             rng.shuffle(modality_seq)
             if self.max_sequential:
                 # Shuffle the list using Fisher-Yates algorithm with consecutive constraint
