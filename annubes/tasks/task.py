@@ -93,7 +93,7 @@ class Task:
         self.modalities = list(dict.fromkeys(char for string in self.session for char in string))
         self.n_inputs = len(self.modalities) + 1  # includes start cue
         trial_duration = self.delay + self.fix_time + self.stim_time
-        self.t = np.linspace(0, trial_duration, int((trial_duration + self.dt) / self.dt))  # TODO: rename attribute
+        self.time = np.linspace(0, trial_duration, int((trial_duration + self.dt) / self.dt))  # TODO: rename attribute
 
     def generate_trials(
         self,
@@ -128,9 +128,9 @@ class Task:
 
         # Setup phases of trial
         self._phases = {}
-        self._phases["delay"] = np.where(self.t <= self.delay)[0]
-        self._phases["fix_time"] = np.where((self.t > self.delay) & (self.t <= self.delay + self.fix_time))[0]
-        self._phases["input"] = np.where(self.t > self.delay + self.fix_time)[0]
+        self._phases["delay"] = np.where(self.time <= self.delay)[0]
+        self._phases["fix_time"] = np.where((self.time > self.delay) & (self.time <= self.delay + self.fix_time))[0]
+        self._phases["input"] = np.where(self.time > self.delay + self.fix_time)[0]
         self._choice = (self._modality_seq != "catch").astype(np.int_)
 
         # Store and return trial data
@@ -214,7 +214,7 @@ class Task:
     def _build_trials_inputs(self) -> NDArray[np.float32]:
         """Generate trial inputs."""
         x = np.full(
-            (self._ntrials, len(self.t), self.n_inputs),
+            (self._ntrials, len(self.time), self.n_inputs),
             self.catch_intensity,
             dtype=np.float32,
         )
@@ -242,7 +242,7 @@ class Task:
 
     def _build_trials_outputs(self) -> NDArray[np.float32]:
         """Generate trial outputs."""
-        y = np.zeros((self._ntrials, len(self.t), self.n_outputs), dtype=np.float32)
+        y = np.zeros((self._ntrials, len(self.time), self.n_outputs), dtype=np.float32)
         for i in range(self._ntrials):
             if self.delay is not None:
                 y[i, self._phases["delay"], :] = min(self.output_intensities)
