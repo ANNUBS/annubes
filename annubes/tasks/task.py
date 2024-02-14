@@ -28,9 +28,6 @@ class Task:
             Defaults to 0.
         shuffle_trials: If True (default), trial order will be randomized. If False, all trials of one modality are run
             before any trial of the next modality starts, in the order defined in `session` followed by catch trials.
-            Note that in the latter case, `self.session` will be converted to an `OrderedDict`, such that e.g.,
-            `Task('a', session={"v": 1, "a": 1}, shuffle=True)` == `Task('a', session={"a": 1, "v": 1}, shuffle=True)`
-            returns False.
         max_sequential: Maximum number of sequential trials of the same modality. Only used if shuffle is True.
             Defaults to None (no maximum).
         n_outputs: Number of output signals that will be generated.
@@ -40,7 +37,7 @@ class Task:
             Defaults to [0, 1].
         stim_time: Duration of each stimulus in ms.
             Defaults to 1000.
-        fix_intensity: Input signal intensity during fixation.
+        fix_intensity: Intensity of input signal during fixation.
             Defaults to 0.
         fix_time: Fixation time in ms. Note that the duration of each input and output signal is increased by this time.
             Defaults to 100.
@@ -137,7 +134,7 @@ class Task:
         self._choice = (self._modality_seq != "catch").astype(np.int_)
 
         # Store and return trial data
-        trials = vars(self)  # TODO: add issue for attribute
+        trials = vars(self)
         trials["inputs"] = self._build_trials_inputs()
         trials["outputs"] = self._build_trials_outputs()
         return trials
