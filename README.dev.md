@@ -2,6 +2,13 @@
 
 If you're looking for user documentation, go [here](README.md).
 
+## Code editor
+
+We use [Visual Studio Code (VS Code)](https://code.visualstudio.com/) as code editor.
+The VS Code settings for this project can be found in [.vscode](.vscode).
+The settings will be automatically loaded and applied when you open the project with VS Code.
+See [the guide](https://code.visualstudio.com/docs/getstarted/settings) for more info about workspace settings of VS Code.
+
 ## Development install
 
 ```shell
@@ -192,3 +199,11 @@ python -m twine upload dist/*
 ### (3/3) GitHub
 
 Don't forget to also make a [release on GitHub](https://github.com/ANNUBS/annubes/releases/new). If your repository uses the GitHub-Zenodo integration this will also trigger Zenodo into making a snapshot of your repository and sticking a DOI on it.
+
+## Development conventions
+
+- Branching
+  - When creating a new branch, please use the following convention: `<issue_number>_<description>_<author_name>`.
+  - Always branch from `dev` branch, unless there is the need to fix an undesired status of `main`. See above for more details about the branching workflow adopted.
+- Pull Requests
+  - When creating a pull request, please use the following convention: `<type>: <description>`. Example _types_ are `fix:`, `feat:`, `build:`, `chore:`, `ci:`, `docs:`, `style:`, `refactor:`, `perf:`, `test:`, and others based on the [Angular convention](https://github.com/angular/angular/blob/22b96b9/CONTRIBUTING.md#-commit-message-guidelines).
