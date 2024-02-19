@@ -79,7 +79,7 @@ class Task:
     rescaling_coeff: float = 0
 
     def __post_init__(self):
-        if not self.catch_prob >= 0 and self.catch_prob < 1:
+        if not isinstance(self.catch_prob, float) or not (0 <= self.catch_prob < 1):
             msg = "`catch_prob` must be between 0 and 1."
             raise ValueError(msg)
 
