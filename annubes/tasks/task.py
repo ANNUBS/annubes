@@ -130,7 +130,7 @@ class Task:
         # Setup phases of trial
         self._phases = {}
         self._phases["iti"] = np.where(self.time <= self.iti)[0]
-        self._phases["fix_time"] = np.where((self.time > self.iti) & (self.time <= self.ditielay + self.fix_time))[0]
+        self._phases["fix_time"] = np.where((self.time > self.iti) & (self.time <= self.iti+ self.fix_time))[0]
         self._phases["input"] = np.where(self.time > self.iti + self.fix_time)[0]
         self._choice = (self._modality_seq != "catch").astype(np.int_)
 
