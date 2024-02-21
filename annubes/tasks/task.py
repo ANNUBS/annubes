@@ -16,7 +16,7 @@ class Task:
 
     Args:
         name: Name of the task.
-        session: Structure of the type of trials which can appear during a session.
+        session: Configuration of the trials that can appear during a session.
             It is given by a dictionary representing the ratio (values) of the different trials (keys) within the task.
             Trials with a single modality (e.g., a visual trial) must be represented by single characters, while trials
             with multiple modalities (e.g., an audiovisual trial) are represented by the character combination of those
