@@ -90,7 +90,7 @@ class Task:
             self.session = OrderedDict(self.session)
 
         # Derived attributes
-        self.modalities = list(dict.fromkeys(char for string in self.session for char in string))
+        self.modalities = set(dict.fromkeys(char for string in self.session for char in string))
         self.n_inputs = len(self.modalities) + 1  # includes start cue
         trial_duration = self.delay + self.fix_time + self.stim_time
         self.time = np.linspace(0, trial_duration, int((trial_duration + self.dt) / self.dt))  # TODO: rename attribute
