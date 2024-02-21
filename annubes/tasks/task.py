@@ -23,7 +23,7 @@ class Task:
             trials. Note that values are read relative to each other, such that e.g. `{"v": 0.25, "a": 0.75}` ==
             `{"v": 1, "a": 3}` is True.
             Defaults to {"v": 0.5, "a": 0.5}.
-        stim_intensities: List of possible intensity values of each stimulus type.
+        stim_intensities: List of possible intensity values of each stimulus.
             Defaults to [0.8, 0.9, 1].
         catch_prob: probability of catch trials in the session, between 0 and 1.
             Defaults to 0.5.
