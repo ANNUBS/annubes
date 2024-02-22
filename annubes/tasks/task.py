@@ -16,24 +16,26 @@ class Task:
 
     Args:
         name: Name of the task.
-        session: Dictionary representing the ratio (values) of the different trials (keys) within the task. Trials with
-            a single modality must be represented by single characters, while trials with multiple modalities are
-            represented by the character combination of those trials. Note that values are read relative to each other,
-            such that e.g. `{"v": 0.25, "a": 0.75}` == `{"v": 1, "a": 3}` is True. Defaults to {"v": 0.5, "a": 0.5}.
-        stim_intensities: List of possible intensities of each stimulus.
+        session: Configuration of the trials that can appear during a session.
+            It is given by a dictionary representing the ratio (values) of the different trials (keys) within the task.
+            Trials with a single modality (e.g., a visual trial) must be represented by single characters, while trials
+            with multiple modalities (e.g., an audiovisual trial) are represented by the character combination of those
+            trials. Note that values are read relative to each other, such that e.g. `{"v": 0.25, "a": 0.75}` ==
+            `{"v": 1, "a": 3}` is True.
+            Defaults to {"v": 0.5, "a": 0.5}.
+        stim_intensities: List of possible intensity values of each stimulus.
             Defaults to [0.8, 0.9, 1].
         catch_prob: probability of catch trials in the session, between 0 and 1.
             Defaults to 0.5.
-        catch_intensity: Intensity value during a catch trial.
-            Defaults to 0.
-        shuffle_trials: If True (default), trial order will be randomized. If False, all trials of one modality are run
-            before any trial of the next modality starts, in the order defined in `session` followed by catch trials.
+        shuffle_trials: If True (default), trial order will be randomized. If False, all trials corresponding to one
+            modality (e.g. visual) are run before any trial of the next modality (e.g. auditory) starts, in the order
+            defined in `session`, followed by catch trials.
         max_sequential: Maximum number of sequential trials of the same modality. Only used if shuffle is True.
             Defaults to None (no maximum).
-        n_outputs: Number of output signals that will be generated.
+        n_outputs: Number of output nodes in the network, signaling different behavioral choices.
             Defaults to 2.
-        output_intensities: List of possible intensities of the output signals. Currently only the smallest and largest
-            value of this list are used.
+        output_behavior: List of possible intensity values of the behavioral output. Currently only the smallest and
+            largest value of this list are used.
             Defaults to [0, 1].
         stim_time: Duration of each stimulus in ms.
             Defaults to 1000.
@@ -43,11 +45,11 @@ class Task:
             Defaults to 100.
         input_baseline: Baseline input for all neurons.
             Defaults to 0.2.
-        delay: Time delay in between sequential trials in ms.
+        iti: Inter-trial interval, or time window between sequential trials, in ms.
             Defaults to 0.
         dt: Sampling interval (inverted sampling frequency) in ms.
             Defaults to 20.
-        tau: Time constant in ms.
+        tau: Time constant for the dynamics of each network node in ms.
             Defaults to 100.
         rescaling_coeff: Rescaling coefficient for `self.stim_intensities` and `self.fix_intensity`. If set to non-zero
             value, these values are linearly rescaled along (0, rescaling_coeff).
@@ -63,16 +65,15 @@ class Task:
     session: dict[str, float] = field(default_factory=lambda: {"v": 0.5, "a": 0.5})
     stim_intensities: list[float] = field(default_factory=lambda: [0.8, 0.9, 1])
     catch_prob: float = 0.5
-    catch_intensity: float = 0
     shuffle_trials: bool = True
     max_sequential: int | None = None
     n_outputs: int = 2
-    output_intensities: list[float] = field(default_factory=lambda: [0, 1])
+    output_behavior: list[float] = field(default_factory=lambda: [0, 1])
     stim_time: int = 1000
     fix_intensity: float = 0
     fix_time: int | None = 100
     input_baseline: float = 0.2
-    delay: int = 0
+    iti: int = 0
     dt: int = 20
     tau: int = 100
     noise_std: float = 0.01
@@ -92,7 +93,7 @@ class Task:
         # Derived attributes
         self.modalities = list(dict.fromkeys(char for string in self.session for char in string))
         self.n_inputs = len(self.modalities) + 1  # includes start cue
-        trial_duration = self.delay + self.fix_time + self.stim_time
+        trial_duration = self.iti + self.fix_time + self.stim_time
         self.time = np.linspace(0, trial_duration, int((trial_duration + self.dt) / self.dt))  # TODO: rename attribute
 
     def generate_trials(
@@ -128,9 +129,9 @@ class Task:
 
         # Setup phases of trial
         self._phases = {}
-        self._phases["delay"] = np.where(self.time <= self.delay)[0]
-        self._phases["fix_time"] = np.where((self.time > self.delay) & (self.time <= self.delay + self.fix_time))[0]
-        self._phases["input"] = np.where(self.time > self.delay + self.fix_time)[0]
+        self._phases["iti"] = np.where(self.time <= self.iti)[0]
+        self._phases["fix_time"] = np.where((self.time > self.iti) & (self.time <= self.iti+ self.fix_time))[0]
+        self._phases["input"] = np.where(self.time > self.iti + self.fix_time)[0]
         self._choice = (self._modality_seq != "catch").astype(np.int_)
 
         # Store and return trial data
@@ -213,9 +214,8 @@ class Task:
 
     def _build_trials_inputs(self) -> NDArray[np.float32]:
         """Generate trial inputs."""
-        x = np.full(
+        x = np.zeros(
             (self._ntrials, len(self.time), self.n_inputs),
-            self.catch_intensity,
             dtype=np.float32,
         )
         sel_value_in = np.full(  # TODO: needs a better name
@@ -244,13 +244,13 @@ class Task:
         """Generate trial outputs."""
         y = np.zeros((self._ntrials, len(self.time), self.n_outputs), dtype=np.float32)
         for i in range(self._ntrials):
-            if self.delay is not None:
-                y[i, self._phases["delay"], :] = min(self.output_intensities)
+            if self.iti is not None:
+                y[i, self._phases["iti"], :] = min(self.output_behavior)
             if self.fix_time is not None:
-                y[i, self._phases["fix_time"], :] = min(self.output_intensities)
+                y[i, self._phases["fix_time"], :] = min(self.output_behavior)
 
-            y[i, self._phases["input"], self._choice[i]] = max(self.output_intensities)
-            y[i, self._phases["input"], 1 - self._choice[i]] = min(self.output_intensities)
+            y[i, self._phases["input"], self._choice[i]] = max(self.output_behavior)
+            y[i, self._phases["input"], 1 - self._choice[i]] = min(self.output_behavior)
 
         return y
 
@@ -340,7 +340,7 @@ class Task:
                 row=i + 1,
                 col=1,
             )
-            fig.add_vline(x=self.delay + self.fix_time, line_width=3, line_dash="dash", line_color="red")
+            fig.add_vline(x=self.iti + self.fix_time, line_width=3, line_dash="dash", line_color="red")
             showlegend = False
         fig.update_layout(height=1300, width=900, title_text="Trials")
         return fig
