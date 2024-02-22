@@ -11,15 +11,10 @@ from plotly.subplots import make_subplots
 
 
 @dataclass
-class TaskSettings:
-    """Class for defining a task's settings.
+class TaskSettingsMixin:
+    """Mixin data class for defining attributes related to extra Task settings.
 
     Args:
-        shuffle_trials: If True (default), trial order will be randomized. If False, all trials corresponding to one
-            modality (e.g. visual) are run before any trial of the next modality (e.g. auditory) starts, in the order
-            defined in `session`, followed by catch trials.
-        max_sequential: Maximum number of sequential trials of the same modality. Only used if shuffle is True.
-            Defaults to None (no maximum).
         fix_intensity: Intensity of input signal during fixation.
             Defaults to 0.
         fix_time: Fixation time in ms. Note that the duration of each input and output signal is increased by this time.
@@ -44,8 +39,6 @@ class TaskSettings:
             Defaults to 0 (i.e. no rescaling).
     """
 
-    shuffle_trials: bool = True
-    max_sequential: int | None = None
     fix_intensity: float = 0
     fix_time: int = 100
     iti: int = 0
@@ -59,8 +52,8 @@ class TaskSettings:
 
 
 @dataclass
-class Task:
-    """General class for defining a task.
+class Task(TaskSettingsMixin):
+    """General data class for defining a task.
 
     Args:
         name: Name of the task.
@@ -77,8 +70,11 @@ class Task:
             Defaults to 1000.
         catch_prob: probability of catch trials in the session, between 0 and 1.
             Defaults to 0.5.
-        settings: other settings for the task, defined in `TaskSettings`.
-            Defaults to TaskSettings().
+        shuffle_trials: If True (default), trial order will be randomized. If False, all trials corresponding to one
+            modality (e.g. visual) are run before any trial of the next modality (e.g. auditory) starts, in the order
+            defined in `session`, followed by catch trials.
+        max_sequential: Maximum number of sequential trials of the same modality. Only used if shuffle is True.
+            Defaults to None (no maximum).
 
     Raises:
         ValueError: if `catch_prob` is not between 0 and 1.
@@ -89,7 +85,8 @@ class Task:
     stim_intensities: list[float] = field(default_factory=lambda: [0.8, 0.9, 1])
     stim_time: int = 1000
     catch_prob: float = 0.5
-    settings: TaskSettings = field(default_factory=TaskSettings)
+    shuffle_trials: bool = True
+    max_sequential: int | None = None
 
     def __post_init__(self):
         if not self.catch_prob >= 0 and self.catch_prob < 1:
@@ -99,17 +96,17 @@ class Task:
         sum_session_vals = sum(self.session.values())
         for i in self.session:
             self.session[i] = self.session[i] / sum_session_vals
-        if not self.settings.shuffle_trials:
+        if not self.shuffle_trials:
             self.session = OrderedDict(self.session)
 
         # Derived attributes
         self.modalities = list(dict.fromkeys(char for string in self.session for char in string))
         self.n_inputs = len(self.modalities) + 1  # includes start cue
-        trial_duration = self.settings.iti + self.settings.fix_time + self.stim_time
+        trial_duration = self.iti + self.fix_time + self.stim_time
         self.time = np.linspace(
             0,
             trial_duration,
-            int((trial_duration + self.settings.dt) / self.settings.dt),
+            int((trial_duration + self.dt) / self.dt),
         )  # TODO: rename attribute
 
     def generate_trials(
@@ -145,11 +142,11 @@ class Task:
 
         # Setup phases of trial
         self._phases = {}
-        self._phases["iti"] = np.where(self.time <= self.settings.iti)[0]
+        self._phases["iti"] = np.where(self.time <= self.iti)[0]
         self._phases["fix_time"] = np.where(
-            (self.time > self.settings.iti) & (self.time <= self.settings.iti + self.settings.fix_time),
+            (self.time > self.iti) & (self.time <= self.iti + self.fix_time),
         )[0]
-        self._phases["input"] = np.where(self.time > self.settings.iti + self.settings.fix_time)[0]
+        self._phases["input"] = np.where(self.time > self.iti + self.fix_time)[0]
         self._choice = (self._modality_seq != "catch").astype(np.int_)
 
         # Generate inputs and outputs
@@ -217,9 +214,9 @@ class Task:
             temp_seq = session_in_samples[m][0] * [m] + session_in_samples[m][1] * ["catch"]
             self._rng.shuffle(temp_seq)
             modality_seq += list(temp_seq)
-        if self.settings.shuffle_trials:
+        if self.shuffle_trials:
             self._rng.shuffle(modality_seq)
-            if self.settings.max_sequential:
+            if self.max_sequential:
                 # Shuffle the list using Fisher-Yates algorithm with consecutive constraint
                 i = len(modality_seq) - 1
                 while i > 0:
@@ -230,7 +227,7 @@ class Task:
                     i -= 1
                     # Check and fix the consecutive constraint
                     count = 1
-                    while i > 0 and modality_seq[i] == modality_seq[i - 1] and count >= self.settings.max_sequential:
+                    while i > 0 and modality_seq[i] == modality_seq[i - 1] and count >= self.max_sequential:
                         i -= 1
         return np.array(modality_seq)
 
@@ -250,32 +247,32 @@ class Task:
             for idx, m in enumerate(self.modalities):
                 if (self._modality_seq[n] != "catch") and (m in self._modality_seq[n]):
                     sel_value_in[n, idx] = self._rng.choice(self.stim_intensities[1:], 1)
-                sel_value_in[n, idx] = self._rescale(sel_value_in[n, idx], self.settings.rescaling_coeff)
+                sel_value_in[n, idx] = self._rescale(sel_value_in[n, idx], self.rescaling_coeff)
                 x[n, self._phases["input"], idx] = sel_value_in[n, idx]
                 x[n, self._phases["fix_time"], idx] = self._rescale(
-                    self.settings.fix_intensity,
-                    self.settings.rescaling_coeff,
+                    self.fix_intensity,
+                    self.rescaling_coeff,
                 )
             x[n, self._phases["input"], self.n_inputs - 1] = 1  # start cue
 
         # generate noise
-        alpha = self.settings.dt / self.settings.tau
-        noise_factor = self.settings.noise_std * np.sqrt(2 * alpha) / alpha
+        alpha = self.dt / self.tau
+        noise_factor = self.noise_std * np.sqrt(2 * alpha) / alpha
         noise = noise_factor * self._rng.normal(loc=0, scale=1, size=x.shape)
 
-        return x + self.settings.input_baseline + noise
+        return x + self.input_baseline + noise
 
     def _build_trials_outputs(self) -> NDArray[np.float32]:
         """Generate trial outputs."""
-        y = np.zeros((self._ntrials, len(self.time), self.settings.n_outputs), dtype=np.float32)
+        y = np.zeros((self._ntrials, len(self.time), self.n_outputs), dtype=np.float32)
         for i in range(self._ntrials):
-            if self.settings.iti > 0:
-                y[i, self._phases["iti"], :] = min(self.settings.output_behavior)
-            if self.settings.fix_time > 0:
-                y[i, self._phases["fix_time"], :] = min(self.settings.output_behavior)
+            if self.iti > 0:
+                y[i, self._phases["iti"], :] = min(self.output_behavior)
+            if self.fix_time > 0:
+                y[i, self._phases["fix_time"], :] = min(self.output_behavior)
 
-            y[i, self._phases["input"], self._choice[i]] = max(self.settings.output_behavior)
-            y[i, self._phases["input"], 1 - self._choice[i]] = min(self.settings.output_behavior)
+            y[i, self._phases["input"], self._choice[i]] = max(self.output_behavior)
+            y[i, self._phases["input"], 1 - self._choice[i]] = min(self.output_behavior)
 
         return y
 
@@ -366,7 +363,7 @@ class Task:
                 col=1,
             )
             fig.add_vline(
-                x=self.settings.iti + self.settings.fix_time,
+                x=self.iti + self.fix_time,
                 line_width=3,
                 line_dash="dash",
                 line_color="red",
