@@ -47,7 +47,7 @@ class TaskSettings:
     shuffle_trials: bool = True
     max_sequential: int | None = None
     fix_intensity: float = 0
-    fix_time: int | None = 100
+    fix_time: int = 100
     iti: int = 0
     dt: int = 20
     tau: int = 100
@@ -269,9 +269,9 @@ class Task:
         """Generate trial outputs."""
         y = np.zeros((self._ntrials, len(self.time), self.settings.n_outputs), dtype=np.float32)
         for i in range(self._ntrials):
-            if self.settings.iti is not None:
+            if self.settings.iti > 0:
                 y[i, self._phases["iti"], :] = min(self.settings.output_behavior)
-            if self.settings.fix_time is not None:
+            if self.settings.fix_time > 0:
                 y[i, self._phases["fix_time"], :] = min(self.settings.output_behavior)
 
             y[i, self._phases["input"], self._choice[i]] = max(self.settings.output_behavior)
