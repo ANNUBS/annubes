@@ -12,7 +12,9 @@ from plotly.subplots import make_subplots
 
 @dataclass
 class TaskSettingsMixin:
-    """Mixin data class for defining attributes related to extra Task settings.
+    """Mixin data class defining detailed parameters for `Task`.
+    
+    These settings are expected to be maintained throughout most experiments, whereas the attributes of `Task` itself are expected to be more commonly adjusted between individual experiments.
 
     Args:
         fix_intensity: Intensity of input signal during fixation.
