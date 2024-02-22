@@ -55,6 +55,8 @@ class TaskSettingsMixin:
 class Task(TaskSettingsMixin):
     """General data class for defining a task.
 
+    A task is defined by a set of trials, each of which is characterized by a sequence of inputs and expected outputs.
+
     Args:
         name: Name of the task.
         session: Configuration of the trials that can appear during a session.
