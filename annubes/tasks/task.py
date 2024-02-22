@@ -11,6 +11,54 @@ from plotly.subplots import make_subplots
 
 
 @dataclass
+class TaskSettings:
+    """Class for defining a task's settings.
+
+    Args:
+        shuffle_trials: If True (default), trial order will be randomized. If False, all trials corresponding to one
+            modality (e.g. visual) are run before any trial of the next modality (e.g. auditory) starts, in the order
+            defined in `session`, followed by catch trials.
+        max_sequential: Maximum number of sequential trials of the same modality. Only used if shuffle is True.
+            Defaults to None (no maximum).
+        fix_intensity: Intensity of input signal during fixation.
+            Defaults to 0.
+        fix_time: Fixation time in ms. Note that the duration of each input and output signal is increased by this time.
+            Defaults to 100.
+        iti: Inter-trial interval, or time window between sequential trials, in ms.
+            Defaults to 0.
+        dt: Sampling interval (inverted sampling frequency) in ms.
+            Defaults to 20.
+        tau: Time constant for the dynamics of each network node in ms.
+            Defaults to 100.
+        n_outputs: Number of output nodes in the network, signaling different behavioral choices.
+            Defaults to 2.
+        output_behavior: List of possible intensity values of the behavioral output. Currently only the smallest and
+            largest value of this list are used.
+            Defaults to [0, 1].
+        input_baseline: Baseline input for all neurons.
+            Defaults to 0.2.
+        noise_std: Standard deviation of input noise.
+            Defaults to 0.01.
+        rescaling_coeff: Rescaling coefficient for `Task.stim_intensities` and `self.fix_intensity`. If set to non-zero
+            value, these values are linearly rescaled along (0, rescaling_coeff).
+            Defaults to 0 (i.e. no rescaling).
+    """
+
+    shuffle_trials: bool = True
+    max_sequential: int | None = None
+    fix_intensity: float = 0
+    fix_time: int | None = 100
+    iti: int = 0
+    dt: int = 20
+    tau: int = 100
+    n_outputs: int = 2
+    output_behavior: list[float] = field(default_factory=lambda: [0, 1])
+    input_baseline: float = 0.2
+    noise_std: float = 0.01
+    rescaling_coeff: float = 0
+
+
+@dataclass
 class Task:
     """General class for defining a task.
 
@@ -25,37 +73,12 @@ class Task:
             Defaults to {"v": 0.5, "a": 0.5}.
         stim_intensities: List of possible intensity values of each stimulus.
             Defaults to [0.8, 0.9, 1].
-        catch_prob: probability of catch trials in the session, between 0 and 1.
-            Defaults to 0.5.
-        shuffle_trials: If True (default), trial order will be randomized. If False, all trials corresponding to one
-            modality (e.g. visual) are run before any trial of the next modality (e.g. auditory) starts, in the order
-            defined in `session`, followed by catch trials.
-        max_sequential: Maximum number of sequential trials of the same modality. Only used if shuffle is True.
-            Defaults to None (no maximum).
-        n_outputs: Number of output nodes in the network, signaling different behavioral choices.
-            Defaults to 2.
-        output_behavior: List of possible intensity values of the behavioral output. Currently only the smallest and
-            largest value of this list are used.
-            Defaults to [0, 1].
         stim_time: Duration of each stimulus in ms.
             Defaults to 1000.
-        fix_intensity: Intensity of input signal during fixation.
-            Defaults to 0.
-        fix_time: Fixation time in ms. Note that the duration of each input and output signal is increased by this time.
-            Defaults to 100.
-        input_baseline: Baseline input for all neurons.
-            Defaults to 0.2.
-        iti: Inter-trial interval, or time window between sequential trials, in ms.
-            Defaults to 0.
-        dt: Sampling interval (inverted sampling frequency) in ms.
-            Defaults to 20.
-        tau: Time constant for the dynamics of each network node in ms.
-            Defaults to 100.
-        rescaling_coeff: Rescaling coefficient for `self.stim_intensities` and `self.fix_intensity`. If set to non-zero
-            value, these values are linearly rescaled along (0, rescaling_coeff).
-            Defaults to 0 (i.e. no rescaling).
-        noise_std: Standard deviation of input noise.
-            Defaults to 0.01.
+        catch_prob: probability of catch trials in the session, between 0 and 1.
+            Defaults to 0.5.
+        settings: other settings for the task, defined in `TaskSettings`.
+            Defaults to TaskSettings().
 
     Raises:
         ValueError: if `catch_prob` is not between 0 and 1.
@@ -64,20 +87,9 @@ class Task:
     name: str
     session: dict[str, float] = field(default_factory=lambda: {"v": 0.5, "a": 0.5})
     stim_intensities: list[float] = field(default_factory=lambda: [0.8, 0.9, 1])
-    catch_prob: float = 0.5
-    shuffle_trials: bool = True
-    max_sequential: int | None = None
-    n_outputs: int = 2
-    output_behavior: list[float] = field(default_factory=lambda: [0, 1])
     stim_time: int = 1000
-    fix_intensity: float = 0
-    fix_time: int | None = 100
-    input_baseline: float = 0.2
-    iti: int = 0
-    dt: int = 20
-    tau: int = 100
-    noise_std: float = 0.01
-    rescaling_coeff: float = 0
+    catch_prob: float = 0.5
+    settings: TaskSettings = field(default_factory=TaskSettings)
 
     def __post_init__(self):
         if not self.catch_prob >= 0 and self.catch_prob < 1:
@@ -87,14 +99,18 @@ class Task:
         sum_session_vals = sum(self.session.values())
         for i in self.session:
             self.session[i] = self.session[i] / sum_session_vals
-        if not self.shuffle_trials:
+        if not self.settings.shuffle_trials:
             self.session = OrderedDict(self.session)
 
         # Derived attributes
         self.modalities = list(dict.fromkeys(char for string in self.session for char in string))
         self.n_inputs = len(self.modalities) + 1  # includes start cue
-        trial_duration = self.iti + self.fix_time + self.stim_time
-        self.time = np.linspace(0, trial_duration, int((trial_duration + self.dt) / self.dt))  # TODO: rename attribute
+        trial_duration = self.settings.iti + self.settings.fix_time + self.stim_time
+        self.time = np.linspace(
+            0,
+            trial_duration,
+            int((trial_duration + self.settings.dt) / self.settings.dt),
+        )  # TODO: rename attribute
 
     def generate_trials(
         self,
@@ -129,15 +145,21 @@ class Task:
 
         # Setup phases of trial
         self._phases = {}
-        self._phases["iti"] = np.where(self.time <= self.iti)[0]
-        self._phases["fix_time"] = np.where((self.time > self.iti) & (self.time <= self.iti+ self.fix_time))[0]
-        self._phases["input"] = np.where(self.time > self.iti + self.fix_time)[0]
+        self._phases["iti"] = np.where(self.time <= self.settings.iti)[0]
+        self._phases["fix_time"] = np.where(
+            (self.time > self.settings.iti) & (self.time <= self.settings.iti + self.settings.fix_time),
+        )[0]
+        self._phases["input"] = np.where(self.time > self.settings.iti + self.settings.fix_time)[0]
         self._choice = (self._modality_seq != "catch").astype(np.int_)
+
+        # Generate inputs and outputs
+        self._inputs = self._build_trials_inputs()
+        self._outputs = self._build_trials_outputs()
 
         # Store and return trial data
         trials = vars(self)
-        trials["inputs"] = self._build_trials_inputs()
-        trials["outputs"] = self._build_trials_outputs()
+        trials["inputs"] = self._inputs
+        trials["outputs"] = self._outputs
         return trials
 
     def _rescale(
@@ -195,9 +217,9 @@ class Task:
             temp_seq = session_in_samples[m][0] * [m] + session_in_samples[m][1] * ["catch"]
             self._rng.shuffle(temp_seq)
             modality_seq += list(temp_seq)
-        if self.shuffle_trials:
+        if self.settings.shuffle_trials:
             self._rng.shuffle(modality_seq)
-            if self.max_sequential:
+            if self.settings.max_sequential:
                 # Shuffle the list using Fisher-Yates algorithm with consecutive constraint
                 i = len(modality_seq) - 1
                 while i > 0:
@@ -208,7 +230,7 @@ class Task:
                     i -= 1
                     # Check and fix the consecutive constraint
                     count = 1
-                    while i > 0 and modality_seq[i] == modality_seq[i - 1] and count >= self.max_sequential:
+                    while i > 0 and modality_seq[i] == modality_seq[i - 1] and count >= self.settings.max_sequential:
                         i -= 1
         return np.array(modality_seq)
 
@@ -228,29 +250,32 @@ class Task:
             for idx, m in enumerate(self.modalities):
                 if (self._modality_seq[n] != "catch") and (m in self._modality_seq[n]):
                     sel_value_in[n, idx] = self._rng.choice(self.stim_intensities[1:], 1)
-                sel_value_in[n, idx] = self._rescale(sel_value_in[n, idx], self.rescaling_coeff)
+                sel_value_in[n, idx] = self._rescale(sel_value_in[n, idx], self.settings.rescaling_coeff)
                 x[n, self._phases["input"], idx] = sel_value_in[n, idx]
-                x[n, self._phases["fix_time"], idx] = self._rescale(self.fix_intensity, self.rescaling_coeff)
+                x[n, self._phases["fix_time"], idx] = self._rescale(
+                    self.settings.fix_intensity,
+                    self.settings.rescaling_coeff,
+                )
             x[n, self._phases["input"], self.n_inputs - 1] = 1  # start cue
 
         # generate noise
-        alpha = self.dt / self.tau
-        noise_factor = self.noise_std * np.sqrt(2 * alpha) / alpha
+        alpha = self.settings.dt / self.settings.tau
+        noise_factor = self.settings.noise_std * np.sqrt(2 * alpha) / alpha
         noise = noise_factor * self._rng.normal(loc=0, scale=1, size=x.shape)
 
-        return x + self.input_baseline + noise
+        return x + self.settings.input_baseline + noise
 
     def _build_trials_outputs(self) -> NDArray[np.float32]:
         """Generate trial outputs."""
-        y = np.zeros((self._ntrials, len(self.time), self.n_outputs), dtype=np.float32)
+        y = np.zeros((self._ntrials, len(self.time), self.settings.n_outputs), dtype=np.float32)
         for i in range(self._ntrials):
-            if self.iti is not None:
-                y[i, self._phases["iti"], :] = min(self.output_behavior)
-            if self.fix_time is not None:
-                y[i, self._phases["fix_time"], :] = min(self.output_behavior)
+            if self.settings.iti is not None:
+                y[i, self._phases["iti"], :] = min(self.settings.output_behavior)
+            if self.settings.fix_time is not None:
+                y[i, self._phases["fix_time"], :] = min(self.settings.output_behavior)
 
-            y[i, self._phases["input"], self._choice[i]] = max(self.output_behavior)
-            y[i, self._phases["input"], 1 - self._choice[i]] = min(self.output_behavior)
+            y[i, self._phases["input"], self._choice[i]] = max(self.settings.output_behavior)
+            y[i, self._phases["input"], 1 - self._choice[i]] = min(self.settings.output_behavior)
 
         return y
 
@@ -273,7 +298,7 @@ class Task:
             cols=1,
             shared_xaxes=True,
             vertical_spacing=0.5 / n_plots,
-            subplot_titles=[f"Trial {i + 1}  - modality {self.trials['modality_seq'][i]}" for i in range(n_plots)],
+            subplot_titles=[f"Trial {i + 1}  - modality {self._modality_seq[i]}" for i in range(n_plots)],
         )
         showlegend = True
         colors = [
@@ -290,8 +315,8 @@ class Task:
                     go.Scatter(
                         name=m,
                         mode="markers+lines",
-                        x=self.trials["t"],
-                        y=self.trials["inputs"][i][:, idx],
+                        x=self.time,
+                        y=self._inputs[i][:, idx],
                         marker_symbol="star",
                         legendgroup=m,
                         showlegend=showlegend,
@@ -304,8 +329,8 @@ class Task:
                 go.Scatter(
                     name="START",
                     mode="markers+lines",
-                    x=self.trials["t"],
-                    y=self.trials["inputs"][i][:, self.n_inputs],  # not for start cue
+                    x=self.time,
+                    y=self._inputs[i][:, self.n_inputs],  # not for start cue
                     marker_symbol="star",
                     legendgroup="START",
                     showlegend=showlegend,
@@ -318,8 +343,8 @@ class Task:
                 go.Scatter(
                     name="Choice 1: NO STIMULUS",
                     mode="lines",
-                    x=self.trials["t"],
-                    y=self.trials["outputs"][i][:, 0],
+                    x=self.time,
+                    y=self._outputs[i][:, 0],
                     legendgroup="Choice 1",
                     showlegend=showlegend,
                     line_color="orange",
@@ -331,8 +356,8 @@ class Task:
                 go.Scatter(
                     name="Choice 2: STIMULUS",
                     mode="lines",
-                    x=self.trials["t"],
-                    y=self.trials["outputs"][i][:, 1],
+                    x=self.time,
+                    y=self._outputs[i][:, 1],
                     legendgroup="Choice 2",
                     showlegend=showlegend,
                     line_color="purple",
@@ -340,7 +365,12 @@ class Task:
                 row=i + 1,
                 col=1,
             )
-            fig.add_vline(x=self.iti + self.fix_time, line_width=3, line_dash="dash", line_color="red")
+            fig.add_vline(
+                x=self.settings.iti + self.settings.fix_time,
+                line_width=3,
+                line_dash="dash",
+                line_color="red",
+            )
             showlegend = False
         fig.update_layout(height=1300, width=900, title_text="Trials")
         return fig
