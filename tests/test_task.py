@@ -77,3 +77,34 @@ def test_post_init_derived_attributes(
     assert task.n_inputs == len(expected_modalities) + 1  # add the start signal
     assert max(task.time) == stim_time + fix_time + iti
     assert len(task.time) == int((stim_time + fix_time + iti + task.dt) / task.dt)
+
+
+@pytest.mark.parametrize(
+    ("session", "catch_prob"),
+    [
+        ({"v": 0.5, "a": 0.5}, 0.5),
+        ({"v": 0.8, "a": 0.2}, 0.1),
+        ({"v": 0.5, "a": 0.5}, 0),
+    ],
+)
+def test__build_trials_seq_distributions(session: dict, catch_prob: float):
+    task = Task(NAME, session=session, catch_prob=catch_prob)
+    task._ntrials = NTRIALS  # noqa: SLF001
+    task._rng = np.random.default_rng(NTRIALS)  # noqa: SLF001
+    modality_seq = task._build_trials_seq()  # noqa: SLF001
+    assert isinstance(modality_seq, np.ndarray)
+    assert len(modality_seq) == task._ntrials  # noqa: SLF001
+    task.modalities.add("catch")
+    counts = {modality: np.sum(modality_seq == modality) for modality in task.modalities}
+    # Assert that the counts match the expected distribution within a certain tolerance
+    assert np.isclose(counts["catch"] / len(modality_seq), task.catch_prob, atol=0.1)  # within 10% tolerance
+    assert np.isclose(
+        counts["v"] / len(modality_seq),
+        task.session["v"] - task.catch_prob * task.session["v"],
+        atol=0.1,
+    )  # within 10% tolerance
+    assert np.isclose(
+        counts["a"] / len(modality_seq),
+        task.session["a"] - task.catch_prob * task.session["a"],
+        atol=0.1,
+    )
