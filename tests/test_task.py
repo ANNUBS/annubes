@@ -144,3 +144,31 @@ def test_generate_trials(task: Task):
     trials = task.generate_trials()
     assert trials["inputs"].shape == (task._ntrials, len(task.time), task.n_inputs)  # noqa: SLF001
     assert trials["outputs"].shape == (task._ntrials, len(task.time), task.n_outputs)  # noqa: SLF001
+
+
+def test_plot_trials(task: Task):
+    # Generate trial data
+    ntrials = 3
+    task.generate_trials(ntrials=ntrials)
+    # Call plot_trials
+    n_plots = 2
+    fig = task.plot_trials(n_plots=n_plots)
+    # Assert basic properties of the plot
+    assert isinstance(fig, go.Figure)
+    assert len(fig["data"]) / (task.n_inputs + task.n_outputs) == n_plots  # Number of plots should match n_plots
+    assert fig.layout.title.text == "Trials"  # Check title
+    # Test with n_plots > ntrials
+    n_plots = 5
+    with pytest.warns(UserWarning) as w:
+        fig = task.plot_trials(n_plots=n_plots)
+    # Check if the warning was raised
+    assert len(w) == 1
+    warning = w[0]
+    assert (
+        str(warning.message)
+        == f"Number of plots requested ({n_plots}) exceeds number of trials ({ntrials}). Will plot all trials."
+    )
+    assert warning.category == UserWarning
+    assert isinstance(fig, go.Figure)
+    assert len(fig["data"]) / (task.n_inputs + task.n_outputs) == ntrials
+    assert fig.layout.title.text == "Trials"  # Check title
