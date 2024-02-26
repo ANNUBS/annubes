@@ -10,11 +10,13 @@ from numpy.typing import NDArray
 from plotly.subplots import make_subplots
 
 
-@dataclass
+@dataclass(kw_only=True)
 class TaskSettingsMixin:
     """Mixin data class defining detailed parameters for `Task`.
-    
-    These settings are expected to be maintained throughout most experiments, whereas the attributes of `Task` itself are expected to be more commonly adjusted between individual experiments.
+
+    These settings are expected to be maintained throughout most experiments,
+    whereas the attributes of `Task` itself are expected to be more commonly
+    adjusted between individual experiments.
 
     Args:
         fix_intensity: Intensity of input signal during fixation.
@@ -53,7 +55,7 @@ class TaskSettingsMixin:
     rescaling_coeff: float = 0
 
 
-@dataclass
+@dataclass()
 class Task(TaskSettingsMixin):
     """General data class for defining a task.
 
@@ -88,12 +90,12 @@ class Task(TaskSettingsMixin):
     session: dict[str, float] = field(default_factory=lambda: {"v": 0.5, "a": 0.5})
     stim_intensities: list[float] = field(default_factory=lambda: [0.8, 0.9, 1])
     stim_time: int = 1000
-    catch_prob: float = 0.5
+    catch_prob: float | int = 0.5
     shuffle_trials: bool = True
     max_sequential: int | None = None
 
     def __post_init__(self):
-        if not isinstance(self.catch_prob, float) or not (0 <= self.catch_prob < 1):
+        if not isinstance(self.catch_prob, float | int) or not (0 <= self.catch_prob < 1):
             msg = "`catch_prob` must be between 0 and 1."
             raise ValueError(msg)
 
@@ -243,7 +245,7 @@ class Task(TaskSettingsMixin):
         )
         sel_value_in = np.full(  # TODO: needs a better name
             (self._ntrials, self.n_inputs - 1),  # should not include start cue
-            min(self.stim_intensities),
+            0,
             dtype=np.float32,
         )
 
@@ -305,10 +307,10 @@ class Task(TaskSettingsMixin):
         colors = [
             "#{:02x}{:02x}{:02x}".format(
                 *tuple(
-                    int(c * 255) for c in colorsys.hsv_to_rgb(i / self.n_inputs - 1, 1.0, 1.0)
+                    int(c * 255) for c in colorsys.hsv_to_rgb(i / self.n_inputs, 1.0, 1.0)
                 ),  # should not include start cue
             )
-            for i in range(self.n_inputs - 1)
+            for i in range(self.n_inputs)
         ]
         for i in range(n_plots):
             for idx, m in enumerate(self.modalities):
@@ -331,7 +333,7 @@ class Task(TaskSettingsMixin):
                     name="START",
                     mode="markers+lines",
                     x=self.time,
-                    y=self._inputs[i][:, self.n_inputs],  # not for start cue
+                    y=self._inputs[i][:, self.n_inputs - 1],
                     marker_symbol="star",
                     legendgroup="START",
                     showlegend=showlegend,
@@ -367,7 +369,7 @@ class Task(TaskSettingsMixin):
                 col=1,
             )
             fig.add_vline(
-                x=self.iti + self.fix_time,
+                x=self.iti + self.fix_time + self.dt,
                 line_width=3,
                 line_dash="dash",
                 line_color="red",
