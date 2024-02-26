@@ -126,3 +126,15 @@ def test__build_trials_seq_shuffling():
     # Verify that the generated sequences are shuffled or not shuffled accordingly
     assert sequence_shuffled.shape == sequence_not_shuffled.shape
     assert not np.array_equal(sequence_shuffled, sequence_not_shuffled)
+
+
+def test__build_trials_seq_maximum_sequential_trials():
+    # Create a Task instance with shuffling enabled and a maximum sequential trial constraint
+    task = Task(name=NAME, max_sequential=4)
+    task._ntrials = NTRIALS  # noqa: SLF001
+    task._rng = np.random.default_rng(NTRIALS)  # noqa: SLF001
+    modality_seq = task._build_trials_seq()  # noqa: SLF001
+    # Ensure that no more than the specified maximum number of consecutive trials of the same modality occur
+    for modality in task.modalities:
+        for i in range(len(modality_seq) - task.max_sequential):
+            assert np.sum(modality_seq[i : i + task.max_sequential] == modality) <= task.max_sequential
