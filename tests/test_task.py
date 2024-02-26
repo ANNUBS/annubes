@@ -108,3 +108,21 @@ def test__build_trials_seq_distributions(session: dict, catch_prob: float):
         task.session["a"] - task.catch_prob * task.session["a"],
         atol=0.1,
     )
+
+
+def test__build_trials_seq_shuffling():
+    task_shuffled = Task(NAME, shuffle_trials=True)
+    task_not_shuffled = Task(NAME, shuffle_trials=False)
+
+    task_shuffled._ntrials = NTRIALS  # noqa: SLF001
+    task_not_shuffled._ntrials = NTRIALS  # noqa: SLF001
+
+    task_shuffled._rng = np.random.default_rng(NTRIALS)  # noqa: SLF001
+    task_not_shuffled._rng = np.random.default_rng(NTRIALS)  # noqa: SLF001
+
+    sequence_shuffled = task_shuffled._build_trials_seq()  # noqa: SLF001
+    sequence_not_shuffled = task_not_shuffled._build_trials_seq()  # noqa: SLF001
+
+    # Verify that the generated sequences are shuffled or not shuffled accordingly
+    assert sequence_shuffled.shape == sequence_not_shuffled.shape
+    assert not np.array_equal(sequence_shuffled, sequence_not_shuffled)
