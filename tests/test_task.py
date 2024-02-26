@@ -138,3 +138,9 @@ def test__build_trials_seq_maximum_sequential_trials():
     for modality in task.modalities:
         for i in range(len(modality_seq) - task.max_sequential):
             assert np.sum(modality_seq[i : i + task.max_sequential] == modality) <= task.max_sequential
+
+
+def test_generate_trials(task: Task):
+    trials = task.generate_trials()
+    assert trials["inputs"].shape == (task._ntrials, len(task.time), task.n_inputs)  # noqa: SLF001
+    assert trials["outputs"].shape == (task._ntrials, len(task.time), task.n_outputs)  # noqa: SLF001
