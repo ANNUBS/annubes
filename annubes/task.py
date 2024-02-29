@@ -34,8 +34,6 @@ class TaskSettingsMixin:
         output_behavior: List of possible intensity values of the behavioral output. Currently only the smallest and
             largest value of this list are used.
             Defaults to [0, 1].
-        input_baseline: Baseline input for all neurons.
-            Defaults to 0.2.
         noise_std: Standard deviation of input noise.
             Defaults to 0.01.
         scaling: If True, input and output signals are rescaled between 0 and 1. A MinMaxScaler logic is used
@@ -50,7 +48,6 @@ class TaskSettingsMixin:
     tau: int = 100
     n_outputs: int = 2
     output_behavior: list[float] = field(default_factory=lambda: [0, 1])
-    input_baseline: float = 0.2
     noise_std: float = 0.01
     scaling: bool = True
 
@@ -247,9 +244,7 @@ class Task(TaskSettingsMixin):
         # generate noise
         alpha = self.dt / self.tau
         noise_factor = self.noise_std * np.sqrt(2 * alpha) / alpha
-        noise = noise_factor * self._rng.normal(loc=0, scale=1, size=x.shape)
-
-        x += self.input_baseline + noise
+        x += noise_factor * self._rng.normal(loc=0, scale=1, size=x.shape)
 
         if self.scaling:
             x = self._minmaxscaler(x)
