@@ -118,6 +118,7 @@ unfixable = ["F401"] # unused imports (should not disappear while editing)
     "S101",   # Use of `assert` detected
     "ANN201", # Missing return type
     "D103",   # Missing function docstring
+    "SLF001", # private member access
 ]
 "docs/*" = ["ALL"]
 

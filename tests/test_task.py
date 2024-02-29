@@ -89,11 +89,11 @@ def test_post_init_derived_attributes(
 )
 def test__build_trials_seq_distributions(session: dict, catch_prob: float):
     task = Task(NAME, session=session, catch_prob=catch_prob)
-    task._ntrials = NTRIALS  # noqa: SLF001
-    task._rng = np.random.default_rng(NTRIALS)  # noqa: SLF001
-    modality_seq = task._build_trials_seq()  # noqa: SLF001
+    task._ntrials = NTRIALS
+    task._rng = np.random.default_rng(NTRIALS)
+    modality_seq = task._build_trials_seq()
     assert isinstance(modality_seq, np.ndarray)
-    assert len(modality_seq) == task._ntrials  # noqa: SLF001
+    assert len(modality_seq) == task._ntrials
     task.modalities.add("catch")
     counts = {modality: np.sum(modality_seq == modality) for modality in task.modalities}
     # Assert that the counts match the expected distribution within a certain tolerance
@@ -114,14 +114,14 @@ def test__build_trials_seq_shuffling():
     task_shuffled = Task(NAME, shuffle_trials=True)
     task_not_shuffled = Task(NAME, shuffle_trials=False)
 
-    task_shuffled._ntrials = NTRIALS  # noqa: SLF001
-    task_not_shuffled._ntrials = NTRIALS  # noqa: SLF001
+    task_shuffled._ntrials = NTRIALS
+    task_not_shuffled._ntrials = NTRIALS
 
-    task_shuffled._rng = np.random.default_rng(NTRIALS)  # noqa: SLF001
-    task_not_shuffled._rng = np.random.default_rng(NTRIALS)  # noqa: SLF001
+    task_shuffled._rng = np.random.default_rng(NTRIALS)
+    task_not_shuffled._rng = np.random.default_rng(NTRIALS)
 
-    sequence_shuffled = task_shuffled._build_trials_seq()  # noqa: SLF001
-    sequence_not_shuffled = task_not_shuffled._build_trials_seq()  # noqa: SLF001
+    sequence_shuffled = task_shuffled._build_trials_seq()
+    sequence_not_shuffled = task_not_shuffled._build_trials_seq()
 
     # Verify that the generated sequences are shuffled or not shuffled accordingly
     assert sequence_shuffled.shape == sequence_not_shuffled.shape
@@ -131,9 +131,9 @@ def test__build_trials_seq_shuffling():
 def test__build_trials_seq_maximum_sequential_trials():
     # Create a Task instance with shuffling enabled and a maximum sequential trial constraint
     task = Task(name=NAME, max_sequential=4)
-    task._ntrials = NTRIALS  # noqa: SLF001
-    task._rng = np.random.default_rng(NTRIALS)  # noqa: SLF001
-    modality_seq = task._build_trials_seq()  # noqa: SLF001
+    task._ntrials = NTRIALS
+    task._rng = np.random.default_rng(NTRIALS)
+    modality_seq = task._build_trials_seq()
     # Ensure that no more than the specified maximum number of consecutive trials of the same modality occur
     for modality in task.modalities:
         for i in range(len(modality_seq) - task.max_sequential):
@@ -142,8 +142,8 @@ def test__build_trials_seq_maximum_sequential_trials():
 
 def test_generate_trials(task: Task):
     trials = task.generate_trials()
-    assert trials["inputs"].shape == (task._ntrials, len(task.time), task.n_inputs)  # noqa: SLF001
-    assert trials["outputs"].shape == (task._ntrials, len(task.time), task.n_outputs)  # noqa: SLF001
+    assert trials["inputs"].shape == (task._ntrials, len(task.time), task.n_inputs)
+    assert trials["outputs"].shape == (task._ntrials, len(task.time), task.n_outputs)
 
 
 def test_plot_trials(task: Task):
