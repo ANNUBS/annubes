@@ -90,7 +90,7 @@ class Task(TaskSettingsMixin):
     session: dict[str, float] = field(default_factory=lambda: {"v": 0.5, "a": 0.5})
     stim_intensities: list[float] = field(default_factory=lambda: [0.8, 0.9, 1])
     stim_time: int = 1000
-    catch_prob: float | int = 0.5
+    catch_prob: float = 0.5
     shuffle_trials: bool = True
     max_sequential: int | None = None
 
@@ -306,9 +306,7 @@ class Task(TaskSettingsMixin):
         showlegend = True
         colors = [
             "#{:02x}{:02x}{:02x}".format(
-                *tuple(
-                    int(c * 255) for c in colorsys.hsv_to_rgb(i / self.n_inputs, 1.0, 1.0)
-                ),  # should not include start cue
+                *tuple(int(c * 255) for c in colorsys.hsv_to_rgb(i / self.n_inputs, 1.0, 1.0)),
             )
             for i in range(self.n_inputs)
         ]

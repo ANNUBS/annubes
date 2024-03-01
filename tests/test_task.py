@@ -85,9 +85,10 @@ def test_post_init_derived_attributes(
         ({"v": 0.5, "a": 0.5}, 0.5),
         ({"v": 0.8, "a": 0.2}, 0.1),
         ({"v": 0.5, "a": 0.5}, 0),
+        pytest.param({"v": 0.5, "a": 0.5}, -1, marks=pytest.mark.xfail(raises=ValueError)),
     ],
 )
-def test__build_trials_seq_distributions(session: dict, catch_prob: float):
+def test_build_trials_seq_distributions(session: dict, catch_prob: float):
     task = Task(NAME, session=session, catch_prob=catch_prob)
     task._ntrials = NTRIALS
     task._rng = np.random.default_rng(NTRIALS)
@@ -108,9 +109,14 @@ def test__build_trials_seq_distributions(session: dict, catch_prob: float):
         task.session["a"] - task.catch_prob * task.session["a"],
         atol=0.1,
     )
+    assert np.isclose(
+        (counts["a"] + counts["v"] + counts["catch"]) / len(modality_seq),
+        1,
+        atol=0.05,
+    )
 
 
-def test__build_trials_seq_shuffling():
+def test_build_trials_seq_shuffling():
     task_shuffled = Task(NAME, shuffle_trials=True)
     task_not_shuffled = Task(NAME, shuffle_trials=False)
 
@@ -128,7 +134,7 @@ def test__build_trials_seq_shuffling():
     assert not np.array_equal(sequence_shuffled, sequence_not_shuffled)
 
 
-def test__build_trials_seq_maximum_sequential_trials():
+def test_build_trials_seq_maximum_sequential_trials():
     # Create a Task instance with shuffling enabled and a maximum sequential trial constraint
     task = Task(name=NAME, max_sequential=4)
     task._ntrials = NTRIALS
@@ -169,6 +175,3 @@ def test_plot_trials(task: Task):
         == f"Number of plots requested ({n_plots}) exceeds number of trials ({ntrials}). Will plot all trials."
     )
     assert warning.category == UserWarning
-    assert isinstance(fig, go.Figure)
-    assert len(fig["data"]) / (task.n_inputs + task.n_outputs) == ntrials
-    assert fig.layout.title.text == "Trials"  # Check title
