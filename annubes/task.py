@@ -34,13 +34,11 @@ class TaskSettingsMixin:
         output_behavior: List of possible intensity values of the behavioral output. Currently only the smallest and
             largest value of this list are used.
             Defaults to [0, 1].
-        input_baseline: Baseline input for all neurons.
-            Defaults to 0.2.
         noise_std: Standard deviation of input noise.
             Defaults to 0.01.
-        rescaling_coeff: Rescaling coefficient for `Task.stim_intensities` and `self.fix_intensity`. If set to non-zero
-            value, these values are linearly rescaled along (0, rescaling_coeff).
-            Defaults to 0 (i.e. no rescaling).
+        scaling: If True, input and output signals are rescaled between 0 and 1. A MinMaxScaler logic is used
+            for this purpose.
+            Defaults to True.
     """
 
     fix_intensity: float = 0
@@ -50,9 +48,8 @@ class TaskSettingsMixin:
     tau: int = 100
     n_outputs: int = 2
     output_behavior: list[float] = field(default_factory=lambda: [0, 1])
-    input_baseline: float = 0.2
     noise_std: float = 0.01
-    rescaling_coeff: float = 0
+    scaling: bool = True
 
 
 @dataclass()
@@ -165,42 +162,32 @@ class Task(TaskSettingsMixin):
         trials["outputs"] = self._outputs
         return trials
 
-    def _rescale(
+    def _minmaxscaler(
         self,
-        input_: float,
-        coeff: float,
-        min_intensity: float | None = None,
-        max_intensity: float | None = None,
+        input_: NDArray[np.float32],
+        input_range: tuple[float, float] = (0, 1),
     ) -> float:
-        """Rescale `input_` value along (0,`coeff`) if `coeff` is non-zero.
+        """Rescale `input_` array to a given range.
 
         Rescaling happens as follows:
-            coeff * (input_ - min_intensity) / (max_intensity - min_intensity)
+
+            `X_std = (input_ - input_.min()) / (input_.max() - input_.min())`
+            `X_scaled = X_std * (max - min) + min`
+            where min, max = range.
+        The logic is the same as that of `sklearn.preprocessing.MinMaxScaler` estimator. Each array is rescaled to the
+        given range, for each trial contained in `input_`.
+
 
         Args:
-            input_: Value that will be rescaled.
-            coeff: Maximum value after rescaling. If set to 0, `input_` is returned unmodified.
-            min_intensity: Minimum value of the input intensities. Defaults to `min(self.stim_intensities)`
-            max_intensity: Maximum value of the input intensities. Defaults to `max(self.stim_intensities)`
+            input_ (NDArray[np.float32]): Input array of shape (self._ntrials, len(self.time), self.n_inputs).
+            input_range (tuple[float, float]): Desired range of transformed data. Defaults to (0, 1).
 
         Returns:
-            float: Rescaled input value.
+            NDArray[np.float32]: Rescaled input array.
         """
-        if not coeff:
-            return input_
-        if min_intensity is None:
-            min_intensity = min(self.stim_intensities)
-        if max_intensity is None:
-            max_intensity = max(self.stim_intensities)
+        input_std = (input_ - input_.min()) / (input_.max() - input_.min())
 
-        try:
-            return coeff * (input_ - min_intensity) / (max_intensity - min_intensity)
-        except ZeroDivisionError:
-            warnings.warn(
-                "Identical max and min intensities while rescaling. Returning unmodified input value.",
-                stacklevel=2,
-            )
-            return input_
+        return input_std * (max(input_range) - min(input_range)) + min(input_range)
 
     def _build_trials_seq(self) -> NDArray:
         """Generate a sequence of modalities."""
@@ -243,30 +230,26 @@ class Task(TaskSettingsMixin):
             (self._ntrials, len(self.time), self.n_inputs),
             dtype=np.float32,
         )
-        sel_value_in = np.full(  # TODO: needs a better name
-            (self._ntrials, self.n_inputs - 1),  # should not include start cue
-            0,
-            dtype=np.float32,
-        )
 
         for n in range(self._ntrials):
             for idx, m in enumerate(self.modalities):
                 if (self._modality_seq[n] != "catch") and (m in self._modality_seq[n]):
-                    sel_value_in[n, idx] = self._rng.choice(self.stim_intensities[1:], 1)
-                sel_value_in[n, idx] = self._rescale(sel_value_in[n, idx], self.rescaling_coeff)
-                x[n, self._phases["input"], idx] = sel_value_in[n, idx]
-                x[n, self._phases["fix_time"], idx] = self._rescale(
-                    self.fix_intensity,
-                    self.rescaling_coeff,
-                )
+                    value = self._rng.choice(self.stim_intensities, 1)
+                else:
+                    value = 0
+                x[n, self._phases["input"], idx] = value
+                x[n, self._phases["fix_time"], idx] = self.fix_intensity
             x[n, self._phases["input"], self.n_inputs - 1] = 1  # start cue
 
         # generate noise
         alpha = self.dt / self.tau
         noise_factor = self.noise_std * np.sqrt(2 * alpha) / alpha
-        noise = noise_factor * self._rng.normal(loc=0, scale=1, size=x.shape)
+        x += noise_factor * self._rng.normal(loc=0, scale=1, size=x.shape)
 
-        return x + self.input_baseline + noise
+        if self.scaling:
+            x = self._minmaxscaler(x)
+
+        return x
 
     def _build_trials_outputs(self) -> NDArray[np.float32]:
         """Generate trial outputs."""
@@ -279,6 +262,9 @@ class Task(TaskSettingsMixin):
 
             y[i, self._phases["input"], self._choice[i]] = max(self.output_behavior)
             y[i, self._phases["input"], 1 - self._choice[i]] = min(self.output_behavior)
+
+        if self.scaling:
+            y = self._minmaxscaler(y)
 
         return y
 
