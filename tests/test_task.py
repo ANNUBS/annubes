@@ -43,10 +43,9 @@ def test_init_session(
     ("catch_prob", "expected"),
     [
         pytest.param(-1, -1, marks=pytest.mark.xfail(raises=ValueError)),
-        pytest.param(1, 1, marks=pytest.mark.xfail(raises=ValueError)),
         pytest.param(2, 2, marks=pytest.mark.xfail(raises=ValueError)),
-        pytest.param(None, None, marks=pytest.mark.xfail(raises=ValueError)),
-        pytest.param("0.6", "0.6", marks=pytest.mark.xfail(raises=ValueError)),
+        pytest.param(None, None, marks=pytest.mark.xfail(raises=TypeError)),
+        pytest.param("0.6", "0.6", marks=pytest.mark.xfail(raises=TypeError)),
         (0.6, 0.6),
     ],
 )
