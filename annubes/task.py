@@ -74,7 +74,7 @@ class Task(TaskSettingsMixin):
             Defaults to [0.8, 0.9, 1].
         stim_time: Duration of each stimulus in ms.
             Defaults to 1000.
-        catch_prob: probability of catch trials in the session, between 0 and 1.
+        catch_prob: probability of catch trials in the session, between 0 and 1 (extremes included).
             Defaults to 0.5.
         shuffle_trials: If True (default), trial order will be randomized. If False, all trials corresponding to one
             modality (e.g. visual) are run before any trial of the next modality (e.g. auditory) starts, in the order
@@ -84,6 +84,7 @@ class Task(TaskSettingsMixin):
 
     Raises:
         ValueError: if `catch_prob` is not between 0 and 1.
+        TypeError: if `catch_prob` is not a float.
     """
 
     name: str
@@ -95,7 +96,7 @@ class Task(TaskSettingsMixin):
     max_sequential: int | None = None
 
     def __post_init__(self):
-        if not isinstance(self.catch_prob, float | int) or not (0 <= self.catch_prob < 1):
+        if not 0 <= self.catch_prob <= 1:
             msg = "`catch_prob` must be between 0 and 1."
             raise ValueError(msg)
 
