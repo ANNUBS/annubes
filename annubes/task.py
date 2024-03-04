@@ -10,11 +10,13 @@ from numpy.typing import NDArray
 from plotly.subplots import make_subplots
 
 
-@dataclass
+@dataclass(kw_only=True)
 class TaskSettingsMixin:
     """Mixin data class defining detailed parameters for `Task`.
-    
-    These settings are expected to be maintained throughout most experiments, whereas the attributes of `Task` itself are expected to be more commonly adjusted between individual experiments.
+
+    These settings are expected to be maintained throughout most experiments,
+    whereas the attributes of `Task` itself are expected to be more commonly
+    adjusted between individual experiments.
 
     Args:
         fix_intensity: Intensity of input signal during fixation.
@@ -53,7 +55,7 @@ class TaskSettingsMixin:
     rescaling_coeff: float = 0
 
 
-@dataclass
+@dataclass()
 class Task(TaskSettingsMixin):
     """General data class for defining a task.
 
@@ -72,7 +74,7 @@ class Task(TaskSettingsMixin):
             Defaults to [0.8, 0.9, 1].
         stim_time: Duration of each stimulus in ms.
             Defaults to 1000.
-        catch_prob: probability of catch trials in the session, between 0 and 1.
+        catch_prob: probability of catch trials in the session, between 0 and 1 (extremes included).
             Defaults to 0.5.
         shuffle_trials: If True (default), trial order will be randomized. If False, all trials corresponding to one
             modality (e.g. visual) are run before any trial of the next modality (e.g. auditory) starts, in the order
@@ -82,6 +84,7 @@ class Task(TaskSettingsMixin):
 
     Raises:
         ValueError: if `catch_prob` is not between 0 and 1.
+        TypeError: if `catch_prob` is not a float.
     """
 
     name: str
@@ -93,7 +96,7 @@ class Task(TaskSettingsMixin):
     max_sequential: int | None = None
 
     def __post_init__(self):
-        if not self.catch_prob >= 0 and self.catch_prob < 1:
+        if not 0 <= self.catch_prob <= 1:
             msg = "`catch_prob` must be between 0 and 1."
             raise ValueError(msg)
 
@@ -104,7 +107,7 @@ class Task(TaskSettingsMixin):
             self.session = OrderedDict(self.session)
 
         # Derived attributes
-        self.modalities = list(dict.fromkeys(char for string in self.session for char in string))
+        self.modalities = set(dict.fromkeys(char for string in self.session for char in string))
         self.n_inputs = len(self.modalities) + 1  # includes start cue
         trial_duration = self.iti + self.fix_time + self.stim_time
         self.time = np.linspace(
@@ -243,7 +246,7 @@ class Task(TaskSettingsMixin):
         )
         sel_value_in = np.full(  # TODO: needs a better name
             (self._ntrials, self.n_inputs - 1),  # should not include start cue
-            min(self.stim_intensities),
+            0,
             dtype=np.float32,
         )
 
@@ -304,11 +307,9 @@ class Task(TaskSettingsMixin):
         showlegend = True
         colors = [
             "#{:02x}{:02x}{:02x}".format(
-                *tuple(
-                    int(c * 255) for c in colorsys.hsv_to_rgb(i / self.n_inputs - 1, 1.0, 1.0)
-                ),  # should not include start cue
+                *tuple(int(c * 255) for c in colorsys.hsv_to_rgb(i / self.n_inputs, 1.0, 1.0)),
             )
-            for i in range(self.n_inputs - 1)
+            for i in range(self.n_inputs)
         ]
         for i in range(n_plots):
             for idx, m in enumerate(self.modalities):
@@ -331,7 +332,7 @@ class Task(TaskSettingsMixin):
                     name="START",
                     mode="markers+lines",
                     x=self.time,
-                    y=self._inputs[i][:, self.n_inputs],  # not for start cue
+                    y=self._inputs[i][:, self.n_inputs - 1],
                     marker_symbol="star",
                     legendgroup="START",
                     showlegend=showlegend,
@@ -367,7 +368,7 @@ class Task(TaskSettingsMixin):
                 col=1,
             )
             fig.add_vline(
-                x=self.iti + self.fix_time,
+                x=self.iti + self.fix_time + self.dt,
                 line_width=3,
                 line_dash="dash",
                 line_color="red",
