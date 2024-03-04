@@ -4,8 +4,6 @@ import torch
 from numpy.typing import NDArray
 from torch import nn
 
-# ruff: noqa: EXE003, EXE005
-
 
 class CustomRNN(nn.Module):
     """Custom Recurrent Neural Network."""
@@ -33,12 +31,12 @@ class CustomRNN(nn.Module):
 
         # H2H
         # NOTE: I think we may not be setting the weights for inhibitory neurons correctly
-        #!Unlike Song, do not put self recurrence on 0
+        # Unlike Song, do not put self recurrence on 0
         self.h2h = nn.Linear(self.hidden_size, self.hidden_size)
-        with torch.no_grad():  #! just for the multiplication
+        with torch.no_grad():  # just for the multiplication
             self.h2h.weight[:, : self.n_in] = (
                 self.h2h.weight[:, : self.n_in] * 4
-            )  #!: Why -> avoid breaking of convergence
+            )  # Why -> avoid breaking of convergence
 
         # H2O
         self.h2o = nn.Linear(self.hidden_size - self.n_in, self.output_size)
@@ -64,7 +62,7 @@ class CustomRNN(nn.Module):
         tau: float,
         dt: float,
         rnn_output: torch.Tensor | None = None,
-    ) -> (torch.Tensor, torch.Tensor):
+    ) -> tuple[torch.Tensor, torch.Tensor]:
         batch_sz, trial_length, _ = x.shape
         alpha = dt / tau
         rnn_input = torch.zeros(batch_sz, 1, self.hidden_size)
@@ -91,7 +89,7 @@ class CustomRNN(nn.Module):
             rnn_input = torch.cat(
                 [rnn_input, rnn_input_t[:, None, :]],
                 dim=1,
-            )  #! Appends along time axis, such that next iteration has access at [:,t,:] to basically [:,t-1,:]
+            )  # Appends along time axis, such that next iteration has access at [:,t,:] to basically [:,t-1,:]
             rnn_output = torch.cat([rnn_output, rnn_output_t[:, None, :]], dim=1)
             network_output = torch.cat([network_output, network_output_t[:, None, :]], dim=1)
 
