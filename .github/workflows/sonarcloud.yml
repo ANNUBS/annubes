@@ -1,4 +1,4 @@
-name: sonarcloud
+name: SonarCloud
 
 on:
   push:
@@ -11,7 +11,7 @@ on:
 
 jobs:
   sonarcloud:
-    name: SonarCloud
+    name: Tests coverage
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
