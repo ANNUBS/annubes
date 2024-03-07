@@ -239,11 +239,8 @@ class Task(TaskSettingsMixin):
         )
 
         for n in range(self._ntrials):
-            for idx, m in enumerate(self.modalities):
-                if (self._modality_seq[n] != "catch") and (m in self._modality_seq[n]):
-                    value = self._rng.choice(self.stim_intensities, 1)
-                else:
-                    value = 0
+            for idx, _ in enumerate(self.modalities):
+                value = self._rng.choice(self.stim_intensities, 1) if self._modality_seq[n] != "catch" else 0
                 x[n, self._phases["input"], idx] = value
                 x[n, self._phases["fix_time"], idx] = self.fix_intensity
             x[n, self._phases["input"], self.n_inputs - 1] = 1  # start cue
