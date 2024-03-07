@@ -57,6 +57,23 @@ def test_init_catch_prob(catch_prob: float | None, expected: float | None):
 
 
 @pytest.mark.parametrize(
+    ("dt", "tau"),
+    [
+        pytest.param(20, 30),
+        pytest.param(0, 0, marks=pytest.mark.xfail(raises=ValueError)),
+        pytest.param(-1, -1, marks=pytest.mark.xfail(raises=ValueError)),
+    ],
+)
+def test_post_init_noise_related(
+    dt: int,
+    tau: int,
+):
+    task = Task(NAME, dt=dt, tau=tau)
+    assert task.dt == dt
+    assert task.tau == tau
+
+
+@pytest.mark.parametrize(
     ("session", "stim_time", "fix_time", "iti", "expected_modalities"),
     [
         ({"v": 0.5, "a": 0.5}, 0, 100, 1000, {"v", "a"}),

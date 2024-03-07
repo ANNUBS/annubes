@@ -102,6 +102,13 @@ class Task(TaskSettingsMixin):
         if not self.shuffle_trials:
             self.session = OrderedDict(self.session)
 
+        if not self.dt > 0:
+            msg = "`dt` must be greater than 0."
+            raise ValueError(msg)
+        if not self.tau > 0:
+            msg = "`tau` must be greater than 0."
+            raise ValueError(msg)
+
         # Derived attributes
         self.modalities = set(dict.fromkeys(char for string in self.session for char in string))
         self.n_inputs = len(self.modalities) + 1  # includes start cue
@@ -166,7 +173,7 @@ class Task(TaskSettingsMixin):
         self,
         input_: NDArray[np.float32],
         rescale_range: tuple[float, float] = (0, 1),
-    ) -> float:
+    ) -> NDArray[np.float32]:
         """Rescale `input_` array to a given range.
 
         Rescaling happens as follows:
@@ -179,11 +186,11 @@ class Task(TaskSettingsMixin):
 
 
         Args:
-            input_ (NDArray[np.float32]): Input array of shape (self._ntrials, len(self.time), self.n_inputs).
-            rescale_range (tuple[float, float]): Desired range of transformed data. Defaults to (0, 1).
+            input_: Input array of shape (self._ntrials, len(self.time), self.n_inputs).
+            rescale_range: Desired range of transformed data. Defaults to (0, 1).
 
         Returns:
-            NDArray[np.float32]: Rescaled input array.
+            Rescaled input array.
         """
         input_std = (input_ - input_.min()) / (input_.max() - input_.min())
 
@@ -241,7 +248,7 @@ class Task(TaskSettingsMixin):
                 x[n, self._phases["fix_time"], idx] = self.fix_intensity
             x[n, self._phases["input"], self.n_inputs - 1] = 1  # start cue
 
-        # generate noise
+        # generate and add noise
         alpha = self.dt / self.tau
         noise_factor = self.noise_std * np.sqrt(2 * alpha) / alpha
         x += noise_factor * self._rng.normal(loc=0, scale=1, size=x.shape)
