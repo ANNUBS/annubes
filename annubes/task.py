@@ -165,7 +165,7 @@ class Task(TaskSettingsMixin):
     def _minmaxscaler(
         self,
         input_: NDArray[np.float32],
-        input_range: tuple[float, float] = (0, 1),
+        rescale_range: tuple[float, float] = (0, 1),
     ) -> float:
         """Rescale `input_` array to a given range.
 
@@ -180,14 +180,14 @@ class Task(TaskSettingsMixin):
 
         Args:
             input_ (NDArray[np.float32]): Input array of shape (self._ntrials, len(self.time), self.n_inputs).
-            input_range (tuple[float, float]): Desired range of transformed data. Defaults to (0, 1).
+            rescale_range (tuple[float, float]): Desired range of transformed data. Defaults to (0, 1).
 
         Returns:
             NDArray[np.float32]: Rescaled input array.
         """
         input_std = (input_ - input_.min()) / (input_.max() - input_.min())
 
-        return input_std * (max(input_range) - min(input_range)) + min(input_range)
+        return input_std * (max(rescale_range) - min(rescale_range)) + min(rescale_range)
 
     def _build_trials_seq(self) -> NDArray:
         """Generate a sequence of modalities."""
