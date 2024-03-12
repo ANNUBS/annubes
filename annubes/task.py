@@ -170,109 +170,6 @@ class Task(TaskSettingsMixin):
         trials["outputs"] = self._outputs
         return trials
 
-    def _minmaxscaler(
-        self,
-        input_: NDArray[np.float32],
-        rescale_range: tuple[float, float] = (0, 1),
-    ) -> NDArray[np.float32]:
-        """Rescale `input_` array to a given range.
-
-        Rescaling happens as follows:
-
-            `X_std = (input_ - input_.min()) / (input_.max() - input_.min())`
-            `X_scaled = X_std * (max - min) + min`
-            where min, max = range.
-        The logic is the same as that of `sklearn.preprocessing.MinMaxScaler` estimator. Each array is rescaled to the
-        given range, for each trial contained in `input_`.
-
-
-        Args:
-            input_: Input array of shape (self._ntrials, len(self.time), self.n_inputs).
-            rescale_range: Desired range of transformed data. Defaults to (0, 1).
-
-        Returns:
-            Rescaled input array.
-        """
-        input_std = (input_ - input_.min()) / (input_.max() - input_.min())
-
-        return input_std * (max(rescale_range) - min(rescale_range)) + min(rescale_range)
-
-    def _build_trials_seq(self) -> NDArray:
-        """Generate a sequence of modalities."""
-        # Extract keys and probabilities from the dictionary
-        scenarios = list(self.session.keys())
-        probabilities = np.array(list(self.session.values()))
-        # Generate random numbers of samples based on the probabilities
-        prob_samples = self._rng.multinomial(self._ntrials, probabilities)
-        # Create a dictionary to store the results
-        session_in_samples = {
-            scenario: self._rng.multinomial(prob_samples[i], [1 - self.catch_prob, self.catch_prob])
-            for i, scenario in enumerate(scenarios)
-        }
-        # Generate the sequence of modalities
-        modality_seq = []
-        for m in scenarios:
-            temp_seq = session_in_samples[m][0] * [m] + session_in_samples[m][1] * ["catch"]
-            self._rng.shuffle(temp_seq)
-            modality_seq += list(temp_seq)
-        if self.shuffle_trials:
-            self._rng.shuffle(modality_seq)
-            if self.max_sequential:
-                # Shuffle the list using Fisher-Yates algorithm with consecutive constraint
-                i = len(modality_seq) - 1
-                while i > 0:
-                    # Picking j can't be fixed, otherwise the algorithm is not random
-                    # We may want to change this in the future
-                    j = self._rng.integers(0, i)
-                    modality_seq[i], modality_seq[j] = modality_seq[j], modality_seq[i]
-                    i -= 1
-                    # Check and fix the consecutive constraint
-                    count = 1
-                    while i > 0 and modality_seq[i] == modality_seq[i - 1] and count >= self.max_sequential:
-                        i -= 1
-        return np.array(modality_seq)
-
-    def _build_trials_inputs(self) -> NDArray[np.float32]:
-        """Generate trial inputs."""
-        x = np.zeros(
-            (self._ntrials, len(self.time), self.n_inputs),
-            dtype=np.float32,
-        )
-
-        for n in range(self._ntrials):
-            for idx, _ in enumerate(self.modalities):
-                value = self._rng.choice(self.stim_intensities, 1) if self._modality_seq[n] != "catch" else 0
-                x[n, self._phases["input"], idx] = value
-                x[n, self._phases["fix_time"], idx] = self.fix_intensity
-            x[n, self._phases["input"], self.n_inputs - 1] = 1  # start cue
-
-        # generate and add noise
-        alpha = self.dt / self.tau
-        noise_factor = self.noise_std * np.sqrt(2 * alpha) / alpha
-        x += noise_factor * self._rng.normal(loc=0, scale=1, size=x.shape)
-
-        if self.scaling:
-            x = self._minmaxscaler(x)
-
-        return x
-
-    def _build_trials_outputs(self) -> NDArray[np.float32]:
-        """Generate trial outputs."""
-        y = np.zeros((self._ntrials, len(self.time), self.n_outputs), dtype=np.float32)
-        for i in range(self._ntrials):
-            if self.iti > 0:
-                y[i, self._phases["iti"], :] = min(self.output_behavior)
-            if self.fix_time > 0:
-                y[i, self._phases["fix_time"], :] = min(self.output_behavior)
-
-            y[i, self._phases["input"], self._choice[i]] = max(self.output_behavior)
-            y[i, self._phases["input"], 1 - self._choice[i]] = min(self.output_behavior)
-
-        if self.scaling:
-            y = self._minmaxscaler(y)
-
-        return y
-
     def plot_trials(self, n_plots: int = 1) -> go.Figure:
         """Method for plotting generated trials.
 
@@ -366,3 +263,106 @@ class Task(TaskSettingsMixin):
             showlegend = False
         fig.update_layout(height=1300, width=900, title_text="Trials")
         return fig
+
+    def _build_trials_seq(self) -> NDArray:
+        """Generate a sequence of modalities."""
+        # Extract keys and probabilities from the dictionary
+        scenarios = list(self.session.keys())
+        probabilities = np.array(list(self.session.values()))
+        # Generate random numbers of samples based on the probabilities
+        prob_samples = self._rng.multinomial(self._ntrials, probabilities)
+        # Create a dictionary to store the results
+        session_in_samples = {
+            scenario: self._rng.multinomial(prob_samples[i], [1 - self.catch_prob, self.catch_prob])
+            for i, scenario in enumerate(scenarios)
+        }
+        # Generate the sequence of modalities
+        modality_seq = []
+        for m in scenarios:
+            temp_seq = session_in_samples[m][0] * [m] + session_in_samples[m][1] * ["catch"]
+            self._rng.shuffle(temp_seq)
+            modality_seq += list(temp_seq)
+        if self.shuffle_trials:
+            self._rng.shuffle(modality_seq)
+            if self.max_sequential:
+                # Shuffle the list using Fisher-Yates algorithm with consecutive constraint
+                i = len(modality_seq) - 1
+                while i > 0:
+                    # Picking j can't be fixed, otherwise the algorithm is not random
+                    # We may want to change this in the future
+                    j = self._rng.integers(0, i)
+                    modality_seq[i], modality_seq[j] = modality_seq[j], modality_seq[i]
+                    i -= 1
+                    # Check and fix the consecutive constraint
+                    count = 1
+                    while i > 0 and modality_seq[i] == modality_seq[i - 1] and count >= self.max_sequential:
+                        i -= 1
+        return np.array(modality_seq)
+
+    def _minmaxscaler(
+        self,
+        input_: NDArray[np.float32],
+        rescale_range: tuple[float, float] = (0, 1),
+    ) -> NDArray[np.float32]:
+        """Rescale `input_` array to a given range.
+
+        Rescaling happens as follows:
+
+            `X_std = (input_ - input_.min()) / (input_.max() - input_.min())`
+            `X_scaled = X_std * (max - min) + min`
+            where min, max = range.
+        The logic is the same as that of `sklearn.preprocessing.MinMaxScaler` estimator. Each array is rescaled to the
+        given range, for each trial contained in `input_`.
+
+
+        Args:
+            input_: Input array of shape (self._ntrials, len(self.time), self.n_inputs).
+            rescale_range: Desired range of transformed data. Defaults to (0, 1).
+
+        Returns:
+            Rescaled input array.
+        """
+        input_std = (input_ - input_.min()) / (input_.max() - input_.min())
+
+        return input_std * (max(rescale_range) - min(rescale_range)) + min(rescale_range)
+
+    def _build_trials_inputs(self) -> NDArray[np.float32]:
+        """Generate trial inputs."""
+        x = np.zeros(
+            (self._ntrials, len(self.time), self.n_inputs),
+            dtype=np.float32,
+        )
+
+        for n in range(self._ntrials):
+            for idx, _ in enumerate(self.modalities):
+                value = self._rng.choice(self.stim_intensities, 1) if self._modality_seq[n] != "catch" else 0
+                x[n, self._phases["input"], idx] = value
+                x[n, self._phases["fix_time"], idx] = self.fix_intensity
+            x[n, self._phases["input"], self.n_inputs - 1] = 1  # start cue
+
+        # generate and add noise
+        alpha = self.dt / self.tau
+        noise_factor = self.noise_std * np.sqrt(2 * alpha) / alpha
+        x += noise_factor * self._rng.normal(loc=0, scale=1, size=x.shape)
+
+        if self.scaling:
+            x = self._minmaxscaler(x)
+
+        return x
+
+    def _build_trials_outputs(self) -> NDArray[np.float32]:
+        """Generate trial outputs."""
+        y = np.zeros((self._ntrials, len(self.time), self.n_outputs), dtype=np.float32)
+        for i in range(self._ntrials):
+            if self.iti > 0:
+                y[i, self._phases["iti"], :] = min(self.output_behavior)
+            if self.fix_time > 0:
+                y[i, self._phases["fix_time"], :] = min(self.output_behavior)
+
+            y[i, self._phases["input"], self._choice[i]] = max(self.output_behavior)
+            y[i, self._phases["input"], 1 - self._choice[i]] = min(self.output_behavior)
+
+        if self.scaling:
+            y = self._minmaxscaler(y)
+
+        return y
