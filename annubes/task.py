@@ -153,7 +153,6 @@ class Task(TaskSettingsMixin):
 
         # Setup phases of trial
         self._phases = self._setup_trial_phases()
-        self._choice = (self._modality_seq != "catch").astype(np.int_)
 
         # Generate inputs and outputs
         self._inputs = self._build_trials_inputs()
@@ -358,14 +357,15 @@ class Task(TaskSettingsMixin):
     def _build_trials_outputs(self) -> NDArray[np.float32]:
         """Generate trial outputs."""
         y = np.zeros((self._ntrials, len(self.time), self.n_outputs), dtype=np.float32)
+        choice = (self._modality_seq != "catch").astype(np.int_)
         for i in range(self._ntrials):
             if self.iti > 0:
                 y[i, self._phases["iti"], :] = min(self.output_behavior)
             if self.fix_time > 0:
                 y[i, self._phases["fix_time"], :] = min(self.output_behavior)
 
-            y[i, self._phases["input"], self._choice[i]] = max(self.output_behavior)
-            y[i, self._phases["input"], 1 - self._choice[i]] = min(self.output_behavior)
+            y[i, self._phases["input"], choice[i]] = max(self.output_behavior)
+            y[i, self._phases["input"], 1 - choice[i]] = min(self.output_behavior)
 
         if self.scaling:
             y = self._minmaxscaler(y)
