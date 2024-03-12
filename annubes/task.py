@@ -152,12 +152,7 @@ class Task(TaskSettingsMixin):
         self._modality_seq = self._build_trials_seq()
 
         # Setup phases of trial
-        self._phases = {}
-        self._phases["iti"] = np.where(self.time <= self.iti)[0]
-        self._phases["fix_time"] = np.where(
-            (self.time > self.iti) & (self.time <= self.iti + self.fix_time),
-        )[0]
-        self._phases["input"] = np.where(self.time > self.iti + self.fix_time)[0]
+        self._phases = self._setup_trial_phases()
         self._choice = (self._modality_seq != "catch").astype(np.int_)
 
         # Generate inputs and outputs
@@ -298,6 +293,16 @@ class Task(TaskSettingsMixin):
                     while i > 0 and modality_seq[i] == modality_seq[i - 1] and count >= self.max_sequential:
                         i -= 1
         return np.array(modality_seq)
+
+    def _setup_trial_phases(self) -> dict[str, NDArray]:
+        """Setup phases of trial, time-wise."""
+        phases = {}
+        phases["iti"] = np.where(self.time <= self.iti)[0]
+        phases["fix_time"] = np.where(
+            (self.time > self.iti) & (self.time <= self.iti + self.fix_time),
+        )[0]
+        phases["input"] = np.where(self.time > self.iti + self.fix_time)[0]
+        return phases
 
     def _minmaxscaler(
         self,
