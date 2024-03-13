@@ -93,15 +93,18 @@ class Task(TaskSettingsMixin):
     max_sequential: int | None = None
 
     def __post_init__(self):
+        self._task_settings = vars(self)
+
         if not 0 <= self.catch_prob <= 1:
             msg = "`catch_prob` must be between 0 and 1."
             raise ValueError(msg)
 
         sum_session_vals = sum(self.session.values())
+        self._session = {}
         for i in self.session:
-            self.session[i] = self.session[i] / sum_session_vals
+            self._session[i] = self.session[i] / sum_session_vals
         if not self.shuffle_trials:
-            self.session = OrderedDict(self.session)
+            self._session = OrderedDict(self._session)
 
         if not self.dt > 0:
             msg = "`dt` must be greater than 0."
@@ -110,11 +113,11 @@ class Task(TaskSettingsMixin):
             msg = "`tau` must be greater than 0."
             raise ValueError(msg)
 
-        # Derived attributes
-        self.modalities = set(dict.fromkeys(char for string in self.session for char in string))
-        self.n_inputs = len(self.modalities) + 1  # includes start cue
+        # Derived and other attributes
+        self._modalities = set(dict.fromkeys(char for string in self._session for char in string))
+        self._n_inputs = len(self._modalities) + 1  # includes start cue
         trial_duration = self.iti + self.fix_time + self.stim_time
-        self.time = np.linspace(
+        self._time = np.linspace(
             0,
             trial_duration,
             int((trial_duration + self.dt) / self.dt),
@@ -132,12 +135,13 @@ class Task(TaskSettingsMixin):
                 Defaults to 20.
             random_seed: Seed for numpy's random number generator (rng). If an int is given, it will be used as the seed
                 for `np.random.default_rng()`. If a dict is given, it must be in the form of a random state as given by
-                `rng.__getstate__()` (previous runs will have stored this value as `self.trials["random_state"]`).
+                `rng.__getstate__()`.
                 Defaults to None (i.e. the initial state itself is random).
 
         Returns:
-            dict containing all attributes of `Task`, including internal ones created in this method, as well as the
-            inputs and outputs of the generated trials.
+            dict containing all input parameters of `Task` ("task_settings"), the input parameters for the current
+            `generate_trials()` method's call ("ntrial", "random_state"), and the generated data ("modality_seq",
+            "time", "phases", "inputs", "outputs").
         """
         self._ntrials = ntrials
 
@@ -158,11 +162,17 @@ class Task(TaskSettingsMixin):
         self._inputs = self._build_trials_inputs()
         self._outputs = self._build_trials_outputs()
 
-        # Store and return trial data
-        trials = vars(self)
-        trials["inputs"] = self._inputs
-        trials["outputs"] = self._outputs
-        return trials
+        # Store trials settings and data
+        return {
+            "task_settings": self._task_settings,
+            "ntrial": self._ntrials,
+            "random_state": self._random_state,
+            "modality_seq": self._modality_seq,
+            "time": self._time,
+            "phases": self._phases,
+            "inputs": self._inputs,
+            "outputs": self._outputs,
+        }
 
     def plot_trials(self, n_plots: int = 1) -> go.Figure:
         """Method for plotting generated trials.
@@ -188,17 +198,17 @@ class Task(TaskSettingsMixin):
         showlegend = True
         colors = [
             "#{:02x}{:02x}{:02x}".format(
-                *tuple(int(c * 255) for c in colorsys.hsv_to_rgb(i / self.n_inputs, 1.0, 1.0)),
+                *tuple(int(c * 255) for c in colorsys.hsv_to_rgb(i / self._n_inputs, 1.0, 1.0)),
             )
-            for i in range(self.n_inputs)
+            for i in range(self._n_inputs)
         ]
         for i in range(n_plots):
-            for idx, m in enumerate(self.modalities):
+            for idx, m in enumerate(self._modalities):
                 fig.add_trace(
                     go.Scatter(
                         name=m,
                         mode="markers+lines",
-                        x=self.time,
+                        x=self._time,
                         y=self._inputs[i][:, idx],
                         marker_symbol="star",
                         legendgroup=m,
@@ -212,8 +222,8 @@ class Task(TaskSettingsMixin):
                 go.Scatter(
                     name="START",
                     mode="markers+lines",
-                    x=self.time,
-                    y=self._inputs[i][:, self.n_inputs - 1],
+                    x=self._time,
+                    y=self._inputs[i][:, self._n_inputs - 1],
                     marker_symbol="star",
                     legendgroup="START",
                     showlegend=showlegend,
@@ -226,7 +236,7 @@ class Task(TaskSettingsMixin):
                 go.Scatter(
                     name="Choice 1: NO STIMULUS",
                     mode="lines",
-                    x=self.time,
+                    x=self._time,
                     y=self._outputs[i][:, 0],
                     legendgroup="Choice 1",
                     showlegend=showlegend,
@@ -239,7 +249,7 @@ class Task(TaskSettingsMixin):
                 go.Scatter(
                     name="Choice 2: STIMULUS",
                     mode="lines",
-                    x=self.time,
+                    x=self._time,
                     y=self._outputs[i][:, 1],
                     legendgroup="Choice 2",
                     showlegend=showlegend,
@@ -261,8 +271,8 @@ class Task(TaskSettingsMixin):
     def _build_trials_seq(self) -> NDArray:
         """Generate a sequence of modalities."""
         # Extract keys and probabilities from the dictionary
-        scenarios = list(self.session.keys())
-        probabilities = np.array(list(self.session.values()))
+        scenarios = list(self._session.keys())
+        probabilities = np.array(list(self._session.values()))
         # Generate random numbers of samples based on the probabilities
         prob_samples = self._rng.multinomial(self._ntrials, probabilities)
         # Create a dictionary to store the results
@@ -296,11 +306,11 @@ class Task(TaskSettingsMixin):
     def _setup_trial_phases(self) -> dict[str, NDArray]:
         """Setup phases of trial, time-wise."""
         phases = {}
-        phases["iti"] = np.where(self.time <= self.iti)[0]
+        phases["iti"] = np.where(self._time <= self.iti)[0]
         phases["fix_time"] = np.where(
-            (self.time > self.iti) & (self.time <= self.iti + self.fix_time),
+            (self._time > self.iti) & (self._time <= self.iti + self.fix_time),
         )[0]
-        phases["input"] = np.where(self.time > self.iti + self.fix_time)[0]
+        phases["input"] = np.where(self._time > self.iti + self.fix_time)[0]
         return phases
 
     def _minmaxscaler(
@@ -320,7 +330,7 @@ class Task(TaskSettingsMixin):
 
 
         Args:
-            input_: Input array of shape (self._ntrials, len(self.time), self.n_inputs).
+            input_: Input array of shape (self._ntrials, len(self._time), self._n_inputs).
             rescale_range: Desired range of transformed data. Defaults to (0, 1).
 
         Returns:
@@ -333,16 +343,16 @@ class Task(TaskSettingsMixin):
     def _build_trials_inputs(self) -> NDArray[np.float32]:
         """Generate trial inputs."""
         x = np.zeros(
-            (self._ntrials, len(self.time), self.n_inputs),
+            (self._ntrials, len(self._time), self._n_inputs),
             dtype=np.float32,
         )
 
         for n in range(self._ntrials):
-            for idx, _ in enumerate(self.modalities):
+            for idx, _ in enumerate(self._modalities):
                 value = self._rng.choice(self.stim_intensities, 1) if self._modality_seq[n] != "catch" else 0
                 x[n, self._phases["input"], idx] = value
                 x[n, self._phases["fix_time"], idx] = self.fix_intensity
-            x[n, self._phases["input"], self.n_inputs - 1] = 1  # start cue
+            x[n, self._phases["input"], self._n_inputs - 1] = 1  # start cue
 
         # generate and add noise
         alpha = self.dt / self.tau
@@ -356,7 +366,7 @@ class Task(TaskSettingsMixin):
 
     def _build_trials_outputs(self) -> NDArray[np.float32]:
         """Generate trial outputs."""
-        y = np.zeros((self._ntrials, len(self.time), self.n_outputs), dtype=np.float32)
+        y = np.zeros((self._ntrials, len(self._time), self.n_outputs), dtype=np.float32)
         choice = (self._modality_seq != "catch").astype(np.int_)
         for i in range(self._ntrials):
             if self.iti > 0:
