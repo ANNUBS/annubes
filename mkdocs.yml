@@ -42,3 +42,7 @@ theme:
 repo_url: https://github.com/ANNUBS/annubes
 repo_name: ANNUBS/annubes
 edit_uri: edit/main/docs/
+
+extra:
+  version:
+    provider: mike
