@@ -3,7 +3,7 @@ site_description: Training Artificial Neural Networks to Uncover Behavioral Stra
 theme:
   name: material
 strict: true
-
+and 
 theme:
   name: 'material'
   palette:
@@ -38,3 +38,7 @@ theme:
     repo: fontawesome/brands/github-alt
     view: material/eye
   favicon: 'mouse.png'
+
+repo_url: https://github.com/ANNUBS/annubes
+repo_name: ANNUBS/annubes
+edit_uri: edit/main/docs/
