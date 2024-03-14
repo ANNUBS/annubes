@@ -3,7 +3,7 @@ site_description: Training Artificial Neural Networks to Uncover Behavioral Stra
 theme:
   name: material
 strict: true
-and 
+
 theme:
   name: 'material'
   palette:
