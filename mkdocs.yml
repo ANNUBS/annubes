@@ -1,0 +1,5 @@
+site_name: ANNUBeS
+site_description: Training Artificial Neural Networks to Uncover Behavioral Strategies in neuroscience
+theme:
+  name: material
+strict: true
