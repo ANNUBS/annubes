@@ -3,3 +3,38 @@ site_description: Training Artificial Neural Networks to Uncover Behavioral Stra
 theme:
   name: material
 strict: true
+
+theme:
+  name: 'material'
+  palette:
+  - media: "(prefers-color-scheme: light)"
+    scheme: default
+    primary: teal
+    accent: orange
+    toggle:
+      icon: material/weather-sunny
+      name: "Switch to dark mode"
+  - media: "(prefers-color-scheme: dark)"
+    scheme: slate
+    primary: teal
+    accent: orange
+    toggle:
+      icon: material/weather-night
+      name: "Switch to light mode"
+  features:
+    - announce.dismiss
+    - content.action.view
+    - content.code.copy
+    - content.tabs.link
+    - navigation.indexes
+    - navigation.path
+    - navigation.sections
+    - navigation.tabs
+    - navigation.tabs.sticky
+  icon:
+    logo: 'material/library-outline'
+    next: fontawesome/solid/angle-right
+    previous: fontawesome/solid/angle-left
+    repo: fontawesome/brands/github-alt
+    view: material/eye
+  favicon: 'mouse.png'
