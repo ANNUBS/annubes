@@ -45,6 +45,15 @@ repo_url: https://github.com/ANNUBS/annubes
 repo_name: ANNUBS/annubes
 edit_uri: edit/main/docs/
 
+nav:
+- Home:
+  - Welcome to ANNUBeS: index.md
+  # - Get started: README.md
+- API Documentation:
+  - Generating Data:
+    - Task: api/task.md
+    - TaskSettingsMixin: api/tasksettingsmixin.md
+
 extra:
   version:
     provider: mike
