@@ -168,6 +168,30 @@ def test_generate_trials(task: Task):
     assert trials["outputs"].shape == (task._ntrials, len(task._time), task.n_outputs)
 
 
+@pytest.mark.parametrize(
+    ("session", "ntrials", "random_seed"),
+    [
+        ({"v": 0.5, "a": 0.5}, 20, None),
+        ({"v": 1, "a": 3}, NTRIALS, 100),
+    ],
+)
+def test_reproduce_experiment(
+    session: dict,
+    ntrials: int,
+    random_seed: int | None,
+):
+    task = Task(name=NAME, session=session)
+    trials = task.generate_trials(ntrials=ntrials, random_seed=random_seed)
+    task_repro = Task(**trials["task_settings"])
+    trials_repro = task_repro.generate_trials(trials["ntrials"], trials["random_seed"])
+    # Check that the output is the same
+    assert np.array_equal(trials["modality_seq"], trials_repro["modality_seq"])
+    assert np.array_equal(trials["time"], trials_repro["time"])
+    assert all(np.array_equal(trials["phases"][key], trials_repro["phases"][key]) for key in trials["phases"])
+    assert np.array_equal(trials["inputs"], trials_repro["inputs"])
+    assert np.array_equal(trials["outputs"], trials_repro["outputs"])
+
+
 def test_plot_trials(task: Task):
     # Generate trial data
     ntrials = 3
