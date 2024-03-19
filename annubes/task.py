@@ -146,7 +146,7 @@ class Task(TaskSettingsMixin):
 
         # Set random state
         if random_seed is None:
-            rng = np.random.default_rng()
+            rng = np.random.default_rng(random_seed)
             random_seed = rng.integers(2**32)
         self._rng = np.random.default_rng(random_seed)
         self._random_seed = random_seed
