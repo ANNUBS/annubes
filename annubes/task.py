@@ -93,7 +93,7 @@ class Task(TaskSettingsMixin):
     max_sequential: int | None = None
 
     def __post_init__(self):
-        self._task_settings = vars(self)
+        self._task_settings = vars(self).copy()
 
         if not 0 <= self.catch_prob <= 1:
             msg = "`catch_prob` must be between 0 and 1."
@@ -126,7 +126,7 @@ class Task(TaskSettingsMixin):
     def generate_trials(
         self,
         ntrials: int = 20,
-        random_seed: int | dict | None = None,
+        random_seed: int | None = None,
     ) -> dict[str, Any]:
         """Method for generating trials.
 
@@ -134,23 +134,22 @@ class Task(TaskSettingsMixin):
             ntrials: Number of trials to generate.
                 Defaults to 20.
             random_seed: Seed for numpy's random number generator (rng). If an int is given, it will be used as the seed
-                for `np.random.default_rng()`. If a dict is given, it must be in the form of a random state as given by
-                `rng.__getstate__()`.
+                for `np.random.default_rng()`.
                 Defaults to None (i.e. the initial state itself is random).
 
         Returns:
             dict containing all input parameters of `Task` ("task_settings"), the input parameters for the current
-            `generate_trials()` method's call ("ntrial", "random_state"), and the generated data ("modality_seq",
+            `generate_trials()` method's call ("ntrials", "random_state"), and the generated data ("modality_seq",
             "time", "phases", "inputs", "outputs").
         """
         self._ntrials = ntrials
 
         # Set random state
-        if isinstance(random_seed, dict):
-            np.random.default_rng().__setstate__(random_seed)
-        else:
-            self._rng = np.random.default_rng(random_seed)
-        self._random_state = self._rng.__getstate__()
+        if random_seed is None:
+            rng = np.random.default_rng()
+            random_seed = rng.integers(2**32)
+        self._rng = np.random.default_rng(random_seed)
+        self._random_seed = random_seed
 
         # Generate sequence of modalities
         self._modality_seq = self._build_trials_seq()
@@ -165,8 +164,8 @@ class Task(TaskSettingsMixin):
         # Store trials settings and data
         return {
             "task_settings": self._task_settings,
-            "ntrial": self._ntrials,
-            "random_state": self._random_state,
+            "ntrials": self._ntrials,
+            "random_seed": self._random_seed,
             "modality_seq": self._modality_seq,
             "time": self._time,
             "phases": self._phases,
