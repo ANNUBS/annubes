@@ -184,12 +184,13 @@ def test_reproduce_experiment(
     trials = task.generate_trials(ntrials=ntrials, random_seed=random_seed)
     task_repro = Task(**trials["task_settings"])
     trials_repro = task_repro.generate_trials(trials["ntrials"], trials["random_seed"])
+
     # Check that the output is the same
-    assert np.array_equal(trials["modality_seq"], trials_repro["modality_seq"])
-    assert np.array_equal(trials["time"], trials_repro["time"])
+    assert task == task_repro
+    for x, y in trials.items():
+        if x != "phases":  # tested separately because it's a dict of numpy arrays
+            assert np.array_equal(y, trials_repro[x])
     assert all(np.array_equal(trials["phases"][key], trials_repro["phases"][key]) for key in trials["phases"])
-    assert np.array_equal(trials["inputs"], trials_repro["inputs"])
-    assert np.array_equal(trials["outputs"], trials_repro["outputs"])
 
 
 def test_plot_trials(task: Task):
