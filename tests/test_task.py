@@ -35,8 +35,8 @@ def test_init_session(
 ):
     task = Task(NAME, session=session, shuffle_trials=shuffle_trials)
     assert task.name == NAME
-    assert task.session == expected_dict
-    assert isinstance(task.session, expected_type)
+    assert task._session == expected_dict
+    assert isinstance(task._session, expected_type)
 
 
 @pytest.mark.parametrize(
@@ -89,10 +89,10 @@ def test_post_init_derived_attributes(
     expected_modalities: set[str],
 ):
     task = Task(NAME, session=session, stim_time=stim_time, fix_time=fix_time, iti=iti)
-    assert task.modalities == expected_modalities
-    assert task.n_inputs == len(expected_modalities) + 1  # add the start signal
-    assert max(task.time) == stim_time + fix_time + iti
-    assert len(task.time) == int((stim_time + fix_time + iti + task.dt) / task.dt)
+    assert task._modalities == expected_modalities
+    assert task._n_inputs == len(expected_modalities) + 1  # add the start signal
+    assert max(task._time) == stim_time + fix_time + iti
+    assert len(task._time) == int((stim_time + fix_time + iti + task.dt) / task.dt)
 
 
 @pytest.mark.parametrize(
@@ -111,8 +111,8 @@ def test_build_trials_seq_distributions(session: dict, catch_prob: float):
     modality_seq = task._build_trials_seq()
     assert isinstance(modality_seq, np.ndarray)
     assert len(modality_seq) == task._ntrials
-    task.modalities.add("catch")
-    counts = {modality: np.sum(modality_seq == modality) for modality in task.modalities}
+    task._modalities.add("catch")
+    counts = {modality: np.sum(modality_seq == modality) for modality in task._modalities}
     # Assert that the counts match the expected distribution within a certain tolerance
     assert np.isclose(counts["catch"] / len(modality_seq), task.catch_prob, atol=0.1)  # within 10% tolerance
     assert np.isclose(
@@ -157,15 +157,40 @@ def test_build_trials_seq_maximum_sequential_trials():
     task._rng = np.random.default_rng(NTRIALS)
     modality_seq = task._build_trials_seq()
     # Ensure that no more than the specified maximum number of consecutive trials of the same modality occur
-    for modality in task.modalities:
+    for modality in task._modalities:
         for i in range(len(modality_seq) - task.max_sequential):
             assert np.sum(modality_seq[i : i + task.max_sequential] == modality) <= task.max_sequential
 
 
 def test_generate_trials(task: Task):
     trials = task.generate_trials()
-    assert trials["inputs"].shape == (task._ntrials, len(task.time), task.n_inputs)
-    assert trials["outputs"].shape == (task._ntrials, len(task.time), task.n_outputs)
+    assert trials["inputs"].shape == (task._ntrials, len(task._time), task._n_inputs)
+    assert trials["outputs"].shape == (task._ntrials, len(task._time), task.n_outputs)
+
+
+@pytest.mark.parametrize(
+    ("session", "ntrials", "random_seed"),
+    [
+        ({"v": 0.5, "a": 0.5}, 20, None),
+        ({"v": 1, "a": 3}, NTRIALS, 100),
+    ],
+)
+def test_reproduce_experiment(
+    session: dict,
+    ntrials: int,
+    random_seed: int | None,
+):
+    task = Task(name=NAME, session=session)
+    trials = task.generate_trials(ntrials=ntrials, random_seed=random_seed)
+    task_repro = Task(**trials["task_settings"])
+    trials_repro = task_repro.generate_trials(trials["ntrials"], trials["random_seed"])
+
+    # Check that the output is the same
+    assert task == task_repro
+    for x, y in trials.items():
+        if x != "phases":  # tested separately because it's a dict of numpy arrays
+            assert np.array_equal(y, trials_repro[x])
+    assert all(np.array_equal(trials["phases"][key], trials_repro["phases"][key]) for key in trials["phases"])
 
 
 def test_plot_trials(task: Task):
@@ -177,7 +202,7 @@ def test_plot_trials(task: Task):
     fig = task.plot_trials(n_plots=n_plots)
     # Assert basic properties of the plot
     assert isinstance(fig, go.Figure)
-    assert len(fig["data"]) / (task.n_inputs + task.n_outputs) == n_plots  # Number of plots should match n_plots
+    assert len(fig["data"]) / (task._n_inputs + task.n_outputs) == n_plots  # Number of plots should match n_plots
     assert fig.layout.title.text == "Trials"  # Check title
     # Test with n_plots > ntrials
     n_plots = 5
