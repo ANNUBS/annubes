@@ -75,7 +75,7 @@ class Task(TaskSettingsMixin):
             Defaults to 0.5.
         shuffle_trials: If True (default), trial order will be randomized. If False, all trials corresponding to one
             modality (e.g. visual) are run before any trial of the next modality (e.g. auditory) starts, in the order
-            defined in `session`, followed by catch trials.
+            defined in `session` (with randomly interspersed catch trials).
         max_sequential: Maximum number of sequential trials of the same modality. Only used if shuffle is True.
             Defaults to None (no maximum).
 
