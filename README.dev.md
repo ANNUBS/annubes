@@ -105,7 +105,7 @@ Then open your browser and go to [http://127.0.0.1:8000/](http://127.0.0.1:8000/
 
 ### Publishing the docs
 
-The docs are published on github pages. We use [mike](https://github.com/jimporter/mike)
+The docs are published on GitHub Pages. We use [mike](https://github.com/jimporter/mike)
 to deploy the docs to the `gh-pages` branch and to manage the versions of docs.
 
 For example, to deploy the version 2.0 of the docs to the `gh-pages` branch and make it the latest
