@@ -88,35 +88,39 @@ You can enable automatic linting with `ruff` on commit by enabling the git hook 
 git config --local core.hooksPath .githooks
 ```
 
-## Generating the API docs
+## Docs
+
+We use [MkDocs](https://www.mkdocs.org/) and its theme [Material for MkDocs](https://squidfunk.github.io/mkdocs-material/)
+to generate documentations. The configurations of MkDocs are set in [mkdocs.yml](mkdocs.yml) file.
+
+To watch the changes of current doc in real time, run:
 
 ```shell
-cd docs
-make html
+mkdocs serve
+# or to watch src and docs directories
+mkdocs serve -w docs -w src
 ```
 
-The documentation will be in `docs/_build/html`
+Then open your browser and go to [http://127.0.0.1:8000/](http://127.0.0.1:8000/).
 
-If you do not have `make` use
+### Publishing the docs
+
+The docs are published on github pages. We use [mike](https://github.com/jimporter/mike)
+to deploy the docs to the `gh-pages` branch and to manage the versions of docs.
+
+For example, to deploy the version 2.0 of the docs to the `gh-pages` branch and make it the latest
+version, run:
 
 ```shell
-sphinx-build -b html docs docs/_build/html
+mike deploy -p -u 2.0 latest
 ```
 
-To find undocumented Python objects run
+If you are not happy with the changes you can run `mike delete [version]`.
+All these mike operations will be recorded as git commits of branch `gh-pages`.
 
-```shell
-cd docs
-make coverage
-cat _build/coverage/python.txt
-```
-
-To [test snippets](https://www.sphinx-doc.org/en/master/usage/extensions/doctest.html) in documentation run
-
-```shell
-cd docs
-make doctest
-```
+`mike serve` is used to check all versions committed to branch `gh-pages`, which is for checking
+the production website. If you have changes but not commit them yet, you should use `mkdocs serve`
+instead of `mike serve` to check them.
 
 ## Versioning
 
