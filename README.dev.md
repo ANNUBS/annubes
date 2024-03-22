@@ -9,6 +9,10 @@ The VS Code settings for this project can be found in [.vscode](.vscode).
 The settings will be automatically loaded and applied when you open the project with VS Code.
 See [the guide](https://code.visualstudio.com/docs/getstarted/settings) for more info about workspace settings of VS Code.
 
+## Project setup
+
+The project has been originally setup using the [Netherlands eScience Center python template](https://github.com/NLeSC/python-template). Most of the choices or the current setup are explained in our [guide](https://guide.esciencecenter.nl). For a quick reference on software development, we refer to [the software guide checklist](https://guide.esciencecenter.nl/#/best_practices/checklist).
+
 ## Development install
 
 ```shell
