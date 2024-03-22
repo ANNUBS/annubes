@@ -3,7 +3,7 @@ site_description: Training Artificial Neural Networks to Uncover Behavioral Stra
 theme:
   name: material
 strict: true
-site_url: https://nplinker.github.io/annubes/
+site_url: https://ANNUBS.github.io/annubes/
 
 theme:
   name: 'material'
