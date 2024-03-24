@@ -6,7 +6,6 @@ from typing import Any
 
 import numpy as np
 import plotly.graph_objects as go
-from numpy.typing import NDArray
 from plotly.subplots import make_subplots
 
 
