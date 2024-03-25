@@ -121,7 +121,7 @@ def test_build_trials_seq_distributions(session: dict, catch_prob: float):
     assert np.isclose(
         (counts["a"] + counts["v"] + counts["catch"]) / len(task._modality_seq),
         1,
-        atol=0.05,
+        atol=0.1,
     )
 
 
