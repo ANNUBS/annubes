@@ -18,7 +18,11 @@ classifiers = [
     "Natural Language :: English",
     "Programming Language :: Python :: 3.11",
 ]
-dependencies = ["numpy >= 1.26.2", "ruff >= 0.3.0", "plotly", "tqdm"]
+dependencies = [
+    "numpy >= 1.26.2",
+    "ruff >= 0.3.0", 
+    "plotly",
+    "tqdm"]
 description = "ANNUBeS: training Artificial Neural Networks to Uncover Behavioral Strategies in neuroscience"
 keywords = ["neuroscience", "neural networks"]
 license = { file = "LICENSE" }
@@ -53,6 +57,7 @@ publishing = ["build", "twine", "wheel"]
 [project.urls]
 Repository = "https://github.com/ANNUBS/annubes"
 Issues = "https://github.com/ANNUBS/annubes/issues"
+"Documentation" = "https://annubs.github.io/annubes"
 Changelog = "https://github.com/ANNUBS/annubes/CHANGELOG.md"
 
 [tool.pytest.ini_options]
@@ -68,15 +73,13 @@ command_line = "-m pytest"
 include = ["annubes*"]
 exclude = ["tests*"]
 
-[tool.tox]
-legacy_tox_ini = """
-[tox]
-envlist = py311,py312
-skip_missing_interpreters = true
-[testenv]
-commands = pytest
-extras = dev
-"""
+# Mypy: to check static type
+# see https://mypy.readthedocs.io/en/stable/config_file.html#example-pyproject-toml
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_configs = true
+ignore_missing_imports = true
 
 [tool.ruff]
 line-length = 120
