@@ -147,18 +147,66 @@ def test_build_trials_seq_maximum_sequential_trials():
             assert np.sum(task._modality_seq[i : i + task.max_sequential] == modality) <= task.max_sequential
 
 
-def test_setup_trial_phases():
-    pass
+@pytest.mark.parametrize(
+    ("stim_time", "fix_time", "iti"),
+    [(1000, 100, 0), (1000, 100, (300, 500))],
+)
+def test_setup_trial_phases(stim_time: int, fix_time: int, iti: int | tuple[int, int]):
+    task = Task(NAME, stim_time=stim_time, fix_time=fix_time, iti=iti)
+    _ = task.generate_trials(ntrials=NTRIALS)
+    trial_indices = range(NTRIALS)
+    # iti
+    assert task._iti.shape == (NTRIALS,)
+    if type(iti) is tuple:
+        assert min(task._iti) == min(iti)
+        assert max(task._iti) == max(iti)
+    else:
+        assert all(task._iti == iti)
+    # time
+    assert task._time.shape == (NTRIALS,)
+    assert all(
+        len(task._time[n_trial]) == int(stim_time + fix_time + task._iti[n_trial] + task.dt) / task.dt
+        for n_trial in trial_indices
+    )
+    assert all(max(task._time[n_trial]) == stim_time + fix_time + task._iti[n_trial] for n_trial in trial_indices)
+    # phases
+    assert task._phases.shape == (NTRIALS,)
+    assert all(
+        len(task._phases[n_trial]["iti"]) == len(np.where(task._time[n_trial] <= task._iti[n_trial])[0])
+        for n_trial in trial_indices
+    )
+    assert all(
+        len(task._phases[n_trial]["fix_time"])
+        == len(
+            np.where(
+                (task._time[n_trial] > task._iti[n_trial]) & (task._time[n_trial] <= task._iti[n_trial] + fix_time),
+            )[0],
+        )
+        for n_trial in trial_indices
+    )
+    assert all(
+        len(task._phases[n_trial]["input"]) == len(np.where(task._time[n_trial] > task._iti[n_trial] + fix_time)[0])
+        for n_trial in trial_indices
+    )
+
+
+def test_minmaxscaler():
+    task = Task(name=NAME, scaling=True)
+    _ = task.generate_trials(ntrials=NTRIALS)
+    trial_indices = range(NTRIALS)
+    # Check that the inputs are scaled between 0 and 1
+    assert all(task._inputs[n_trial].min() >= 0 and task._inputs[n_trial].max() <= 1 for n_trial in trial_indices)
+    # Check that the outputs are scaled between 0 and 1
+    assert all(task._outputs[n_trial].min() >= 0 and task._outputs[n_trial].max() <= 1 for n_trial in trial_indices)
 
 
 def test_generate_trials(task: Task):
     trials = task.generate_trials(ntrials=NTRIALS)
     trial_indices = range(NTRIALS)
-    assert trials["inputs"].shape == (task._ntrials,)
+    assert all(trials[key].shape == (task._ntrials,) for key in ["modality_seq", "time", "phases", "inputs", "outputs"])
     assert all(
         trials["inputs"][n_trial].shape == (len(task._time[n_trial]), task._n_inputs) for n_trial in trial_indices
     )
-    assert trials["outputs"].shape == (task._ntrials,)
     assert all(
         trials["outputs"][n_trial].shape == (len(task._time[n_trial]), task.n_outputs) for n_trial in trial_indices
     )
