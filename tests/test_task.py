@@ -27,7 +27,7 @@ def task():
         ({"v": 1, "va": 3, "a": 6}, False, {"v": 0.1, "va": 0.3, "a": 0.6}, OrderedDict),
     ],
 )
-def test_init_session(
+def test_post_init_session(
     session: dict,
     shuffle_trials: bool,
     expected_dict: dict | OrderedDict,
@@ -49,7 +49,7 @@ def test_init_session(
         (0.6, 0.6),
     ],
 )
-def test_init_catch_prob(catch_prob: float | None, expected: float | None):
+def test_post_init_catch_prob(catch_prob: float | None, expected: float | None):
     task = Task(NAME, catch_prob=catch_prob)
     assert task.name == NAME
     assert task.catch_prob == expected
@@ -73,22 +73,19 @@ def test_post_init_noise_related(
 
 
 @pytest.mark.parametrize(
-    ("session", "stim_time", "fix_time", "iti", "expected_modalities"),
+    ("session", "expected_modalities"),
     [
-        ({"v": 0.5, "a": 0.5}, 0, 100, 1000, {"v", "a"}),
-        ({"v": 0.5, "a": 0.5}, 0, 100, 1000, {"a", "v"}),
-        ({"v": 0.4, "av": 0.1, "a": 0.5}, 30, 200, 500, {"v", "a"}),
-        ({"v": 0.4, "av": 0.1, "m": 0.1, "a": 0.4}, 20, 100, 500, {"v", "a", "m"}),
+        ({"v": 0.5, "a": 0.5}, {"v", "a"}),
+        ({"v": 0.5, "a": 0.5}, {"a", "v"}),
+        ({"v": 0.4, "av": 0.1, "a": 0.5}, {"v", "a"}),
+        ({"v": 0.4, "av": 0.1, "m": 0.1, "a": 0.4}, {"v", "a", "m"}),
     ],
 )
 def test_post_init_derived_attributes(
     session: dict,
-    stim_time: int,
-    fix_time: int,
-    iti: int,
     expected_modalities: set[str],
 ):
-    task = Task(NAME, session=session, stim_time=stim_time, fix_time=fix_time, iti=iti)
+    task = Task(NAME, session=session)
     assert task._modalities == expected_modalities
     assert task._n_inputs == len(expected_modalities) + 1  # add the start signal
 
@@ -104,27 +101,25 @@ def test_post_init_derived_attributes(
 )
 def test_build_trials_seq_distributions(session: dict, catch_prob: float):
     task = Task(NAME, session=session, catch_prob=catch_prob)
-    task._ntrials = NTRIALS
-    task._rng = np.random.default_rng(NTRIALS)
-    modality_seq = task._build_trials_seq()
-    assert isinstance(modality_seq, np.ndarray)
-    assert len(modality_seq) == task._ntrials
+    _ = task.generate_trials(ntrials=NTRIALS)
+    assert isinstance(task._modality_seq, np.ndarray)
+    assert len(task._modality_seq) == task._ntrials
     task._modalities.add("catch")
-    counts = {modality: np.sum(modality_seq == modality) for modality in task._modalities}
+    counts = {modality: np.sum(task._modality_seq == modality) for modality in task._modalities}
     # Assert that the counts match the expected distribution within a certain tolerance
-    assert np.isclose(counts["catch"] / len(modality_seq), task.catch_prob, atol=0.1)  # within 10% tolerance
+    assert np.isclose(counts["catch"] / len(task._modality_seq), task.catch_prob, atol=0.1)  # within 10% tolerance
     assert np.isclose(
-        counts["v"] / len(modality_seq),
+        counts["v"] / len(task._modality_seq),
         task.session["v"] - task.catch_prob * task.session["v"],
         atol=0.1,
     )  # within 10% tolerance
     assert np.isclose(
-        counts["a"] / len(modality_seq),
+        counts["a"] / len(task._modality_seq),
         task.session["a"] - task.catch_prob * task.session["a"],
         atol=0.1,
     )
     assert np.isclose(
-        (counts["a"] + counts["v"] + counts["catch"]) / len(modality_seq),
+        (counts["a"] + counts["v"] + counts["catch"]) / len(task._modality_seq),
         1,
         atol=0.05,
     )
@@ -134,30 +129,26 @@ def test_build_trials_seq_shuffling():
     task_shuffled = Task(NAME, shuffle_trials=True)
     task_not_shuffled = Task(NAME, shuffle_trials=False)
 
-    task_shuffled._ntrials = NTRIALS
-    task_not_shuffled._ntrials = NTRIALS
-
-    task_shuffled._rng = np.random.default_rng(NTRIALS)
-    task_not_shuffled._rng = np.random.default_rng(NTRIALS)
-
-    sequence_shuffled = task_shuffled._build_trials_seq()
-    sequence_not_shuffled = task_not_shuffled._build_trials_seq()
+    _ = task_shuffled.generate_trials(ntrials=NTRIALS)
+    _ = task_not_shuffled.generate_trials(ntrials=NTRIALS)
 
     # Verify that the generated sequences are shuffled or not shuffled accordingly
-    assert sequence_shuffled.shape == sequence_not_shuffled.shape
-    assert not np.array_equal(sequence_shuffled, sequence_not_shuffled)
+    assert task_shuffled._modality_seq.shape == task_not_shuffled._modality_seq.shape
+    assert not np.array_equal(task_shuffled._modality_seq, task_not_shuffled._modality_seq)
 
 
 def test_build_trials_seq_maximum_sequential_trials():
     # Create a Task instance with shuffling enabled and a maximum sequential trial constraint
     task = Task(name=NAME, max_sequential=4)
-    task._ntrials = NTRIALS
-    task._rng = np.random.default_rng(NTRIALS)
-    modality_seq = task._build_trials_seq()
+    _ = task.generate_trials(ntrials=NTRIALS)
     # Ensure that no more than the specified maximum number of consecutive trials of the same modality occur
     for modality in task._modalities:
-        for i in range(len(modality_seq) - task.max_sequential):
-            assert np.sum(modality_seq[i : i + task.max_sequential] == modality) <= task.max_sequential
+        for i in range(len(task._modality_seq) - task.max_sequential):
+            assert np.sum(task._modality_seq[i : i + task.max_sequential] == modality) <= task.max_sequential
+
+
+def test_setup_trial_phases():
+    pass
 
 
 def test_generate_trials(task: Task):
@@ -213,7 +204,7 @@ def test_reproduce_experiment(
 def test_plot_trials(task: Task):
     # Generate trial data
     ntrials = 3
-    task.generate_trials(ntrials=ntrials)
+    _ = task.generate_trials(ntrials=ntrials)
     # Call plot_trials
     n_plots = 2
     fig = task.plot_trials(n_plots=n_plots)
