@@ -4,16 +4,30 @@ on:
   push:
     branches:
       - main
-    paths:
-      - annubes/**
-      - tests/**
+    paths-ignore:
+      # specific folder locations
+      - ".vscode/**"
+      - "docs/**"
+      # filetypes
+      - "**.md"
+      - "**.rst"
+      - "**.ipynb"
+      - "**.cff"
+      - "**.png"
   pull_request:
     branches:
       - main
     types: [opened, synchronize, reopened, ready_for_review]
-    paths:
-      - annubes/**
-      - tests/**
+    paths-ignore:
+      # specific folder locations
+      - ".vscode/**"
+      - "docs/**"
+      # filetypes
+      - "**.md"
+      - "**.rst"
+      - "**.ipynb"
+      - "**.cff"
+      - "**.png"
 
 jobs:
   lint:
