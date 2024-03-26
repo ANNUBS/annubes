@@ -94,6 +94,9 @@ class Task(TaskSettingsMixin):
     max_sequential: int | None = None
 
     def __post_init__(self):
+        # Check time variables
+        self._check_time_vars()
+
         self._task_settings = vars(self).copy()
 
         if not 0 <= self.catch_prob <= 1:
@@ -106,13 +109,6 @@ class Task(TaskSettingsMixin):
             self._session[i] = self.session[i] / sum_session_vals
         if not self.shuffle_trials:
             self._session = OrderedDict(self._session)
-
-        if not self.dt > 0:
-            msg = "`dt` must be greater than 0."
-            raise ValueError(msg)
-        if not self.tau > 0:
-            msg = "`tau` must be greater than 0."
-            raise ValueError(msg)
 
         # Derived and other attributes
         self._modalities = set(dict.fromkeys(char for string in self._session for char in string))
@@ -264,6 +260,33 @@ class Task(TaskSettingsMixin):
             showlegend = False
         fig.update_layout(height=1300, width=900, title_text="Trials")
         return fig
+
+    def _check_int_positive(self, name: str, value: Any, strict: bool) -> None:  # noqa: ANN401
+        if not isinstance(value, int):
+            msg = f"`{name}` must be an integer."
+            raise TypeError(msg)
+        if strict:
+            if not value > 0:
+                msg = f"`{name}` must be greater than 0."
+                raise ValueError(msg)
+        elif not value >= 0:
+            msg = f"`{name}` must be greater than or equal to 0."
+            raise ValueError(msg)
+
+    def _check_time_vars(self) -> None:
+        strictly_positive = {
+            "stim_time": (self.stim_time, True),
+            "dt": (self.dt, True),
+            "tau": (self.tau, True),
+            "fix_time": (self.fix_time, False),
+        }
+        for name, value in strictly_positive.items():
+            self._check_int_positive(name, value[0], value[1])
+        if isinstance(self.iti, tuple):
+            for iti in self.iti:
+                self._check_int_positive("iti", iti, False)
+        else:
+            self._check_int_positive("iti", self.iti, False)
 
     def _build_trials_seq(self) -> NDArray[np.str_]:
         """Generate a sequence of modalities."""
