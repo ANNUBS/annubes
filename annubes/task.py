@@ -120,13 +120,14 @@ class Task(TaskSettingsMixin):
 
     def generate_trials(
         self,
-        ntrials: int = 20,
+        ntrials: int | tuple[int, int] = 20,
         random_seed: int | None = None,
     ) -> dict[str, Any]:
         """Method for generating trials.
 
         Args:
-            ntrials: Number of trials to generate.
+            ntrials: Number of trials to generate. If a tuple is given, it is interpreted as an interval of
+                possible values, and a value will be randomly picked from it.
                 Defaults to 20.
             random_seed: Seed for numpy's random number generator (rng). If an int is given, it will be used as the seed
                 for `np.random.default_rng()`.
@@ -137,14 +138,14 @@ class Task(TaskSettingsMixin):
             `generate_trials()` method's call ("ntrials", "random_state"), and the generated data ("modality_seq",
             "time", "phases", "inputs", "outputs").
         """
-        self._ntrials = ntrials
-
         # Set random state
         if random_seed is None:
             rng = np.random.default_rng(random_seed)
             random_seed = rng.integers(2**32)
         self._rng = np.random.default_rng(random_seed)
         self._random_seed = random_seed
+
+        self._ntrials = self._rng.integers(min(ntrials), max(ntrials)) if type(ntrials) is tuple else ntrials
 
         # Generate sequence of modalities
         self._modality_seq = self._build_trials_seq()
