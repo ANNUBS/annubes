@@ -94,14 +94,29 @@ class Task(TaskSettingsMixin):
     max_sequential: int | None = None
 
     def __post_init__(self):
-        # Check time variables
+        # Check input parameters
+        ## Check str
+        self._check_str("name", self.name)
+        ## Check dict
+        self._check_session("session", self.session)
+        ## Check float
+        for intensity in self.stim_intensities:
+            self._check_float_positive("stim_intensities", intensity)
+        self._check_float_positive("catch_prob", self.catch_prob, prob=True)
+        self._check_float_positive("fix_intensity", self.fix_intensity)
+        for intensity in self.output_behavior:
+            self._check_float_positive("output_behavior", intensity)
+        self._check_float_positive("noise_std", self.noise_std)
+        ## Check int
         self._check_time_vars()
+        if self.max_sequential is not None:
+            self._check_int_positive("max_sequential", self.max_sequential, strict=True)
+        self._check_int_positive("n_outputs", self.n_outputs, strict=True)
+        ## Check bool
+        self._check_bool("shuffle_trials", self.shuffle_trials)
+        self._check_bool("scaling", self.scaling)
 
         self._task_settings = vars(self).copy()
-
-        if not 0 <= self.catch_prob <= 1:
-            msg = "`catch_prob` must be between 0 and 1."
-            raise ValueError(msg)
 
         sum_session_vals = sum(self.session.values())
         self._session = {}
@@ -134,6 +149,18 @@ class Task(TaskSettingsMixin):
             `generate_trials()` method's call ("ntrials", "random_state"), and the generated data ("modality_seq",
             "time", "phases", "inputs", "outputs").
         """
+        # Check input parameters
+        if isinstance(ntrials, tuple):
+            if len(ntrials) != 2:  # noqa: PLR2004
+                msg = "`ntrials` must be an integer or a tuple of two integers."
+                raise ValueError(msg)
+            self._check_int_positive("ntrials", ntrials[0], strict=True)
+            self._check_int_positive("ntrials", ntrials[1], strict=True)
+        else:
+            self._check_int_positive("ntrials", ntrials, strict=True)
+        if random_seed is not None:
+            self._check_int_positive("random_seed", random_seed, strict=False)
+
         # Set random state
         if random_seed is None:
             rng = np.random.default_rng(random_seed)
@@ -174,6 +201,9 @@ class Task(TaskSettingsMixin):
         Returns:
             go.Figure: Plotly figure of trial results.
         """
+        # Check input parameters
+        self._check_int_positive("n_plots", n_plots, strict=True)
+
         if (p := n_plots) > (t := self._ntrials):
             msg = f"Number of plots requested ({p}) exceeds number of trials ({t}). Will plot all trials."
             warnings.warn(msg, stacklevel=2)
@@ -261,6 +291,33 @@ class Task(TaskSettingsMixin):
         fig.update_layout(height=1300, width=900, title_text="Trials")
         return fig
 
+    def _check_str(self, name: str, value: Any) -> None:  # noqa: ANN401
+        if not isinstance(value, str):
+            msg = f"`{name}` must be a string"
+            raise TypeError(msg)
+
+    def _check_session(self, name: str, value: Any) -> None:  # noqa: ANN401
+        if not isinstance(value, dict):
+            msg = f"`{name}` must be a dictionary."
+            raise TypeError(msg)
+        if not all(isinstance(k, str) for k in value):
+            msg = f"Keys of `{name}` must be strings."
+            raise TypeError(msg)
+        if not all(isinstance(v, (float | int)) for v in value.values()):
+            msg = f"Values of `{name}` must be floats or integers."
+            raise TypeError(msg)
+
+    def _check_float_positive(self, name: str, value: Any, prob: bool = False) -> None:  # noqa: ANN401
+        if not isinstance(value, float | int):
+            msg = f"`{name}` must be a float or integer."
+            raise TypeError(msg)
+        if not value >= 0:
+            msg = f"`{name}` must be greater than or equal to 0."
+            raise ValueError(msg)
+        if prob and not 0 <= value <= 1:
+            msg = f"`{name}` must be between 0 and 1."
+            raise ValueError(msg)
+
     def _check_int_positive(self, name: str, value: Any, strict: bool) -> None:  # noqa: ANN401
         if not isinstance(value, int):
             msg = f"`{name}` must be an integer."
@@ -273,6 +330,11 @@ class Task(TaskSettingsMixin):
             msg = f"`{name}` must be greater than or equal to 0."
             raise ValueError(msg)
 
+    def _check_bool(self, name: str, value: Any) -> None:  # noqa: ANN401
+        if not isinstance(value, bool):
+            msg = f"`{name}` must be a boolean."
+            raise TypeError(msg)
+
     def _check_time_vars(self) -> None:
         strictly_positive = {
             "stim_time": (self.stim_time, True),
@@ -281,12 +343,12 @@ class Task(TaskSettingsMixin):
             "fix_time": (self.fix_time, False),
         }
         for name, value in strictly_positive.items():
-            self._check_int_positive(name, value[0], value[1])
+            self._check_int_positive(name, value[0], strict=value[1])
         if isinstance(self.iti, tuple):
             for iti in self.iti:
-                self._check_int_positive("iti", iti, False)
+                self._check_int_positive("iti", iti, strict=False)
         else:
-            self._check_int_positive("iti", self.iti, False)
+            self._check_int_positive("iti", self.iti, strict=False)
 
     def _build_trials_seq(self) -> NDArray[np.str_]:
         """Generate a sequence of modalities."""
