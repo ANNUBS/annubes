@@ -23,7 +23,8 @@ class TaskSettingsMixin:
             Defaults to 0.
         fix_time: Fixation time in ms. Note that the duration of each input and output signal is increased by this time.
             Defaults to 100.
-        iti: Inter-trial interval, or time window between sequential trials, in ms.
+        iti: Inter-trial interval, or time window between sequential trials, in ms. If a tuple is given, it is
+            interpreted as an interval of possible values, and for each trial the value will be randomly picked from it.
             Defaults to 0.
         dt: Sampling interval (inverted sampling frequency) in ms.
             Defaults to 20.
@@ -43,7 +44,7 @@ class TaskSettingsMixin:
 
     fix_intensity: float = 0
     fix_time: int = 100
-    iti: int = 0
+    iti: int | tuple[int, int] = 0
     dt: int = 20
     tau: int = 100
     n_outputs: int = 2
@@ -116,12 +117,6 @@ class Task(TaskSettingsMixin):
         # Derived and other attributes
         self._modalities = set(dict.fromkeys(char for string in self._session for char in string))
         self._n_inputs = len(self._modalities) + 1  # includes start cue
-        trial_duration = self.iti + self.fix_time + self.stim_time
-        self._time = np.linspace(
-            0,
-            trial_duration,
-            int((trial_duration + self.dt) / self.dt),
-        )  # TODO: rename attribute
 
     def generate_trials(
         self,
@@ -155,7 +150,7 @@ class Task(TaskSettingsMixin):
         self._modality_seq = self._build_trials_seq()
 
         # Setup phases of trial
-        self._phases = self._setup_trial_phases()
+        self._iti, self._time, self._phases = self._setup_trial_phases()
 
         # Generate inputs and outputs
         self._inputs = self._build_trials_inputs()
@@ -207,7 +202,7 @@ class Task(TaskSettingsMixin):
                     go.Scatter(
                         name=m,
                         mode="markers+lines",
-                        x=self._time,
+                        x=self._time[i],
                         y=self._inputs[i][:, idx],
                         marker_symbol="star",
                         legendgroup=m,
@@ -221,7 +216,7 @@ class Task(TaskSettingsMixin):
                 go.Scatter(
                     name="START",
                     mode="markers+lines",
-                    x=self._time,
+                    x=self._time[i],
                     y=self._inputs[i][:, self._n_inputs - 1],
                     marker_symbol="star",
                     legendgroup="START",
@@ -235,7 +230,7 @@ class Task(TaskSettingsMixin):
                 go.Scatter(
                     name="Choice 1: NO STIMULUS",
                     mode="lines",
-                    x=self._time,
+                    x=self._time[i],
                     y=self._outputs[i][:, 0],
                     legendgroup="Choice 1",
                     showlegend=showlegend,
@@ -248,7 +243,7 @@ class Task(TaskSettingsMixin):
                 go.Scatter(
                     name="Choice 2: STIMULUS",
                     mode="lines",
-                    x=self._time,
+                    x=self._time[i],
                     y=self._outputs[i][:, 1],
                     legendgroup="Choice 2",
                     showlegend=showlegend,
@@ -258,14 +253,15 @@ class Task(TaskSettingsMixin):
                 col=1,
             )
             fig.add_vline(
-                x=self.iti + self.fix_time + self.dt,
+                x=self._iti[i] + self.fix_time + self.dt,
                 line_width=3,
                 line_dash="dash",
                 line_color="red",
+                row=i + 1,
+                col=1,
             )
             showlegend = False
         fig.update_layout(height=1300, width=900, title_text="Trials")
-        return fig
 
     def _build_trials_seq(self) -> NDArray:
         """Generate a sequence of modalities."""
@@ -304,13 +300,25 @@ class Task(TaskSettingsMixin):
 
     def _setup_trial_phases(self) -> dict[str, NDArray]:
         """Setup phases of trial, time-wise."""
-        phases = {}
-        phases["iti"] = np.where(self._time <= self.iti)[0]
-        phases["fix_time"] = np.where(
-            (self._time > self.iti) & (self._time <= self.iti + self.fix_time),
-        )[0]
-        phases["input"] = np.where(self._time > self.iti + self.fix_time)[0]
-        return phases
+        # Generate inter-trial duration sequence
+        if type(self.iti) is tuple:
+            iti = self._rng.integers(min(self.iti), max(self.iti), self._ntrials)
+            iti = np.array([round(i / 100) * 100 for i in iti])  # round to the nearest hundred
+        else:
+            iti = np.full(self._ntrials, self.iti)
+        # Generate time sequence for each trial
+        time = np.empty(self._ntrials, dtype=object)
+        phases = np.empty(self._ntrials, dtype=object)
+        for n in range(self._ntrials):
+            trial_duration = iti[n] + self.fix_time + self.stim_time
+            time[n] = np.linspace(0, trial_duration, int((trial_duration + self.dt) / self.dt))
+            phases[n] = {}
+            phases[n]["iti"] = np.where(time[n] <= iti[n])[0]
+            phases[n]["fix_time"] = np.where(
+                (time[n] > iti[n]) & (time[n] <= iti[n] + self.fix_time),
+            )[0]
+            phases[n]["input"] = np.where(time[n] > iti[n] + self.fix_time)[0]
+        return iti, time, phases
 
     def _minmaxscaler(
         self,
@@ -339,44 +347,39 @@ class Task(TaskSettingsMixin):
 
         return input_std * (max(rescale_range) - min(rescale_range)) + min(rescale_range)
 
-    def _build_trials_inputs(self) -> NDArray[np.float32]:
-        """Generate trial inputs."""
-        x = np.zeros(
-            (self._ntrials, len(self._time), self._n_inputs),
-            dtype=np.float32,
-        )
-
+    def _build_trials_inputs(self) -> list[np.ndarray[np.float32]]:
+        """Generate trials time and inputs ndarrays."""
+        x = np.empty(self._ntrials, dtype=object)
         for n in range(self._ntrials):
+            x[n] = np.zeros(
+                (len(self._time[n]), self._n_inputs),
+                dtype=np.float32,
+            )
             for idx, _ in enumerate(self._modalities):
                 value = self._rng.choice(self.stim_intensities, 1) if self._modality_seq[n] != "catch" else 0
-                x[n, self._phases["input"], idx] = value
-                x[n, self._phases["fix_time"], idx] = self.fix_intensity
-            x[n, self._phases["input"], self._n_inputs - 1] = 1  # start cue
+                x[n][self._phases[n]["fix_time"], idx] = self.fix_intensity
+                x[n][self._phases[n]["input"], idx] = value
+            x[n][self._phases[n]["input"], self._n_inputs - 1] = 1  # start cue
+            # generate and add noise
+            alpha = self.dt / self.tau
+            noise_factor = self.noise_std * np.sqrt(2 * alpha) / alpha
+            x[n] += noise_factor * self._rng.normal(loc=0, scale=1, size=x[n].shape)
 
-        # generate and add noise
-        alpha = self.dt / self.tau
-        noise_factor = self.noise_std * np.sqrt(2 * alpha) / alpha
-        x += noise_factor * self._rng.normal(loc=0, scale=1, size=x.shape)
-
-        if self.scaling:
-            x = self._minmaxscaler(x)
+            if self.scaling:
+                x[n] = self._minmaxscaler(x[n])
 
         return x
 
-    def _build_trials_outputs(self) -> NDArray[np.float32]:
-        """Generate trial outputs."""
-        y = np.zeros((self._ntrials, len(self._time), self.n_outputs), dtype=np.float32)
+    def _build_trials_outputs(self) -> list[np.ndarray[np.float32]]:
+        """Generate trials outputs ndarray."""
+        y = np.empty(self._ntrials, dtype=object)
         choice = (self._modality_seq != "catch").astype(np.int_)
-        for i in range(self._ntrials):
-            if self.iti > 0:
-                y[i, self._phases["iti"], :] = min(self.output_behavior)
-            if self.fix_time > 0:
-                y[i, self._phases["fix_time"], :] = min(self.output_behavior)
+        for n in range(self._ntrials):
+            y[n] = np.full((len(self._time[n]), self.n_outputs), min(self.output_behavior), dtype=np.float32)
+            y[n][self._phases[n]["input"], choice[n]] = max(self.output_behavior)
+            y[n][self._phases[n]["input"], 1 - choice[n]] = min(self.output_behavior)
 
-            y[i, self._phases["input"], choice[i]] = max(self.output_behavior)
-            y[i, self._phases["input"], 1 - choice[i]] = min(self.output_behavior)
-
-        if self.scaling:
-            y = self._minmaxscaler(y)
+            if self.scaling:
+                y[n] = self._minmaxscaler(y[n])
 
         return y
