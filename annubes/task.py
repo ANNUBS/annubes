@@ -319,7 +319,7 @@ class Task(TaskSettingsMixin):
             raise ValueError(msg)
 
     def _check_int_positive(self, name: str, value: Any, strict: bool) -> None:  # noqa: ANN401
-        if not isinstance(value, int):
+        if not isinstance(value, int | np.int_):
             msg = f"`{name}` must be an integer."
             raise TypeError(msg)
         if strict:
