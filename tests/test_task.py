@@ -200,9 +200,16 @@ def test_minmaxscaler():
     assert all(task._outputs[n_trial].min() >= 0 and task._outputs[n_trial].max() <= 1 for n_trial in trial_indices)
 
 
-def test_generate_trials(task: Task):
-    trials = task.generate_trials(ntrials=NTRIALS)
-    trial_indices = range(NTRIALS)
+@pytest.mark.parametrize(
+    "ntrials",
+    [NTRIALS, (100, 200)],
+)
+def test_generate_trials(task: Task, ntrials: int | tuple[int, int]):
+    trials = task.generate_trials(ntrials=ntrials)
+    if type(ntrials) is tuple:
+        assert task._ntrials >= ntrials[0]
+        assert task._ntrials <= ntrials[1]
+    trial_indices = range(task._ntrials)
     assert all(trials[key].shape == (task._ntrials,) for key in ["modality_seq", "time", "phases", "inputs", "outputs"])
     assert all(
         trials["inputs"][n_trial].shape == (len(task._time[n_trial]), task._n_inputs) for n_trial in trial_indices
