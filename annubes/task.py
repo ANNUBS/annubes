@@ -145,7 +145,7 @@ class Task(TaskSettingsMixin):
         self._rng = np.random.default_rng(random_seed)
         self._random_seed = random_seed
 
-        self._ntrials = self._rng.integers(min(ntrials), max(ntrials)) if type(ntrials) is tuple else ntrials
+        self._ntrials = self._rng.integers(min(ntrials), max(ntrials)) if isinstance(ntrials, tuple) else ntrials
 
         # Generate sequence of modalities
         self._modality_seq = self._build_trials_seq()
@@ -265,7 +265,7 @@ class Task(TaskSettingsMixin):
         fig.update_layout(height=1300, width=900, title_text="Trials")
         return fig
 
-    def _build_trials_seq(self) -> NDArray:
+    def _build_trials_seq(self) -> NDArray[np.str_]:
         """Generate a sequence of modalities."""
         # Extract keys and probabilities from the dictionary
         scenarios = list(self._session.keys())
@@ -300,7 +300,13 @@ class Task(TaskSettingsMixin):
                         i -= 1
         return np.array(modality_seq)
 
-    def _setup_trial_phases(self) -> dict[str, NDArray]:
+    def _setup_trial_phases(
+        self,
+    ) -> tuple[
+        NDArray[np.int64],
+        NDArray[np.float64],
+        NDArray[Any],
+    ]:
         """Setup phases of trial, time-wise."""
         # Generate inter-trial duration sequence
         if type(self.iti) is tuple:
@@ -324,9 +330,9 @@ class Task(TaskSettingsMixin):
 
     def _minmaxscaler(
         self,
-        input_: NDArray[np.float32],
+        input_: NDArray[np.float64],
         rescale_range: tuple[float, float] = (0, 1),
-    ) -> NDArray[np.float32]:
+    ) -> NDArray[np.float64]:
         """Rescale `input_` array to a given range.
 
         Rescaling happens as follows:
@@ -347,9 +353,9 @@ class Task(TaskSettingsMixin):
         """
         input_std = (input_ - input_.min()) / (input_.max() - input_.min())
 
-        return input_std * (max(rescale_range) - min(rescale_range)) + min(rescale_range)
+        return np.array(input_std * (max(rescale_range) - min(rescale_range)) + min(rescale_range))
 
-    def _build_trials_inputs(self) -> list[np.ndarray[np.float32]]:
+    def _build_trials_inputs(self) -> NDArray[np.float64]:
         """Generate trials time and inputs ndarrays."""
         x = np.empty(self._ntrials, dtype=object)
         for n in range(self._ntrials):
@@ -372,7 +378,7 @@ class Task(TaskSettingsMixin):
 
         return x
 
-    def _build_trials_outputs(self) -> list[np.ndarray[np.float32]]:
+    def _build_trials_outputs(self) -> NDArray[np.float64]:
         """Generate trials outputs ndarray."""
         y = np.empty(self._ntrials, dtype=object)
         choice = (self._modality_seq != "catch").astype(np.int_)

@@ -36,7 +36,7 @@ def test_post_init_session(
     task = Task(NAME, session=session, shuffle_trials=shuffle_trials)
     assert task.name == NAME
     assert task._session == expected_dict
-    assert isinstance(task._session, expected_type)
+    assert isinstance(task._session, expected_type)  # type: ignore # noqa: PGH003
 
 
 @pytest.mark.parametrize(
@@ -50,7 +50,7 @@ def test_post_init_session(
     ],
 )
 def test_post_init_catch_prob(catch_prob: float | None, expected: float | None):
-    task = Task(NAME, catch_prob=catch_prob)
+    task = Task(NAME, catch_prob=catch_prob)  # type: ignore # noqa: PGH003
     assert task.name == NAME
     assert task.catch_prob == expected
 
