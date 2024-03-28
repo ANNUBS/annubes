@@ -262,6 +262,7 @@ class Task(TaskSettingsMixin):
             )
             showlegend = False
         fig.update_layout(height=1300, width=900, title_text="Trials")
+        return fig
 
     def _build_trials_seq(self) -> NDArray:
         """Generate a sequence of modalities."""

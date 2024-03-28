@@ -91,8 +91,6 @@ def test_post_init_derived_attributes(
     task = Task(NAME, session=session, stim_time=stim_time, fix_time=fix_time, iti=iti)
     assert task._modalities == expected_modalities
     assert task._n_inputs == len(expected_modalities) + 1  # add the start signal
-    assert max(task._time) == stim_time + fix_time + iti
-    assert len(task._time) == int((stim_time + fix_time + iti + task.dt) / task.dt)
 
 
 @pytest.mark.parametrize(
@@ -163,9 +161,16 @@ def test_build_trials_seq_maximum_sequential_trials():
 
 
 def test_generate_trials(task: Task):
-    trials = task.generate_trials()
-    assert trials["inputs"].shape == (task._ntrials, len(task._time), task._n_inputs)
-    assert trials["outputs"].shape == (task._ntrials, len(task._time), task.n_outputs)
+    trials = task.generate_trials(ntrials=NTRIALS)
+    trial_indices = range(NTRIALS)
+    assert trials["inputs"].shape == (task._ntrials,)
+    assert all(
+        trials["inputs"][n_trial].shape == (len(task._time[n_trial]), task._n_inputs) for n_trial in trial_indices
+    )
+    assert trials["outputs"].shape == (task._ntrials,)
+    assert all(
+        trials["outputs"][n_trial].shape == (len(task._time[n_trial]), task.n_outputs) for n_trial in trial_indices
+    )
 
 
 @pytest.mark.parametrize(
@@ -184,13 +189,25 @@ def test_reproduce_experiment(
     trials = task.generate_trials(ntrials=ntrials, random_seed=random_seed)
     task_repro = Task(**trials["task_settings"])
     trials_repro = task_repro.generate_trials(trials["ntrials"], trials["random_seed"])
+    trial_indices = range(trials["ntrials"])
 
     # Check that the output is the same
     assert task == task_repro
     for x, y in trials.items():
-        if x != "phases":  # tested separately because it's a dict of numpy arrays
-            assert np.array_equal(y, trials_repro[x])
-    assert all(np.array_equal(trials["phases"][key], trials_repro["phases"][key]) for key in trials["phases"])
+        if type(y) is not np.ndarray:
+            # task_settings, ntrials, random_seed
+            assert y == trials_repro[x]
+        elif type(y[0]) is np.ndarray:
+            # time, inputs, outputs
+            assert all(np.array_equal(trials[x][n_trial], trials_repro[x][n_trial]) for n_trial in trial_indices)
+    assert all(
+        all(
+            np.array_equal(trials["phases"][n_trial][key], trials_repro["phases"][n_trial][key])
+            for key in trials["phases"][n_trial]
+        )
+        for n_trial in trial_indices
+    )
+    assert np.array_equal(trials["modality_seq"], trials_repro["modality_seq"])
 
 
 def test_plot_trials(task: Task):
