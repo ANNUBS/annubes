@@ -388,9 +388,10 @@ class Task(TaskSettingsMixin):
                     violations = joined_seq.count(mod * (self.max_sequential + 1))
                     if violations > 0:
                         warnings.warn(
-                            f"`max_sequential` limit of {self.max_sequential} was violated {violations} times for {mod}.\n"
-                            "Please check the current trials sequence, and if it is not acceptable redefine your task or try"
-                            f" to change the random seed, now set to {self._random_seed}.\n",
+                            f"`max_sequential` limit of {self.max_sequential} was violated {violations} times"
+                            f" for {mod}.\n"
+                            "Please check the current trials sequence, and if it is not acceptable redefine your"
+                            f"task or try to change the random seed, now set to {self._random_seed}.\n",
                             stacklevel=2,
                         )
         return np.array(modality_seq)
