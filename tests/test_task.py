@@ -25,7 +25,7 @@ def task():
         pytest.param(5, marks=pytest.mark.xfail(raises=TypeError)),
     ],
 )
-def test_post_init_check_str(name: Any):  # noqa: ANN401
+def test_post_init_check_str(name: Any):
     Task(name=name)
 
 
@@ -38,7 +38,7 @@ def test_post_init_check_str(name: Any):  # noqa: ANN401
         pytest.param({"v": "a", "a": 0.5}, marks=pytest.mark.xfail(raises=TypeError)),
     ],
 )
-def test_post_init_check_session(session: Any):  # noqa: ANN401
+def test_post_init_check_session(session: Any):
     Task(name=NAME, session=session)
 
 
@@ -59,11 +59,11 @@ def test_post_init_check_session(session: Any):  # noqa: ANN401
     ],
 )
 def test_post_init_check_float_positive(
-    stim_intensities: Any,  # noqa: ANN401
-    catch_prob: Any,  # noqa: ANN401
-    fix_intensity: Any,  # noqa: ANN401
-    output_behavior: Any,  # noqa: ANN401
-    noise_std: Any,  # noqa: ANN401
+    stim_intensities: Any,
+    catch_prob: Any,
+    fix_intensity: Any,
+    output_behavior: Any,
+    noise_std: Any,
 ):
     Task(
         name=NAME,
@@ -95,11 +95,11 @@ def test_post_init_check_float_positive(
     ],
 )
 def test_post_init_check_time_vars(
-    stim_time: Any,  # noqa: ANN401
-    dt: Any,  # noqa: ANN401
-    tau: Any,  # noqa: ANN401
-    fix_time: Any,  # noqa: ANN401
-    iti: Any,  # noqa: ANN401
+    stim_time: Any,
+    dt: Any,
+    tau: Any,
+    fix_time: Any,
+    iti: Any,
 ):
     Task(
         name=NAME,
@@ -122,8 +122,8 @@ def test_post_init_check_time_vars(
     ],
 )
 def test_post_init_check_other_int_positive(
-    max_sequential: Any,  # noqa: ANN401
-    n_outputs: Any,  # noqa: ANN401
+    max_sequential: Any,
+    n_outputs: Any,
 ):
     Task(
         name=NAME,
@@ -141,8 +141,8 @@ def test_post_init_check_other_int_positive(
     ],
 )
 def test_post_init_check_bool(
-    shuffle_trials: Any,  # noqa: ANN401
-    scaling: Any,  # noqa: ANN401
+    shuffle_trials: Any,
+    scaling: Any,
 ):
     Task(
         name=NAME,
@@ -351,8 +351,8 @@ def test_minmaxscaler():
 )
 def test_generate_trials_check(
     task: Task,
-    ntrials: Any,  # noqa: ANN401
-    random_seed: Any,  # noqa: ANN401
+    ntrials: Any,
+    random_seed: Any,
 ):
     _ = task.generate_trials(ntrials=ntrials, random_seed=random_seed)
 
