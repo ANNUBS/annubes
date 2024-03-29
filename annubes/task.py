@@ -383,6 +383,16 @@ class Task(TaskSettingsMixin):
                     count = 1
                     while i > 0 and modality_seq[i] == modality_seq[i - 1] and count >= self.max_sequential:
                         i -= 1
+        joined_seq = "".join(modality_seq)
+        for mod in self._session:
+            violations = joined_seq.count(mod * (self.max_sequential + 1))
+            if violations > 0:
+                warnings.warn(
+                    f"`max_sequential` limit of {self.max_sequential} was violated {violations} times for {mod}.\n"
+                    "Please check the current trials sequence, and if it is not acceptable redefine your task or try"
+                    f" to change the random seed, now set to {self._random_seed}.\n",
+                    stacklevel=2,
+                )
         return np.array(modality_seq)
 
     def _setup_trial_phases(
