@@ -332,10 +332,12 @@ class Task(TaskSettingsMixin):
             msg = f"`{name}` must be greater than or equal to 0."
             raise ValueError(msg)
 
-    def _check_bool(self, name: str, value: Any) -> None:  # noqa: ANN401
-        if not isinstance(value, bool):
-            msg = f"`{name}` must be a boolean."
-            raise TypeError(msg)
+    def _check_range(self, name: str, value: Any) -> None:  # noqa: ANN401
+        if isinstance(value, tuple):
+            for v in value:
+                self._check_int_positive(name, v, strict=False)
+        else:
+            self._check_int_positive(name, value, strict=False)
 
     def _check_time_vars(self) -> None:
         strictly_positive = {
@@ -345,17 +347,13 @@ class Task(TaskSettingsMixin):
         }
         for name, value in strictly_positive.items():
             self._check_int_positive(name, value[0], strict=value[1])
-        # Check fix_time and iti
-        if isinstance(self.fix_time, tuple):
-            for fix_time in self.fix_time:
-                self._check_int_positive("fix_time", fix_time, strict=False)
-        else:
-            self._check_int_positive("fix_time", self.fix_time, strict=False)
-        if isinstance(self.iti, tuple):
-            for iti in self.iti:
-                self._check_int_positive("iti", iti, strict=False)
-        else:
-            self._check_int_positive("iti", self.iti, strict=False)
+        self._check_range("fix_time", self.fix_time)
+        self._check_range("iti", self.iti)
+
+    def _check_bool(self, name: str, value: Any) -> None:  # noqa: ANN401
+        if not isinstance(value, bool):
+            msg = f"`{name}` must be a boolean."
+            raise TypeError(msg)
 
     def _build_trials_seq(self) -> NDArray[np.str_]:
         """Generate a sequence of modalities."""
@@ -403,26 +401,33 @@ class Task(TaskSettingsMixin):
                         )
         return np.array(modality_seq)
 
+    def _generate_time_sequence(self, time: int | tuple[int, int]) -> NDArray[np.int64]:
+        """Generate time sequence.
+
+        Args:
+            time: Time in ms. If a tuple is given, it is interpreted as an interval of possible values, and for each
+                trial the value will be randomly picked from it.
+
+        Returns:
+            Time sequence.
+        """
+        if type(time) is tuple:
+            time_seq = self._rng.integers(min(time), max(time), self._ntrials)
+            return np.array([round(i / 100) * 100 for i in time_seq])  # round to the nearest hundred
+        return np.full(self._ntrials, time)
+
     def _setup_trial_phases(
         self,
     ) -> tuple[
+        NDArray[np.int64],
         NDArray[np.int64],
         NDArray[np.float64],
         NDArray[Any],
     ]:
         """Setup phases of trial, time-wise."""
         # Generate fixation time sequence
-        if type(self.fix_time) is tuple:
-            fix_time = self._rng.integers(min(self.fix_time), max(self.fix_time), self._ntrials)
-            fix_time = np.array([round(i / 100) * 100 for i in fix_time])  # round to the nearest hundred
-        else:
-            fix_time = np.full(self._ntrials, self.fix_time)
-        # Generate inter-trial duration sequence
-        if type(self.iti) is tuple:
-            iti = self._rng.integers(min(self.iti), max(self.iti), self._ntrials)
-            iti = np.array([round(i / 100) * 100 for i in iti])  # round to the nearest hundred
-        else:
-            iti = np.full(self._ntrials, self.iti)
+        fix_time = self._generate_time_sequence(self.fix_time)
+        iti = self._generate_time_sequence(self.iti)
         # Generate time sequence for each trial
         time = np.empty(self._ntrials, dtype=object)
         phases = np.empty(self._ntrials, dtype=object)
