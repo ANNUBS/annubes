@@ -21,7 +21,9 @@ class TaskSettingsMixin:
     Args:
         fix_intensity: Intensity of input signal during fixation.
             Defaults to 0.
-        fix_time: Fixation time in ms. Note that the duration of each input and output signal is increased by this time.
+        fix_time: Fixation time in ms. If a tuple is given, it is
+            interpreted as an interval of possible values, and for each trial the value will be randomly picked from it.
+            Note that the duration of each input and output signal is increased by this time.
             Defaults to 100.
         iti: Inter-trial interval, or time window between sequential trials, in ms. If a tuple is given, it is
             interpreted as an interval of possible values, and for each trial the value will be randomly picked from it.
@@ -43,7 +45,7 @@ class TaskSettingsMixin:
     """
 
     fix_intensity: float = 0
-    fix_time: int = 100
+    fix_time: int | tuple[int, int] = 100
     iti: int | tuple[int, int] = 0
     dt: int = 20
     tau: int = 100
@@ -340,10 +342,15 @@ class Task(TaskSettingsMixin):
             "stim_time": (self.stim_time, True),
             "dt": (self.dt, True),
             "tau": (self.tau, True),
-            "fix_time": (self.fix_time, False),
         }
         for name, value in strictly_positive.items():
             self._check_int_positive(name, value[0], strict=value[1])
+        # Check fix_time and iti
+        if isinstance(self.fix_time, tuple):
+            for fix_time in self.fix_time:
+                self._check_int_positive("fix_time", fix_time, strict=False)
+        else:
+            self._check_int_positive("fix_time", self.fix_time, strict=False)
         if isinstance(self.iti, tuple):
             for iti in self.iti:
                 self._check_int_positive("iti", iti, strict=False)
