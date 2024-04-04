@@ -176,7 +176,7 @@ class Task(TaskSettingsMixin):
         self._modality_seq = self._build_trials_seq()
 
         # Setup phases of trial
-        self._iti, self._fix_time, self._time, self._phases = self._setup_trial_phases()
+        self._fix_time, self._iti, self._time, self._phases = self._setup_trial_phases()
 
         # Generate inputs and outputs
         self._inputs = self._build_trials_inputs()
@@ -282,7 +282,7 @@ class Task(TaskSettingsMixin):
                 col=1,
             )
             fig.add_vline(
-                x=self._iti[i] + self._fix_time[i] + self.dt,
+                x=self._fix_time[i] + self.dt,
                 line_width=3,
                 line_dash="dash",
                 line_color="red",
@@ -427,15 +427,15 @@ class Task(TaskSettingsMixin):
         time = np.empty(self._ntrials, dtype=object)
         phases = np.empty(self._ntrials, dtype=object)
         for n in range(self._ntrials):
-            trial_duration = iti[n] + fix_time[n] + self.stim_time
+            trial_duration = fix_time[n] + self.stim_time + iti[n]
             time[n] = np.linspace(0, trial_duration, int((trial_duration + self.dt) / self.dt))
             phases[n] = {}
-            phases[n]["iti"] = np.where(time[n] <= iti[n])[0]
-            phases[n]["fix_time"] = np.where(
-                (time[n] > iti[n]) & (time[n] <= iti[n] + fix_time[n]),
+            phases[n]["fix_time"] = np.where(time[n] <= fix_time[n])[0]
+            phases[n]["input"] = np.where(
+                (time[n] > fix_time[n]) & (time[n] <= fix_time[n] + self.stim_time),
             )[0]
-            phases[n]["input"] = np.where(time[n] > iti[n] + fix_time[n])[0]
-        return iti, fix_time, time, phases
+            phases[n]["iti"] = np.where(time[n] >= fix_time[n] + self.stim_time)[0]
+        return fix_time, iti, time, phases
 
     def _minmaxscaler(
         self,

@@ -306,20 +306,22 @@ def test_setup_trial_phases(stim_time: int, fix_time: int, iti: int | tuple[int,
     # phases
     assert task._phases.shape == (NTRIALS,)
     assert all(
-        len(task._phases[n_trial]["iti"]) == len(np.where(task._time[n_trial] <= task._iti[n_trial])[0])
+        len(task._phases[n_trial]["fix_time"]) == len(np.where(task._time[n_trial] <= task._fix_time[n_trial])[0])
         for n_trial in trial_indices
     )
     assert all(
-        len(task._phases[n_trial]["fix_time"])
+        len(task._phases[n_trial]["input"])
         == len(
             np.where(
-                (task._time[n_trial] > task._iti[n_trial]) & (task._time[n_trial] <= task._iti[n_trial] + fix_time),
+                (task._time[n_trial] > task._fix_time[n_trial])
+                & (task._time[n_trial] <= task._fix_time[n_trial] + stim_time),
             )[0],
         )
         for n_trial in trial_indices
     )
     assert all(
-        len(task._phases[n_trial]["input"]) == len(np.where(task._time[n_trial] > task._iti[n_trial] + fix_time)[0])
+        len(task._phases[n_trial]["iti"])
+        == len(np.where(task._time[n_trial] >= task._fix_time[n_trial] + stim_time)[0])
         for n_trial in trial_indices
     )
 
