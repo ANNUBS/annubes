@@ -21,9 +21,9 @@ class TaskSettingsMixin:
     Args:
         fix_intensity: Intensity of input signal during fixation.
             Defaults to 0.
-        fix_time: Fixation time in ms. If a tuple is given, it is
-            interpreted as an interval of possible values, and for each trial the value will be randomly picked from it.
-            Note that the duration of each input and output signal is increased by this time.
+        fix_time: Fixation time in ms. If a tuple is given, it is interpreted as an interval of possible values, and
+            for each trial the value will be randomly picked from it. Note that the duration of each input and output
+            signal is increased by this time.
             Defaults to 100.
         iti: Inter-trial interval, or time window between sequential trials, in ms. If a tuple is given, it is
             interpreted as an interval of possible values, and for each trial the value will be randomly picked from it.
@@ -176,7 +176,7 @@ class Task(TaskSettingsMixin):
         self._modality_seq = self._build_trials_seq()
 
         # Setup phases of trial
-        self._iti, self._time, self._phases = self._setup_trial_phases()
+        self._iti, self._fix_time, self._time, self._phases = self._setup_trial_phases()
 
         # Generate inputs and outputs
         self._inputs = self._build_trials_inputs()
@@ -282,7 +282,7 @@ class Task(TaskSettingsMixin):
                 col=1,
             )
             fig.add_vline(
-                x=self._iti[i] + self.fix_time + self.dt,
+                x=self._iti[i] + self._fix_time[i] + self.dt,
                 line_width=3,
                 line_dash="dash",
                 line_color="red",
@@ -411,6 +411,12 @@ class Task(TaskSettingsMixin):
         NDArray[Any],
     ]:
         """Setup phases of trial, time-wise."""
+        # Generate fixation time sequence
+        if type(self.fix_time) is tuple:
+            fix_time = self._rng.integers(min(self.fix_time), max(self.fix_time), self._ntrials)
+            fix_time = np.array([round(i / 100) * 100 for i in fix_time])  # round to the nearest hundred
+        else:
+            fix_time = np.full(self._ntrials, self.fix_time)
         # Generate inter-trial duration sequence
         if type(self.iti) is tuple:
             iti = self._rng.integers(min(self.iti), max(self.iti), self._ntrials)
@@ -421,15 +427,15 @@ class Task(TaskSettingsMixin):
         time = np.empty(self._ntrials, dtype=object)
         phases = np.empty(self._ntrials, dtype=object)
         for n in range(self._ntrials):
-            trial_duration = iti[n] + self.fix_time + self.stim_time
+            trial_duration = iti[n] + fix_time[n] + self.stim_time
             time[n] = np.linspace(0, trial_duration, int((trial_duration + self.dt) / self.dt))
             phases[n] = {}
             phases[n]["iti"] = np.where(time[n] <= iti[n])[0]
             phases[n]["fix_time"] = np.where(
-                (time[n] > iti[n]) & (time[n] <= iti[n] + self.fix_time),
+                (time[n] > iti[n]) & (time[n] <= iti[n] + fix_time[n]),
             )[0]
-            phases[n]["input"] = np.where(time[n] > iti[n] + self.fix_time)[0]
-        return iti, time, phases
+            phases[n]["input"] = np.where(time[n] > iti[n] + fix_time[n])[0]
+        return iti, fix_time, time, phases
 
     def _minmaxscaler(
         self,
