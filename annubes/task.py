@@ -311,11 +311,11 @@ class Task(TaskSettingsMixin):
         if not isinstance(value, float | int):
             msg = f"`{name}` must be a float or integer."
             raise TypeError(msg)
-        if not value >= 0:
-            msg = f"`{name}` must be greater than or equal to 0."
-            raise ValueError(msg)
         if prob and not 0 <= value <= 1:
             msg = f"`{name}` must be between 0 and 1."
+            raise ValueError(msg)
+        if not value >= 0:
+            msg = f"`{name}` must be greater than or equal to 0."
             raise ValueError(msg)
 
     def _check_int_positive(self, name: str, value: Any, strict: bool) -> None:  # noqa: ANN401
