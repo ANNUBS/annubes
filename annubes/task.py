@@ -340,12 +340,12 @@ class Task(TaskSettingsMixin):
 
     def _check_time_vars(self) -> None:
         strictly_positive = {
-            "stim_time": (self.stim_time, True),
-            "dt": (self.dt, True),
-            "tau": (self.tau, True),
+            "stim_time": self.stim_time,
+            "dt": self.dt,
+            "tau": self.tau,
         }
         for name, value in strictly_positive.items():
-            self._check_int_positive(name, value[0], strict=value[1])
+            self._check_int_positive(name, value, strict=True)
         self._check_range("fix_time", self.fix_time, strict=False)
         self._check_range("iti", self.iti, strict=False)
 
