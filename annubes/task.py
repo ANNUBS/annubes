@@ -152,14 +152,7 @@ class Task(TaskSettingsMixin):
             "time", "phases", "inputs", "outputs").
         """
         # Check input parameters
-        if isinstance(ntrials, tuple):
-            if len(ntrials) != 2:  # noqa: PLR2004
-                msg = "`ntrials` must be an integer or a tuple of two integers."
-                raise ValueError(msg)
-            self._check_int_positive("ntrials", ntrials[0], strict=True)
-            self._check_int_positive("ntrials", ntrials[1], strict=True)
-        else:
-            self._check_int_positive("ntrials", ntrials, strict=True)
+        self._check_range("ntrials", ntrials, strict=True)
         if random_seed is not None:
             self._check_int_positive("random_seed", random_seed, strict=False)
 
@@ -332,12 +325,18 @@ class Task(TaskSettingsMixin):
             msg = f"`{name}` must be greater than or equal to 0."
             raise ValueError(msg)
 
-    def _check_range(self, name: str, value: Any) -> None:  # noqa: ANN401
+    def _check_range(self, name: str, value: Any, strict: bool) -> None:  # noqa: ANN401
         if isinstance(value, tuple):
+            if len(value) != 2:  # noqa: PLR2004
+                msg = f"`{name}` must be an integer or a tuple of integers of length 2."
+                raise ValueError(msg)
             for v in value:
-                self._check_int_positive(name, v, strict=False)
+                self._check_int_positive("Each element of " + name, v, strict=strict)
+        elif isinstance(value, int):
+            self._check_int_positive(name, value, strict=strict)
         else:
-            self._check_int_positive(name, value, strict=False)
+            msg = f"`{name}` must be an integer or a tuple of integers of length 2."
+            raise TypeError(msg)
 
     def _check_time_vars(self) -> None:
         strictly_positive = {
@@ -347,8 +346,8 @@ class Task(TaskSettingsMixin):
         }
         for name, value in strictly_positive.items():
             self._check_int_positive(name, value[0], strict=value[1])
-        self._check_range("fix_time", self.fix_time)
-        self._check_range("iti", self.iti)
+        self._check_range("fix_time", self.fix_time, strict=False)
+        self._check_range("iti", self.iti, strict=False)
 
     def _check_bool(self, name: str, value: Any) -> None:  # noqa: ANN401
         if not isinstance(value, bool):
