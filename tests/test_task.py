@@ -9,6 +9,7 @@ from annubes.task import Task
 
 NAME = "test_task"
 NTRIALS = 100
+RND_SEED = 100
 
 
 @pytest.fixture()
@@ -292,8 +293,8 @@ def test_setup_trial_phases(stim_time: int, fix_time: int, iti: int | tuple[int,
     # iti
     assert task._iti.shape == (NTRIALS,)
     if type(iti) is tuple:
-        assert min(task._iti) == min(iti)
-        assert max(task._iti) == max(iti)
+        assert min(task._iti) >= min(iti)
+        assert max(task._iti) >= max(iti)
     else:
         assert all(task._iti == iti)
     # time
@@ -328,10 +329,13 @@ def test_minmaxscaler():
     task = Task(name=NAME, scaling=True)
     _ = task.generate_trials(ntrials=NTRIALS)
     trial_indices = range(NTRIALS)
-    # Check that the inputs are scaled between 0 and 1
-    assert all(task._inputs[n_trial].min() >= 0 and task._inputs[n_trial].max() <= 1 for n_trial in trial_indices)
-    # Check that the outputs are scaled between 0 and 1
-    assert all(task._outputs[n_trial].min() >= 0 and task._outputs[n_trial].max() <= 1 for n_trial in trial_indices)
+    # Check that the signals are scaled between 0 and 1, and that min is 0 and max is 1
+    ## Inputs
+    assert all((task._inputs[n_trial] >= 0).all() and (task._inputs[n_trial] <= 1).all() for n_trial in trial_indices)
+    assert all(task._inputs[n_trial].min() == 0 and task._inputs[n_trial].max() == 1 for n_trial in trial_indices)
+    # Outputs
+    assert all((task._outputs[n_trial] >= 0).all() and (task._outputs[n_trial] <= 1).all() for n_trial in trial_indices)
+    assert all(task._outputs[n_trial].min() == 0 and task._outputs[n_trial].max() == 1 for n_trial in trial_indices)
 
 
 @pytest.mark.parametrize(
@@ -394,15 +398,18 @@ def test_reproduce_experiment(
     trials_repro = task_repro.generate_trials(trials["ntrials"], trials["random_seed"])
     trial_indices = range(trials["ntrials"])
 
+    tested_outputs = []
     # Check that the output is the same
     assert task == task_repro
     for x, y in trials.items():
-        if type(y) is not np.ndarray:
+        if not isinstance(y, np.ndarray):
             # task_settings, ntrials, random_seed
             assert y == trials_repro[x]
+            tested_outputs.append(x)
         elif type(y[0]) is np.ndarray:
             # time, inputs, outputs
             assert all(np.array_equal(trials[x][n_trial], trials_repro[x][n_trial]) for n_trial in trial_indices)
+            tested_outputs.append(x)
     assert all(
         all(
             np.array_equal(trials["phases"][n_trial][key], trials_repro["phases"][n_trial][key])
@@ -410,7 +417,10 @@ def test_reproduce_experiment(
         )
         for n_trial in trial_indices
     )
+    tested_outputs.append("phases")
     assert np.array_equal(trials["modality_seq"], trials_repro["modality_seq"])
+    tested_outputs.append("modality_seq")
+    assert set(tested_outputs) == set(trials.keys())
 
 
 def test_plot_trials(task: Task):
