@@ -1,4 +1,5 @@
 from collections import OrderedDict
+from typing import Any
 
 import numpy as np
 import plotly.graph_objects as go
@@ -15,6 +16,139 @@ RND_SEED = 100
 def task():
     return Task(
         name=NAME,
+    )
+
+
+@pytest.mark.parametrize(
+    "name",
+    [
+        NAME,
+        pytest.param(5, marks=pytest.mark.xfail(raises=TypeError)),
+    ],
+)
+def test_post_init_check_str(name: Any):
+    Task(name=name)
+
+
+@pytest.mark.parametrize(
+    "session",
+    [
+        {"v": 0.5, "a": 0.5},
+        pytest.param(5, marks=pytest.mark.xfail(raises=TypeError)),
+        pytest.param({1: 0.5, "a": 0.5}, marks=pytest.mark.xfail(raises=TypeError)),
+        pytest.param({"v": "a", "a": 0.5}, marks=pytest.mark.xfail(raises=TypeError)),
+    ],
+)
+def test_post_init_check_session(session: Any):
+    Task(name=NAME, session=session)
+
+
+@pytest.mark.parametrize(
+    ("stim_intensities", "catch_prob", "fix_intensity", "output_behavior", "noise_std"),
+    [
+        ([0.8, 0.9, 1], 0.5, 0, [0, 1], 0.01),
+        pytest.param([0.8, "a"], 0.5, 0, [0, 1], 0.01, marks=pytest.mark.xfail(raises=TypeError)),
+        pytest.param([0.8, -1], 0.5, 0, [0, 1], 0.01, marks=pytest.mark.xfail(raises=ValueError)),
+        pytest.param([0.8, 0.9, 1], "a", 0, [0, 1], 0.01, marks=pytest.mark.xfail(raises=TypeError)),
+        pytest.param([0.8, 0.9, 1], 5, 0, [0, 1], 0.01, marks=pytest.mark.xfail(raises=ValueError)),
+        pytest.param([0.8, 0.9, 1], 0.5, "a", [0, 1], 0.01, marks=pytest.mark.xfail(raises=TypeError)),
+        pytest.param([0.8, 0.9, 1], 0.5, -1, [0, 1], 0.01, marks=pytest.mark.xfail(raises=ValueError)),
+        pytest.param([0.8, 0.9, 1], 0.5, 0, ["0", 1], 0.01, marks=pytest.mark.xfail(raises=TypeError)),
+        pytest.param([0.8, 0.9, 1], 0.5, 0, [-1, 1], 0.01, marks=pytest.mark.xfail(raises=ValueError)),
+        pytest.param([0.8, 0.9, 1], 0.5, 0, [0, 1], "a", marks=pytest.mark.xfail(raises=TypeError)),
+        pytest.param([0.8, 0.9, 1], 0.5, 0, [0, 1], -1, marks=pytest.mark.xfail(raises=ValueError)),
+    ],
+)
+def test_post_init_check_float_positive(
+    stim_intensities: Any,
+    catch_prob: Any,
+    fix_intensity: Any,
+    output_behavior: Any,
+    noise_std: Any,
+):
+    Task(
+        name=NAME,
+        stim_intensities=stim_intensities,
+        catch_prob=catch_prob,
+        fix_intensity=fix_intensity,
+        output_behavior=output_behavior,
+        noise_std=noise_std,
+    )
+
+
+@pytest.mark.parametrize(
+    ("stim_time", "dt", "tau", "fix_time", "iti"),
+    [
+        (1000, 20, 100, 100, 0),
+        pytest.param("a", 20, 100, 100, 0, marks=pytest.mark.xfail(raises=TypeError)),
+        pytest.param(0, 20, 100, 100, 0, marks=pytest.mark.xfail(raises=ValueError)),
+        pytest.param(1000, "a", 100, 100, 0, marks=pytest.mark.xfail(raises=TypeError)),
+        pytest.param(1000, 0, 100, 100, 0, marks=pytest.mark.xfail(raises=ValueError)),
+        pytest.param(1000, 20, "a", 100, 0, marks=pytest.mark.xfail(raises=TypeError)),
+        pytest.param(1000, 20, 0, 100, 0, marks=pytest.mark.xfail(raises=ValueError)),
+        (1000, 20, 100, 0, 0),
+        pytest.param(1000, 20, 100, "a", 0, marks=pytest.mark.xfail(raises=TypeError)),
+        pytest.param(1000, 20, 100, -1, 0, marks=pytest.mark.xfail(raises=ValueError)),
+        pytest.param(1000, 20, 100, 100, "a", marks=pytest.mark.xfail(raises=TypeError)),
+        pytest.param(1000, 20, 100, 100, -1, marks=pytest.mark.xfail(raises=ValueError)),
+        pytest.param(1000, 20, 100, 100, ("a", 0), marks=pytest.mark.xfail(raises=TypeError)),
+        pytest.param(1000, 20, 100, 100, (-1, 0), marks=pytest.mark.xfail(raises=ValueError)),
+    ],
+)
+def test_post_init_check_time_vars(
+    stim_time: Any,
+    dt: Any,
+    tau: Any,
+    fix_time: Any,
+    iti: Any,
+):
+    Task(
+        name=NAME,
+        stim_time=stim_time,
+        dt=dt,
+        tau=tau,
+        fix_time=fix_time,
+        iti=iti,
+    )
+
+
+@pytest.mark.parametrize(
+    ("max_sequential", "n_outputs"),
+    [
+        (None, 2),
+        pytest.param("a", 2, marks=pytest.mark.xfail(raises=TypeError)),
+        pytest.param(0, 2, marks=pytest.mark.xfail(raises=ValueError)),
+        pytest.param(None, "a", marks=pytest.mark.xfail(raises=TypeError)),
+        pytest.param(None, 0, marks=pytest.mark.xfail(raises=ValueError)),
+    ],
+)
+def test_post_init_check_other_int_positive(
+    max_sequential: Any,
+    n_outputs: Any,
+):
+    Task(
+        name=NAME,
+        max_sequential=max_sequential,
+        n_outputs=n_outputs,
+    )
+
+
+@pytest.mark.parametrize(
+    ("shuffle_trials", "scaling"),
+    [
+        (True, True),
+        pytest.param("a", True, marks=pytest.mark.xfail(raises=TypeError)),
+        pytest.param(False, "a", marks=pytest.mark.xfail(raises=TypeError)),
+    ],
+)
+def test_post_init_check_bool(
+    shuffle_trials: Any,
+    scaling: Any,
+):
+    Task(
+        name=NAME,
+        shuffle_trials=shuffle_trials,
+        scaling=scaling,
     )
 
 
@@ -202,6 +336,29 @@ def test_minmaxscaler():
     # Outputs
     assert all((task._outputs[n_trial] >= 0).all() and (task._outputs[n_trial] <= 1).all() for n_trial in trial_indices)
     assert all(task._outputs[n_trial].min() == 0 and task._outputs[n_trial].max() == 1 for n_trial in trial_indices)
+
+
+@pytest.mark.parametrize(
+    ("ntrials", "random_seed"),
+    [
+        (20, None),
+        pytest.param("a", None, marks=pytest.mark.xfail(raises=TypeError)),
+        pytest.param(0, None, marks=pytest.mark.xfail(raises=ValueError)),
+        pytest.param(0.5, None, marks=pytest.mark.xfail(raises=TypeError)),
+        pytest.param((30, 40, 50), None, marks=pytest.mark.xfail(raises=ValueError)),
+        pytest.param(("40", 50), None, marks=pytest.mark.xfail(raises=TypeError)),
+        pytest.param((40, "50"), None, marks=pytest.mark.xfail(raises=TypeError)),
+        pytest.param(20, "a", marks=pytest.mark.xfail(raises=TypeError)),
+        pytest.param(20, -1, marks=pytest.mark.xfail(raises=ValueError)),
+        pytest.param(20, 0.5, marks=pytest.mark.xfail(raises=TypeError)),
+    ],
+)
+def test_generate_trials_check(
+    task: Task,
+    ntrials: Any,
+    random_seed: Any,
+):
+    _ = task.generate_trials(ntrials=ntrials, random_seed=random_seed)
 
 
 @pytest.mark.parametrize(

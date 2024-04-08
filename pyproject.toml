@@ -143,6 +143,7 @@ isort.known-first-party = ["annubes"]
     "S101",   # Use of `assert` detected
     "ANN201", # Missing return type
     "D103",   # Missing function docstring
-    "SLF001", # private member access
+    "SLF001", # Private member access
+    "ANN401", # Function arguments annotated with too generic `Any` type
 ]
 "docs/*" = ["ALL"]
