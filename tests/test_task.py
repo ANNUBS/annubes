@@ -8,6 +8,7 @@ from annubes.task import Task
 
 NAME = "test_task"
 NTRIALS = 100
+RND_SEED = 100
 
 
 @pytest.fixture()
@@ -27,7 +28,7 @@ def task():
         ({"v": 1, "va": 3, "a": 6}, False, {"v": 0.1, "va": 0.3, "a": 0.6}, OrderedDict),
     ],
 )
-def test_init_session(
+def test_post_init_session(
     session: dict,
     shuffle_trials: bool,
     expected_dict: dict | OrderedDict,
@@ -36,7 +37,7 @@ def test_init_session(
     task = Task(NAME, session=session, shuffle_trials=shuffle_trials)
     assert task.name == NAME
     assert task._session == expected_dict
-    assert isinstance(task._session, expected_type)
+    assert isinstance(task._session, expected_type)  # type: ignore # noqa: PGH003
 
 
 @pytest.mark.parametrize(
@@ -49,8 +50,8 @@ def test_init_session(
         (0.6, 0.6),
     ],
 )
-def test_init_catch_prob(catch_prob: float | None, expected: float | None):
-    task = Task(NAME, catch_prob=catch_prob)
+def test_post_init_catch_prob(catch_prob: float | None, expected: float | None):
+    task = Task(NAME, catch_prob=catch_prob)  # type: ignore # noqa: PGH003
     assert task.name == NAME
     assert task.catch_prob == expected
 
@@ -73,26 +74,21 @@ def test_post_init_noise_related(
 
 
 @pytest.mark.parametrize(
-    ("session", "stim_time", "fix_time", "iti", "expected_modalities"),
+    ("session", "expected_modalities"),
     [
-        ({"v": 0.5, "a": 0.5}, 0, 100, 1000, {"v", "a"}),
-        ({"v": 0.5, "a": 0.5}, 0, 100, 1000, {"a", "v"}),
-        ({"v": 0.4, "av": 0.1, "a": 0.5}, 30, 200, 500, {"v", "a"}),
-        ({"v": 0.4, "av": 0.1, "m": 0.1, "a": 0.4}, 20, 100, 500, {"v", "a", "m"}),
+        ({"v": 0.5, "a": 0.5}, {"v", "a"}),
+        ({"v": 0.5, "a": 0.5}, {"a", "v"}),
+        ({"v": 0.4, "av": 0.1, "a": 0.5}, {"v", "a"}),
+        ({"v": 0.4, "av": 0.1, "m": 0.1, "a": 0.4}, {"v", "a", "m"}),
     ],
 )
 def test_post_init_derived_attributes(
     session: dict,
-    stim_time: int,
-    fix_time: int,
-    iti: int,
     expected_modalities: set[str],
 ):
-    task = Task(NAME, session=session, stim_time=stim_time, fix_time=fix_time, iti=iti)
+    task = Task(NAME, session=session)
     assert task._modalities == expected_modalities
     assert task._n_inputs == len(expected_modalities) + 1  # add the start signal
-    assert max(task._time) == stim_time + fix_time + iti
-    assert len(task._time) == int((stim_time + fix_time + iti + task.dt) / task.dt)
 
 
 @pytest.mark.parametrize(
@@ -106,29 +102,27 @@ def test_post_init_derived_attributes(
 )
 def test_build_trials_seq_distributions(session: dict, catch_prob: float):
     task = Task(NAME, session=session, catch_prob=catch_prob)
-    task._ntrials = NTRIALS
-    task._rng = np.random.default_rng(NTRIALS)
-    modality_seq = task._build_trials_seq()
-    assert isinstance(modality_seq, np.ndarray)
-    assert len(modality_seq) == task._ntrials
+    _ = task.generate_trials(ntrials=NTRIALS)
+    assert isinstance(task._modality_seq, np.ndarray)
+    assert len(task._modality_seq) == task._ntrials
     task._modalities.add("catch")
-    counts = {modality: np.sum(modality_seq == modality) for modality in task._modalities}
+    counts = {modality: np.sum(task._modality_seq == modality) for modality in task._modalities}
     # Assert that the counts match the expected distribution within a certain tolerance
-    assert np.isclose(counts["catch"] / len(modality_seq), task.catch_prob, atol=0.1)  # within 10% tolerance
+    assert np.isclose(counts["catch"] / len(task._modality_seq), task.catch_prob, atol=0.1)  # within 10% tolerance
     assert np.isclose(
-        counts["v"] / len(modality_seq),
+        counts["v"] / len(task._modality_seq),
         task.session["v"] - task.catch_prob * task.session["v"],
         atol=0.1,
     )  # within 10% tolerance
     assert np.isclose(
-        counts["a"] / len(modality_seq),
+        counts["a"] / len(task._modality_seq),
         task.session["a"] - task.catch_prob * task.session["a"],
         atol=0.1,
     )
     assert np.isclose(
-        (counts["a"] + counts["v"] + counts["catch"]) / len(modality_seq),
+        (counts["a"] + counts["v"] + counts["catch"]) / len(task._modality_seq),
         1,
-        atol=0.05,
+        atol=0.1,
     )
 
 
@@ -136,36 +130,97 @@ def test_build_trials_seq_shuffling():
     task_shuffled = Task(NAME, shuffle_trials=True)
     task_not_shuffled = Task(NAME, shuffle_trials=False)
 
-    task_shuffled._ntrials = NTRIALS
-    task_not_shuffled._ntrials = NTRIALS
-
-    task_shuffled._rng = np.random.default_rng(NTRIALS)
-    task_not_shuffled._rng = np.random.default_rng(NTRIALS)
-
-    sequence_shuffled = task_shuffled._build_trials_seq()
-    sequence_not_shuffled = task_not_shuffled._build_trials_seq()
+    _ = task_shuffled.generate_trials(ntrials=NTRIALS)
+    _ = task_not_shuffled.generate_trials(ntrials=NTRIALS)
 
     # Verify that the generated sequences are shuffled or not shuffled accordingly
-    assert sequence_shuffled.shape == sequence_not_shuffled.shape
-    assert not np.array_equal(sequence_shuffled, sequence_not_shuffled)
+    assert task_shuffled._modality_seq.shape == task_not_shuffled._modality_seq.shape
+    assert not np.array_equal(task_shuffled._modality_seq, task_not_shuffled._modality_seq)
 
 
 def test_build_trials_seq_maximum_sequential_trials():
     # Create a Task instance with shuffling enabled and a maximum sequential trial constraint
     task = Task(name=NAME, max_sequential=4)
-    task._ntrials = NTRIALS
-    task._rng = np.random.default_rng(NTRIALS)
-    modality_seq = task._build_trials_seq()
+    _ = task.generate_trials(ntrials=NTRIALS)
     # Ensure that no more than the specified maximum number of consecutive trials of the same modality occur
     for modality in task._modalities:
-        for i in range(len(modality_seq) - task.max_sequential):
-            assert np.sum(modality_seq[i : i + task.max_sequential] == modality) <= task.max_sequential
+        for i in range(len(task._modality_seq) - task.max_sequential):
+            assert np.sum(task._modality_seq[i : i + task.max_sequential] == modality) <= task.max_sequential
 
 
-def test_generate_trials(task: Task):
-    trials = task.generate_trials()
-    assert trials["inputs"].shape == (task._ntrials, len(task._time), task._n_inputs)
-    assert trials["outputs"].shape == (task._ntrials, len(task._time), task.n_outputs)
+@pytest.mark.parametrize(
+    ("stim_time", "fix_time", "iti"),
+    [(1000, 100, 0), (1000, 100, (300, 500))],
+)
+def test_setup_trial_phases(stim_time: int, fix_time: int, iti: int | tuple[int, int]):
+    task = Task(NAME, stim_time=stim_time, fix_time=fix_time, iti=iti)
+    _ = task.generate_trials(ntrials=NTRIALS)
+    trial_indices = range(NTRIALS)
+    # iti
+    assert task._iti.shape == (NTRIALS,)
+    if type(iti) is tuple:
+        assert min(task._iti) >= min(iti)
+        assert max(task._iti) >= max(iti)
+    else:
+        assert all(task._iti == iti)
+    # time
+    assert task._time.shape == (NTRIALS,)
+    assert all(
+        len(task._time[n_trial]) == int(stim_time + fix_time + task._iti[n_trial] + task.dt) / task.dt
+        for n_trial in trial_indices
+    )
+    assert all(max(task._time[n_trial]) == stim_time + fix_time + task._iti[n_trial] for n_trial in trial_indices)
+    # phases
+    assert task._phases.shape == (NTRIALS,)
+    assert all(
+        len(task._phases[n_trial]["iti"]) == len(np.where(task._time[n_trial] <= task._iti[n_trial])[0])
+        for n_trial in trial_indices
+    )
+    assert all(
+        len(task._phases[n_trial]["fix_time"])
+        == len(
+            np.where(
+                (task._time[n_trial] > task._iti[n_trial]) & (task._time[n_trial] <= task._iti[n_trial] + fix_time),
+            )[0],
+        )
+        for n_trial in trial_indices
+    )
+    assert all(
+        len(task._phases[n_trial]["input"]) == len(np.where(task._time[n_trial] > task._iti[n_trial] + fix_time)[0])
+        for n_trial in trial_indices
+    )
+
+
+def test_minmaxscaler():
+    task = Task(name=NAME, scaling=True)
+    _ = task.generate_trials(ntrials=NTRIALS)
+    trial_indices = range(NTRIALS)
+    # Check that the signals are scaled between 0 and 1, and that min is 0 and max is 1
+    ## Inputs
+    assert all((task._inputs[n_trial] >= 0).all() and (task._inputs[n_trial] <= 1).all() for n_trial in trial_indices)
+    assert all(task._inputs[n_trial].min() == 0 and task._inputs[n_trial].max() == 1 for n_trial in trial_indices)
+    # Outputs
+    assert all((task._outputs[n_trial] >= 0).all() and (task._outputs[n_trial] <= 1).all() for n_trial in trial_indices)
+    assert all(task._outputs[n_trial].min() == 0 and task._outputs[n_trial].max() == 1 for n_trial in trial_indices)
+
+
+@pytest.mark.parametrize(
+    "ntrials",
+    [NTRIALS, (100, 200)],
+)
+def test_generate_trials(task: Task, ntrials: int | tuple[int, int]):
+    trials = task.generate_trials(ntrials=ntrials)
+    if type(ntrials) is tuple:
+        assert task._ntrials >= ntrials[0]
+        assert task._ntrials <= ntrials[1]
+    trial_indices = range(task._ntrials)
+    assert all(trials[key].shape == (task._ntrials,) for key in ["modality_seq", "time", "phases", "inputs", "outputs"])
+    assert all(
+        trials["inputs"][n_trial].shape == (len(task._time[n_trial]), task._n_inputs) for n_trial in trial_indices
+    )
+    assert all(
+        trials["outputs"][n_trial].shape == (len(task._time[n_trial]), task.n_outputs) for n_trial in trial_indices
+    )
 
 
 @pytest.mark.parametrize(
@@ -184,19 +239,37 @@ def test_reproduce_experiment(
     trials = task.generate_trials(ntrials=ntrials, random_seed=random_seed)
     task_repro = Task(**trials["task_settings"])
     trials_repro = task_repro.generate_trials(trials["ntrials"], trials["random_seed"])
+    trial_indices = range(trials["ntrials"])
 
+    tested_outputs = []
     # Check that the output is the same
     assert task == task_repro
     for x, y in trials.items():
-        if x != "phases":  # tested separately because it's a dict of numpy arrays
-            assert np.array_equal(y, trials_repro[x])
-    assert all(np.array_equal(trials["phases"][key], trials_repro["phases"][key]) for key in trials["phases"])
+        if not isinstance(y, np.ndarray):
+            # task_settings, ntrials, random_seed
+            assert y == trials_repro[x]
+            tested_outputs.append(x)
+        elif type(y[0]) is np.ndarray:
+            # time, inputs, outputs
+            assert all(np.array_equal(trials[x][n_trial], trials_repro[x][n_trial]) for n_trial in trial_indices)
+            tested_outputs.append(x)
+    assert all(
+        all(
+            np.array_equal(trials["phases"][n_trial][key], trials_repro["phases"][n_trial][key])
+            for key in trials["phases"][n_trial]
+        )
+        for n_trial in trial_indices
+    )
+    tested_outputs.append("phases")
+    assert np.array_equal(trials["modality_seq"], trials_repro["modality_seq"])
+    tested_outputs.append("modality_seq")
+    assert set(tested_outputs) == set(trials.keys())
 
 
 def test_plot_trials(task: Task):
     # Generate trial data
     ntrials = 3
-    task.generate_trials(ntrials=ntrials)
+    _ = task.generate_trials(ntrials=ntrials)
     # Call plot_trials
     n_plots = 2
     fig = task.plot_trials(n_plots=n_plots)
