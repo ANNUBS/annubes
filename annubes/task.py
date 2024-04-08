@@ -380,7 +380,7 @@ class Task(TaskSettingsMixin):
         return x
 
     def _build_trials_outputs(self) -> NDArray[np.float64]:
-        """Generate trials outputs ndarray."""
+        """Generate trials outputs."""
         y = np.empty(self._ntrials, dtype=object)
         choice = (self._modality_seq != "catch").astype(np.int_)
         for n in range(self._ntrials):
