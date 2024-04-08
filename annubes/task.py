@@ -311,11 +311,11 @@ class Task(TaskSettingsMixin):
         if not isinstance(value, float | int):
             msg = f"`{name}` must be a float or integer."
             raise TypeError(msg)
-        if not value >= 0:
-            msg = f"`{name}` must be greater than or equal to 0."
-            raise ValueError(msg)
         if prob and not 0 <= value <= 1:
             msg = f"`{name}` must be between 0 and 1."
+            raise ValueError(msg)
+        if not value >= 0:
+            msg = f"`{name}` must be greater than or equal to 0."
             raise ValueError(msg)
 
     def _check_int_positive(self, name: str, value: Any, strict: bool) -> None:  # noqa: ANN401
@@ -454,6 +454,9 @@ class Task(TaskSettingsMixin):
     def _build_trials_inputs(self) -> NDArray[np.float64]:
         """Generate trials time and inputs ndarrays."""
         x = np.empty(self._ntrials, dtype=object)
+        # generate noise
+        alpha = self.dt / self.tau
+        noise_factor = self.noise_std * np.sqrt(2 * alpha) / alpha
         for n in range(self._ntrials):
             x[n] = np.zeros(
                 (len(self._time[n]), self._n_inputs),
@@ -464,9 +467,7 @@ class Task(TaskSettingsMixin):
                 x[n][self._phases[n]["fix_time"], idx] = self.fix_intensity
                 x[n][self._phases[n]["input"], idx] = value
             x[n][self._phases[n]["input"], self._n_inputs - 1] = 1  # start cue
-            # generate and add noise
-            alpha = self.dt / self.tau
-            noise_factor = self.noise_std * np.sqrt(2 * alpha) / alpha
+            # add noise
             x[n] += noise_factor * self._rng.normal(loc=0, scale=1, size=x[n].shape)
 
             if self.scaling:
@@ -475,7 +476,7 @@ class Task(TaskSettingsMixin):
         return x
 
     def _build_trials_outputs(self) -> NDArray[np.float64]:
-        """Generate trials outputs ndarray."""
+        """Generate trials outputs."""
         y = np.empty(self._ntrials, dtype=object)
         choice = (self._modality_seq != "catch").astype(np.int_)
         for n in range(self._ntrials):
