@@ -326,8 +326,8 @@ class Task(TaskSettingsMixin):
             raise ValueError(msg)
 
     def _check_range(self, name: str, value: Any, strict: bool) -> None:  # noqa: ANN401
-        msg = f"`{name}` must be an integer or a tuple of integers of length 2." 
-       if isinstance(value, tuple):
+        msg = f"`{name}` must be an integer or a tuple of integers of length 2."
+        if isinstance(value, tuple):
             if len(value) != 2:  # noqa: PLR2004
                 raise ValueError(msg)
             for v in value:
