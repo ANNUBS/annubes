@@ -326,16 +326,15 @@ class Task(TaskSettingsMixin):
             raise ValueError(msg)
 
     def _check_range(self, name: str, value: Any, strict: bool) -> None:  # noqa: ANN401
-        if isinstance(value, tuple):
+        msg = f"`{name}` must be an integer or a tuple of integers of length 2." 
+       if isinstance(value, tuple):
             if len(value) != 2:  # noqa: PLR2004
-                msg = f"`{name}` must be an integer or a tuple of integers of length 2."
                 raise ValueError(msg)
             for v in value:
                 self._check_int_positive("Each element of " + name, v, strict=strict)
         elif isinstance(value, int):
             self._check_int_positive(name, value, strict=strict)
         else:
-            msg = f"`{name}` must be an integer or a tuple of integers of length 2."
             raise TypeError(msg)
 
     def _check_time_vars(self) -> None:
