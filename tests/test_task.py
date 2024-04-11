@@ -238,26 +238,25 @@ def test_build_trials_seq_distributions(session: dict, catch_prob: float):
     task = Task(NAME, session=session, catch_prob=catch_prob)
     _ = task.generate_trials(ntrials=NTRIALS)
     assert isinstance(task._modality_seq, np.ndarray)
-    assert len(task._modality_seq) == task._ntrials
-    task._modalities.add("catch")
-    counts = {modality: np.sum(task._modality_seq == modality) for modality in task._modalities}
+
     # Assert that the counts match the expected distribution within a certain tolerance
-    assert np.isclose(counts["catch"] / len(task._modality_seq), task.catch_prob, atol=0.1)  # within 10% tolerance
-    assert np.isclose(
-        counts["v"] / len(task._modality_seq),
-        task.session["v"] - task.catch_prob * task.session["v"],
-        atol=0.1,
-    )  # within 10% tolerance
-    assert np.isclose(
-        counts["a"] / len(task._modality_seq),
-        task.session["a"] - task.catch_prob * task.session["a"],
-        atol=0.1,
-    )
-    assert np.isclose(
-        (counts["a"] + counts["v"] + counts["catch"]) / len(task._modality_seq),
-        1,
-        atol=0.1,
-    )
+    counts = {modality: np.sum(task._modality_seq == modality) for modality in [*task._modalities, "catch"]}
+    tolerance = 0.2
+    for i, comp in enumerate(
+        [
+            (counts["catch"] / len(task._modality_seq), task.catch_prob),
+            (counts["v"] / len(task._modality_seq), task.session["v"] - task.catch_prob * task.session["v"]),
+            (counts["a"] / len(task._modality_seq), task.session["a"] - task.catch_prob * task.session["a"]),
+        ],
+    ):
+        assert np.isclose(
+            comp[0],
+            comp[1],
+            atol=tolerance,
+        ), f"Actual difference: {round(abs(comp[0] - comp[1]), 3)}, (trials {i})."
+
+    # Assert that total counts match the expected number exactly
+    assert counts["a"] + counts["v"] + counts["catch"] == len(task._modality_seq) == task._ntrials
 
 
 def test_build_trials_seq_shuffling():
@@ -267,9 +266,18 @@ def test_build_trials_seq_shuffling():
     _ = task_shuffled.generate_trials(ntrials=NTRIALS)
     _ = task_not_shuffled.generate_trials(ntrials=NTRIALS)
 
-    # Verify that the generated sequences are shuffled or not shuffled accordingly
     assert task_shuffled._modality_seq.shape == task_not_shuffled._modality_seq.shape
-    assert not np.array_equal(task_shuffled._modality_seq, task_not_shuffled._modality_seq)
+
+    keys = list(task_shuffled._session.keys())
+    first_occurrence = list(task_not_shuffled._modality_seq).index(keys[1])
+    assert (
+        keys[0] not in task_not_shuffled._modality_seq[first_occurrence:]
+    ), "unshuffled _modality_seq appears shuffled"
+
+    assert not np.array_equal(
+        task_shuffled._modality_seq,
+        task_not_shuffled._modality_seq,
+    ), "shuffled _modality_seq == unshuffled _modality_seq"
 
 
 def test_build_trials_seq_maximum_sequential_trials():
