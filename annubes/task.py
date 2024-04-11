@@ -78,7 +78,8 @@ class Task(TaskSettingsMixin):
         shuffle_trials: If True (default), trial order will be randomized. If False, all trials corresponding to one
             modality (e.g. visual) are run before any trial of the next modality (e.g. auditory) starts, in the order
             defined in `session` (with randomly interspersed catch trials).
-        max_sequential: Maximum number of sequential trials of the same modality. Only used if shuffle is True.
+        max_sequential: If `shuffle_trials` is True, sets the maximum number of sequential trials. Note that exceptions
+            can exist (see description for `max_redraws` below for details).
             Defaults to None (no maximum).
         max_draws: Only used if `shuffle_trials` is True and `max_sequential` is not None. Sets the maximum number of
             times an attempt is made to select a random trial that does not break the `max_sequential` setting above.
@@ -87,10 +88,6 @@ class Task(TaskSettingsMixin):
             Note that this is mainly relevant when `session` or `catch_prob` is set such that the odds of repetition are
                 very high, and that in this case, a high value for `max_draws` will exponentially slow down the process
                 of creating a trial order.
-
-    Raises:
-        ValueError: if `catch_prob` is not between 0 and 1.
-        TypeError: if `catch_prob` is not a float.
     """
 
     name: str
@@ -104,11 +101,8 @@ class Task(TaskSettingsMixin):
 
     def __post_init__(self):
         # Check input parameters
-        ## Check str
         self._check_str("name", self.name)
-        ## Check dict
         self._check_session("session", self.session)
-        ## Check float
         for intensity in self.stim_intensities:
             self._check_float_positive("stim_intensities", intensity)
         self._check_float_positive("catch_prob", self.catch_prob, prob=True)
@@ -116,26 +110,22 @@ class Task(TaskSettingsMixin):
         for intensity in self.output_behavior:
             self._check_float_positive("output_behavior", intensity)
         self._check_float_positive("noise_std", self.noise_std)
-        ## Check int
         self._check_time_vars()
-        if self.max_sequential is not None:
+        if self.max_sequential:
             self._check_int_positive("max_sequential", self.max_sequential, strict=True)
         self._check_int_positive("max_draws", self.max_draws, strict=True)
         self._check_int_positive("n_outputs", self.n_outputs, strict=True)
-        ## Check bool
         self._check_bool("shuffle_trials", self.shuffle_trials)
         self._check_bool("scaling", self.scaling)
 
+        # store raw inputs
         self._task_settings = vars(self).copy()
 
-        sum_session_vals = sum(self.session.values())
-        self._session = {}
-        for i in self.session:
-            self._session[i] = self.session[i] / sum_session_vals
+        # make self._session adhere to expected format
         if not self.shuffle_trials:
             self._session = OrderedDict(self._session)
 
-        # Derived and other attributes
+        # Derived attributes
         self._modalities = set(dict.fromkeys(char for string in self._session for char in string))
         self._n_inputs = len(self._modalities) + 1  # includes start cue
 
