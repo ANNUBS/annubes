@@ -1,4 +1,5 @@
 import colorsys
+import itertools
 import warnings
 from collections import OrderedDict
 from dataclasses import dataclass, field
@@ -352,48 +353,52 @@ class Task(TaskSettingsMixin):
 
     def _build_trials_seq(self) -> NDArray[np.str_]:
         """Generate a sequence of modalities."""
-        # Extract keys and probabilities from the dictionary
-        scenarios = list(self._session.keys())
-        probabilities = np.array(list(self._session.values()))
-        # Generate random numbers of samples based on the probabilities
-        prob_samples = self._rng.multinomial(self._ntrials, probabilities)
-        # Create a dictionary to store the results
-        session_in_samples = {
-            scenario: self._rng.multinomial(prob_samples[i], [1 - self.catch_prob, self.catch_prob])
-            for i, scenario in enumerate(scenarios)
-        }
-        # Generate the sequence of modalities
-        modality_seq = []
-        for m in scenarios:
-            temp_seq = session_in_samples[m][0] * [m] + session_in_samples[m][1] * ["catch"]
-            self._rng.shuffle(temp_seq)
-            modality_seq += list(temp_seq)
-        if self.shuffle_trials:
-            self._rng.shuffle(modality_seq)
-            if self.max_sequential:
-                # Shuffle the list using Fisher-Yates algorithm with consecutive constraint
-                i = len(modality_seq) - 1
-                while i > 0:
-                    # Picking j can't be fixed, otherwise the algorithm is not random
-                    # We may want to change this in the future
-                    j = self._rng.integers(0, i)
-                    modality_seq[i], modality_seq[j] = modality_seq[j], modality_seq[i]
+        # Extract options and probs from the dictionary
+        options = list(self._session.keys())
+        probs = list(self._session.values())
+        max_seq = self.max_sequential
+
+        if True:  # NOTE: this line (and 377) just exists to not get conflicts later on
+            n_samples = self._rng.multinomial(self._ntrials, probs)  # Random ratio of samples based on probs
+
+            modality_seq = (  # Create list with expected number of entries for each option (in order and unshuffled)
+                list(
+                    itertools.chain.from_iterable(
+                        itertools.repeat(sample, repeats) for sample, repeats in zip(options, n_samples, strict=False)
+                    ),
+                )
+            )
+            catches = self._rng.binomial(n=1, p=self.catch_prob, size=len(modality_seq))
+            modality_seq = ["catch" if x else modality_seq[i] for i, x in enumerate(catches)]  # randomly add catches
+
+            if self.shuffle_trials:  # but not max_seq
+                self._rng.shuffle(modality_seq)
+
+        else:  # if shuffle and max_seq
+            # NOTE: ignore wrong indentation and the fact that this loop will never be entered until next commit
+            # Shuffle the list using Fisher-Yates algorithm with consecutive constraint
+            i = len(modality_seq) - 1
+            while i > 0:
+                # Picking j can't be fixed, otherwise the algorithm is not random
+                # We may want to change this in the future
+                j = self._rng.integers(0, i)
+                modality_seq[i], modality_seq[j] = modality_seq[j], modality_seq[i]
+                i -= 1
+                # Check and fix the consecutive constraint
+                count = 1
+                while i > 0 and modality_seq[i] == modality_seq[i - 1] and count >= self.max_sequential:
                     i -= 1
-                    # Check and fix the consecutive constraint
-                    count = 1
-                    while i > 0 and modality_seq[i] == modality_seq[i - 1] and count >= self.max_sequential:
-                        i -= 1
-                joined_seq = "".join(modality_seq)
-                for mod in self._session:
-                    violations = joined_seq.count(mod * (self.max_sequential + 1))
-                    if violations > 0:
-                        warnings.warn(
-                            f"`max_sequential` limit of {self.max_sequential} was violated {violations} times"
-                            f" for {mod}.\n"
-                            "Please check the current trials sequence, and if it is not acceptable redefine your"
-                            f"task or try to change the random seed, now set to {self._random_seed}.\n",
-                            stacklevel=2,
-                        )
+            joined_seq = "".join(modality_seq)
+            for mod in self._session:
+                violations = joined_seq.count(mod * (self.max_sequential + 1))
+                if violations > 0:
+                    warnings.warn(
+                        f"`max_sequential` limit of {self.max_sequential} was violated {violations} times"
+                        f" for {mod}.\n"
+                        "Please check the current trials sequence, and if it is not acceptable redefine your"
+                        f"task or try to change the random seed, now set to {self._random_seed}.\n",
+                        stacklevel=2,
+                    )
         return np.array(modality_seq)
 
     def _setup_trial_phases(
