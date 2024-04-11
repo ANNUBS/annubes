@@ -284,10 +284,14 @@ def test_build_trials_seq_maximum_sequential_trials():
     # Create a Task instance with shuffling enabled and a maximum sequential trial constraint
     task = Task(name=NAME, max_sequential=4)
     _ = task.generate_trials(ntrials=NTRIALS)
+
     # Ensure that no more than the specified maximum number of consecutive trials of the same modality occur
-    for modality in task._modalities:
-        for i in range(len(task._modality_seq) - task.max_sequential):
-            assert np.sum(task._modality_seq[i : i + task.max_sequential] == modality) <= task.max_sequential
+    sequence_string = "".join(task._modality_seq).replace("catch", "X")
+    too_many = task.max_sequential + 1
+    for mod in set(sequence_string):
+        assert (
+            mod * (too_many) not in sequence_string
+        ), f'{mod.replace("X", "catch")} was detected too many times (seed: {task._random_seed})'
 
 
 @pytest.mark.parametrize(
