@@ -80,6 +80,13 @@ class Task(TaskSettingsMixin):
             defined in `session` (with randomly interspersed catch trials).
         max_sequential: Maximum number of sequential trials of the same modality. Only used if shuffle is True.
             Defaults to None (no maximum).
+        max_draws: Only used if `shuffle_trials` is True and `max_sequential` is not None. Sets the maximum number of
+            times an attempt is made to select a random trial that does not break the `max_sequential` setting above.
+            Once this many draws were made, a warning is given and the selection is used nonetheless.
+            Defaults to 20.
+            Note that this is mainly relevant when `session` or `catch_prob` is set such that the odds of repetition are
+                very high, and that in this case, a high value for `max_draws` will exponentially slow down the process
+                of creating a trial order.
 
     Raises:
         ValueError: if `catch_prob` is not between 0 and 1.
@@ -93,6 +100,7 @@ class Task(TaskSettingsMixin):
     catch_prob: float = 0.5
     shuffle_trials: bool = True
     max_sequential: int | None = None
+    max_draws: int = 20
 
     def __post_init__(self):
         # Check input parameters
@@ -112,6 +120,7 @@ class Task(TaskSettingsMixin):
         self._check_time_vars()
         if self.max_sequential is not None:
             self._check_int_positive("max_sequential", self.max_sequential, strict=True)
+        self._check_int_positive("max_draws", self.max_draws, strict=True)
         self._check_int_positive("n_outputs", self.n_outputs, strict=True)
         ## Check bool
         self._check_bool("shuffle_trials", self.shuffle_trials)
@@ -358,7 +367,7 @@ class Task(TaskSettingsMixin):
         probs = list(self._session.values())
         max_seq = self.max_sequential
 
-        if True:  # NOTE: this line (and 377) just exists to not get conflicts later on
+        if not (self.shuffle_trials and max_seq):
             n_samples = self._rng.multinomial(self._ntrials, probs)  # Random ratio of samples based on probs
 
             modality_seq = (  # Create list with expected number of entries for each option (in order and unshuffled)
@@ -375,30 +384,32 @@ class Task(TaskSettingsMixin):
                 self._rng.shuffle(modality_seq)
 
         else:  # if shuffle and max_seq
-            # NOTE: ignore wrong indentation and the fact that this loop will never be entered until next commit
-            # Shuffle the list using Fisher-Yates algorithm with consecutive constraint
-            i = len(modality_seq) - 1
-            while i > 0:
-                # Picking j can't be fixed, otherwise the algorithm is not random
-                # We may want to change this in the future
-                j = self._rng.integers(0, i)
-                modality_seq[i], modality_seq[j] = modality_seq[j], modality_seq[i]
-                i -= 1
-                # Check and fix the consecutive constraint
-                count = 1
-                while i > 0 and modality_seq[i] == modality_seq[i - 1] and count >= self.max_sequential:
-                    i -= 1
-            joined_seq = "".join(modality_seq)
-            for mod in self._session:
-                violations = joined_seq.count(mod * (self.max_sequential + 1))
-                if violations > 0:
-                    warnings.warn(
-                        f"`max_sequential` limit of {self.max_sequential} was violated {violations} times"
-                        f" for {mod}.\n"
-                        "Please check the current trials sequence, and if it is not acceptable redefine your"
-                        f"task or try to change the random seed, now set to {self._random_seed}.\n",
-                        stacklevel=2,
-                    )
+            too_many_reps = max_seq + 1
+            modality_seq = []
+            n_failed_max_seq = 0
+
+            adjusted_options = options + ["catch"]  # noqa: RUF005
+            adjusted_probs = [i * (1 - self.catch_prob) for i in probs] + [self.catch_prob]
+
+            for _ in range(self._ntrials):
+                n_attempts = 0
+                modality_seq.append(self._rng.choice(adjusted_options, p=adjusted_probs))
+                while (
+                    [modality_seq[-1]] * too_many_reps == modality_seq[-too_many_reps:]  # exceeded max_sequential
+                    and n_attempts < self.max_draws  # exceeded allowed number of attempts
+                ):
+                    modality_seq[-1] = self._rng.choice(adjusted_options, p=adjusted_probs)
+                    n_attempts += 1
+                    if n_attempts > self.max_draws:
+                        n_failed_max_seq += 1
+            if n_failed_max_seq:
+                msg = (
+                    f"{n_failed_max_seq} occurrences (in {self._ntrials} cases) of failure to enforce the "
+                    f"`max_sequential` condition of {max_seq} repetions after {self.max_draws} attempts. "
+                    f"final sequence is: {'-'.join(modality_seq)}"
+                )
+                warnings.warn(msg, stacklevel=2)
+
         return np.array(modality_seq)
 
     def _setup_trial_phases(
