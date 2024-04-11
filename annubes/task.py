@@ -122,6 +122,7 @@ class Task(TaskSettingsMixin):
         self._task_settings = vars(self).copy()
 
         # make self._session adhere to expected format
+        self._session = {i: self.session[i] / sum(self.session.values()) for i in self.session}
         if not self.shuffle_trials:
             self._session = OrderedDict(self._session)
 
