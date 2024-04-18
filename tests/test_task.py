@@ -240,23 +240,27 @@ def test_build_trials_seq_distributions(session: dict, catch_prob: float):
     assert isinstance(task._modality_seq, np.ndarray)
 
     # Assert that the counts match the expected distribution within a certain tolerance
-    counts = {modality: np.sum(task._modality_seq == modality) for modality in [*task._modalities, "catch"]}
+    ratios = {
+        modality: np.sum(task._modality_seq == modality) / len(task._modality_seq)
+        for modality in [*task._modalities, "catch"]
+    }
+    expected_ratios = {
+        "v": task.session["v"] - task.catch_prob * task.session["v"],
+        "a": task.session["a"] - task.catch_prob * task.session["a"],
+        "catch": task.catch_prob,
+    }
     tolerance = 0.2
-    for i, comp in enumerate(
-        [
-            (counts["catch"] / len(task._modality_seq), task.catch_prob),
-            (counts["v"] / len(task._modality_seq), task.session["v"] - task.catch_prob * task.session["v"]),
-            (counts["a"] / len(task._modality_seq), task.session["a"] - task.catch_prob * task.session["a"]),
-        ],
-    ):
+
+    for modularity, actual_ratio in ratios.items():
         assert np.isclose(
-            comp[0],
-            comp[1],
+            actual_ratio,
+            expected_ratios[modularity],
             atol=tolerance,
-        ), f"Actual difference: {round(abs(comp[0] - comp[1]), 3)}, (trials {i})."
+        ), f"Actual difference for {modularity}: {round(abs(actual_ratio[0] - expected_ratios[modularity]), 3)}"
 
     # Assert that total counts match the expected number exactly
-    assert counts["a"] + counts["v"] + counts["catch"] == len(task._modality_seq) == task._ntrials
+    assert ratios["a"] + ratios["v"] + ratios["catch"] == 1
+    assert len(task._modality_seq) == task._ntrials
 
 
 def test_build_trials_seq_shuffling():
