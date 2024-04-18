@@ -111,12 +111,12 @@ class Task(TaskSettingsMixin):
             self._check_float_positive("output_behavior", intensity)
         self._check_float_positive("noise_std", self.noise_std)
         self._check_time_vars()
+        self._check_int_positive("n_outputs", self.n_outputs, strict=True)
+        self._check_bool("scaling", self.scaling)
+        self._check_bool("shuffle_trials", self.shuffle_trials)
         if self.max_sequential:
             self._check_int_positive("max_sequential", self.max_sequential, strict=True)
         self._check_int_positive("max_draws", self.max_draws, strict=True)
-        self._check_int_positive("n_outputs", self.n_outputs, strict=True)
-        self._check_bool("shuffle_trials", self.shuffle_trials)
-        self._check_bool("scaling", self.scaling)
 
         # store raw inputs
         self._task_settings = vars(self).copy()
@@ -129,6 +129,7 @@ class Task(TaskSettingsMixin):
         # Derived attributes
         self._modalities = set(dict.fromkeys(char for string in self._session for char in string))
         self._n_inputs = len(self._modalities) + 1  # includes start cue
+        self._constrained_shuffle = self.shuffle_trials and self.max_sequential
 
     def generate_trials(
         self,
@@ -357,7 +358,7 @@ class Task(TaskSettingsMixin):
         options = list(self._session.keys())
         probs = list(self._session.values())
 
-        if not (self.shuffle_trials and max_seq):
+        if not self._constrained_shuffle:
             n_samples = self._rng.multinomial(self._ntrials, probs)  # Random ratio of samples based on probs
 
             modality_seq = (  # Create list with expected number of entries for each option (in order and unshuffled)
