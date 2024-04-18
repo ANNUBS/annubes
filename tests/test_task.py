@@ -272,16 +272,13 @@ def test_build_trials_seq_shuffling():
 
     assert task_shuffled._modality_seq.shape == task_not_shuffled._modality_seq.shape
 
+    # check that shuffled and unshuffled are different
+    assert not np.array_equal(task_shuffled._modality_seq, task_not_shuffled._modality_seq)
+
+    # check that there is no "v" after any "a", which would mean that the list is shuffled
     keys = list(task_shuffled._session.keys())
     first_occurrence = list(task_not_shuffled._modality_seq).index(keys[1])
-    assert (
-        keys[0] not in task_not_shuffled._modality_seq[first_occurrence:]
-    ), "unshuffled _modality_seq appears shuffled"
-
-    assert not np.array_equal(
-        task_shuffled._modality_seq,
-        task_not_shuffled._modality_seq,
-    ), "shuffled _modality_seq == unshuffled _modality_seq"
+    assert keys[0] not in task_not_shuffled._modality_seq[first_occurrence:]
 
 
 def test_build_trials_seq_maximum_sequential_trials():
