@@ -356,7 +356,6 @@ class Task(TaskSettingsMixin):
         # Extract options and probs from the dictionary
         options = list(self._session.keys())
         probs = list(self._session.values())
-        max_seq = self.max_sequential
 
         if not (self.shuffle_trials and max_seq):
             n_samples = self._rng.multinomial(self._ntrials, probs)  # Random ratio of samples based on probs
@@ -375,7 +374,7 @@ class Task(TaskSettingsMixin):
                 self._rng.shuffle(modality_seq)
 
         else:  # if shuffle and max_seq
-            too_many_reps = max_seq + 1
+            too_many_reps = self.max_sequential + 1
             modality_seq = []
             n_failed_max_seq = 0
 
@@ -396,7 +395,7 @@ class Task(TaskSettingsMixin):
             if n_failed_max_seq:
                 msg = (
                     f"{n_failed_max_seq} occurrences (in {self._ntrials} cases) of failure to enforce the "
-                    f"`max_sequential` condition of {max_seq} repetions after {self.max_draws} attempts. "
+                    f"`max_sequential` condition of {self.max_sequential} repetions after {self.max_draws} attempts. "
                     f"final sequence is: {'-'.join(modality_seq)}"
                 )
                 warnings.warn(msg, stacklevel=2)
