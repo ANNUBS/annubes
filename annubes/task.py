@@ -78,16 +78,16 @@ class Task(TaskSettingsMixin):
         shuffle_trials: If True (default), trial order will be randomized. If False, all trials corresponding to one
             modality (e.g. visual) are run before any trial of the next modality (e.g. auditory) starts, in the order
             defined in `session` (with randomly interspersed catch trials).
-        max_sequential: If `shuffle_trials` is True, sets the maximum number of sequential trials. Note that exceptions
-            can exist (see description for `max_redraws` below for details).
+        max_sequential: If `shuffle_trials` is True, sets the maximum number of sequential trials of the same modality.
+            Note that exceptions can exist (see description for `max_draws` below for details).
             Defaults to None (no maximum).
         max_draws: Only used if `shuffle_trials` is True and `max_sequential` is not None. Sets the maximum number of
             times an attempt is made to select a random trial that does not break the `max_sequential` setting above.
-            Once this many draws were made, a warning is given and the selection is used nonetheless.
+            Once this many draws are made, a warning is given and the selection is used nonetheless.
             Defaults to 20.
             Note that this is mainly relevant when `session` or `catch_prob` is set such that the odds of repetition are
-                very high, and that in this case, a high value for `max_draws` will exponentially slow down the process
-                of creating a trial order.
+            very high, and that in this case, a high value for `max_draws` will exponentially slow down the process of
+            creating a trial order.
     """
 
     name: str
