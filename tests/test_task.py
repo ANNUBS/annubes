@@ -242,12 +242,12 @@ def test_build_trials_seq_distributions(session: dict, catch_prob: float):
     # Assert that the counts match the expected distribution within a certain tolerance
     ratios = {
         modality: np.sum(task._modality_seq == modality) / len(task._modality_seq)
-        for modality in [*task._modalities, "catch"]
+        for modality in [*task._modalities, "X"]
     }
     expected_ratios = {
         "v": task.session["v"] - task.catch_prob * task.session["v"],
         "a": task.session["a"] - task.catch_prob * task.session["a"],
-        "catch": task.catch_prob,
+        "X": task.catch_prob,
     }
     tolerance = 0.2
 
@@ -259,7 +259,7 @@ def test_build_trials_seq_distributions(session: dict, catch_prob: float):
         ), f"Actual difference for {modality}: {round(abs(actual_ratio - expected_ratios[modality]), 3)}"
 
     # Assert that total counts match the expected number exactly
-    assert np.isclose(ratios["a"] + ratios["v"] + ratios["catch"], 1.0)  # avoid floating point errors
+    assert np.isclose(ratios["a"] + ratios["v"] + ratios["X"], 1.0)  # avoid floating point errors
     assert len(task._modality_seq) == task._ntrials
 
 
@@ -298,12 +298,10 @@ def test_build_trials_seq_maximum_sequential_trials(session: dict[str, float], c
     _ = task.generate_trials(ntrials=NTRIALS)
 
     # Ensure that no more than the specified maximum number of consecutive trials of the same modality occur
-    sequence_string = "".join(task._modality_seq).replace("catch", "X")
+    sequence_string = "".join(task._modality_seq)
     too_many = task.max_sequential + 1
     for mod in set(sequence_string):
-        assert (
-            mod * (too_many) not in sequence_string
-        ), f'{mod.replace("X", "catch")} was detected too many times (seed: {task._random_seed})'
+        assert mod * (too_many) not in sequence_string, f"{mod} was detected too many times (seed: {task._random_seed})"
 
 
 @pytest.mark.parametrize(
