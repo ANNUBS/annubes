@@ -8,6 +8,7 @@ import pytest
 from annubes.task import Task
 
 NAME = "test_task"
+STIM_TIME = 1000
 NTRIALS = 100
 RND_SEED = 100
 
@@ -79,22 +80,22 @@ def test_post_init_check_float_positive(
 @pytest.mark.parametrize(
     ("stim_time", "dt", "tau", "fix_time", "iti"),
     [
-        (1000, 20, 100, 100, 0),
+        (STIM_TIME, 20, 100, 100, 0),
         pytest.param("a", 20, 100, 100, 0, marks=pytest.mark.xfail(raises=TypeError)),
         pytest.param(0, 20, 100, 100, 0, marks=pytest.mark.xfail(raises=ValueError)),
-        pytest.param(1000, "a", 100, 100, 0, marks=pytest.mark.xfail(raises=TypeError)),
-        pytest.param(1000, 0, 100, 100, 0, marks=pytest.mark.xfail(raises=ValueError)),
-        pytest.param(1000, 20, "a", 100, 0, marks=pytest.mark.xfail(raises=TypeError)),
-        pytest.param(1000, 20, 0, 100, 0, marks=pytest.mark.xfail(raises=ValueError)),
-        (1000, 20, 100, 0, 0),
-        pytest.param(1000, 20, 100, "a", 0, marks=pytest.mark.xfail(raises=TypeError)),
-        pytest.param(1000, 20, 100, -1, 0, marks=pytest.mark.xfail(raises=ValueError)),
-        pytest.param(1000, 20, 100, 100, "a", marks=pytest.mark.xfail(raises=TypeError)),
-        pytest.param(1000, 20, 100, 100, -1, marks=pytest.mark.xfail(raises=ValueError)),
-        pytest.param(1000, 20, 100, ("a", 0), 0, marks=pytest.mark.xfail(raises=TypeError)),
-        pytest.param(1000, 20, 100, (-1, 0), 0, marks=pytest.mark.xfail(raises=ValueError)),
-        pytest.param(1000, 20, 100, 100, ("a", 0), marks=pytest.mark.xfail(raises=TypeError)),
-        pytest.param(1000, 20, 100, 100, (-1, 0), marks=pytest.mark.xfail(raises=ValueError)),
+        pytest.param(STIM_TIME, "a", 100, 100, 0, marks=pytest.mark.xfail(raises=TypeError)),
+        pytest.param(STIM_TIME, 0, 100, 100, 0, marks=pytest.mark.xfail(raises=ValueError)),
+        pytest.param(STIM_TIME, 20, "a", 100, 0, marks=pytest.mark.xfail(raises=TypeError)),
+        pytest.param(STIM_TIME, 20, 0, 100, 0, marks=pytest.mark.xfail(raises=ValueError)),
+        (STIM_TIME, 20, 100, 0, 0),
+        pytest.param(STIM_TIME, 20, 100, "a", 0, marks=pytest.mark.xfail(raises=TypeError)),
+        pytest.param(STIM_TIME, 20, 100, -1, 0, marks=pytest.mark.xfail(raises=ValueError)),
+        pytest.param(STIM_TIME, 20, 100, 100, "a", marks=pytest.mark.xfail(raises=TypeError)),
+        pytest.param(STIM_TIME, 20, 100, 100, -1, marks=pytest.mark.xfail(raises=ValueError)),
+        pytest.param(STIM_TIME, 20, 100, ("a", 0), 0, marks=pytest.mark.xfail(raises=TypeError)),
+        pytest.param(STIM_TIME, 20, 100, (-1, 0), 0, marks=pytest.mark.xfail(raises=ValueError)),
+        pytest.param(STIM_TIME, 20, 100, 100, ("a", 0), marks=pytest.mark.xfail(raises=TypeError)),
+        pytest.param(STIM_TIME, 20, 100, 100, (-1, 0), marks=pytest.mark.xfail(raises=ValueError)),
     ],
 )
 def test_post_init_check_time_vars(
@@ -284,11 +285,10 @@ def test_build_trials_seq_maximum_sequential_trials():
             assert np.sum(task._modality_seq[i : i + task.max_sequential] == modality) <= task.max_sequential
 
 
-@pytest.mark.parametrize("stim_time", [1000])
 @pytest.mark.parametrize("fix_time", [100, (3000, 5000)])
 @pytest.mark.parametrize("iti", [0, (300, 500)])
-def test_setup_trial_phases(stim_time: int, fix_time: int | tuple[int, int], iti: int | tuple[int, int]):
-    task = Task(NAME, stim_time=stim_time, fix_time=fix_time, iti=iti)
+def test_setup_trial_phases(fix_time: int | tuple[int, int], iti: int | tuple[int, int]):
+    task = Task(NAME, stim_time=STIM_TIME, fix_time=fix_time, iti=iti)
     _ = task.generate_trials(ntrials=NTRIALS)
     trial_indices = range(NTRIALS)
     # iti
@@ -301,11 +301,11 @@ def test_setup_trial_phases(stim_time: int, fix_time: int | tuple[int, int], iti
     # time
     assert task._time.shape == (NTRIALS,)
     assert all(
-        len(task._time[n_trial]) == int(stim_time + task._fix_time[n_trial] + task._iti[n_trial] + task.dt) / task.dt
+        len(task._time[n_trial]) == int(STIM_TIME + task._fix_time[n_trial] + task._iti[n_trial] + task.dt) / task.dt
         for n_trial in trial_indices
     )
     assert all(
-        max(task._time[n_trial]) == stim_time + task._fix_time[n_trial] + task._iti[n_trial]
+        max(task._time[n_trial]) == STIM_TIME + task._fix_time[n_trial] + task._iti[n_trial]
         for n_trial in trial_indices
     )
     # phases
@@ -319,14 +319,14 @@ def test_setup_trial_phases(stim_time: int, fix_time: int | tuple[int, int], iti
         == len(
             np.where(
                 (task._time[n_trial] > task._fix_time[n_trial])
-                & (task._time[n_trial] <= task._fix_time[n_trial] + stim_time),
+                & (task._time[n_trial] <= task._fix_time[n_trial] + STIM_TIME),
             )[0],
         )
         for n_trial in trial_indices
     )
     assert all(
         len(task._phases[n_trial]["iti"])
-        == len(np.where(task._time[n_trial] >= task._fix_time[n_trial] + stim_time)[0])
+        == len(np.where(task._time[n_trial] >= task._fix_time[n_trial] + STIM_TIME)[0])
         for n_trial in trial_indices
     )
 
@@ -387,15 +387,13 @@ def test_generate_trials(task: Task, ntrials: int | tuple[int, int]):
 
 
 @pytest.mark.parametrize("session", [{"v": 0.5, "a": 0.5}, {"v": 1, "a": 3}])
-@pytest.mark.parametrize("ntrials", [NTRIALS])
 @pytest.mark.parametrize("random_seed", [None, 100])
 def test_reproduce_experiment(
     session: dict,
-    ntrials: int,
     random_seed: int | None,
 ):
     task = Task(name=NAME, session=session)
-    trials = task.generate_trials(ntrials=ntrials, random_seed=random_seed)
+    trials = task.generate_trials(ntrials=NTRIALS, random_seed=random_seed)
     task_repro = Task(**trials["task_settings"])
     trials_repro = task_repro.generate_trials(trials["ntrials"], trials["random_seed"])
     trial_indices = range(trials["ntrials"])
