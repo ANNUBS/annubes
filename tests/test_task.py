@@ -251,15 +251,15 @@ def test_build_trials_seq_distributions(session: dict, catch_prob: float):
     }
     tolerance = 0.2
 
-    for modularity, actual_ratio in ratios.items():
+    for modality, actual_ratio in ratios.items():
         assert np.isclose(
             actual_ratio,
-            expected_ratios[modularity],
+            expected_ratios[modality],
             atol=tolerance,
-        ), f"Actual difference for {modularity}: {round(abs(actual_ratio[0] - expected_ratios[modularity]), 3)}"
+        ), f"Actual difference for {modality}: {round(abs(actual_ratio - expected_ratios[modality]), 3)}"
 
     # Assert that total counts match the expected number exactly
-    assert ratios["a"] + ratios["v"] + ratios["catch"] == 1
+    assert np.isclose(ratios["a"] + ratios["v"] + ratios["catch"], 1.0)  # avoid floating point errors
     assert len(task._modality_seq) == task._ntrials
 
 
