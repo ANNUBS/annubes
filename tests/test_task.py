@@ -284,10 +284,9 @@ def test_build_trials_seq_maximum_sequential_trials():
             assert np.sum(task._modality_seq[i : i + task.max_sequential] == modality) <= task.max_sequential
 
 
-@pytest.mark.parametrize(
-    ("stim_time", "fix_time", "iti"),
-    [(1000, 100, 0), (1000, 100, (300, 500)), (1000, (3000, 5000), 0)],
-)
+@pytest.mark.parametrize("stim_time", [1000])
+@pytest.mark.parametrize("fix_time", [100, (3000, 5000)])
+@pytest.mark.parametrize("iti", [0, (300, 500)])
 def test_setup_trial_phases(stim_time: int, fix_time: int | tuple[int, int], iti: int | tuple[int, int]):
     task = Task(NAME, stim_time=stim_time, fix_time=fix_time, iti=iti)
     _ = task.generate_trials(ntrials=NTRIALS)
@@ -387,13 +386,9 @@ def test_generate_trials(task: Task, ntrials: int | tuple[int, int]):
     )
 
 
-@pytest.mark.parametrize(
-    ("session", "ntrials", "random_seed"),
-    [
-        ({"v": 0.5, "a": 0.5}, 20, None),
-        ({"v": 1, "a": 3}, NTRIALS, 100),
-    ],
-)
+@pytest.mark.parametrize("session", [{"v": 0.5, "a": 0.5}, {"v": 1, "a": 3}])
+@pytest.mark.parametrize("ntrials", [NTRIALS])
+@pytest.mark.parametrize("random_seed", [None, 100])
 def test_reproduce_experiment(
     session: dict,
     ntrials: int,
