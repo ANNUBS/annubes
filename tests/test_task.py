@@ -281,9 +281,20 @@ def test_build_trials_seq_shuffling():
     assert keys[0] not in task_not_shuffled._modality_seq[first_occurrence:]
 
 
-def test_build_trials_seq_maximum_sequential_trials():
+@pytest.mark.parametrize(
+    ("session", "catch_prob", "max_sequential"),
+    [
+        ({"v": 0.5, "a": 0.5}, 0.5, 4),
+        ({"v": 0.5, "a": 0.5}, 0.5, 1),
+        ({"v": 0.8, "a": 0.2}, 0.1, 4),
+        ({"v": 0.5, "a": 0.5}, 0.9, 4),
+        ({"v": 0.5, "a": 0.5}, 0.9, 1),
+        pytest.param({"v": 0.5, "a": 0.5}, 0.5, 0.5, marks=pytest.mark.xfail(raises=TypeError)),
+    ],
+)
+def test_build_trials_seq_maximum_sequential_trials(session: dict[str, float], catch_prob: float, max_sequential: int):
     # Create a Task instance with shuffling enabled and a maximum sequential trial constraint
-    task = Task(name=NAME, max_sequential=4)
+    task = Task(name=NAME, session=session, catch_prob=catch_prob, max_sequential=max_sequential)
     _ = task.generate_trials(ntrials=NTRIALS)
 
     # Ensure that no more than the specified maximum number of consecutive trials of the same modality occur
