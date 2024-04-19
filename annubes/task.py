@@ -79,15 +79,7 @@ class Task(TaskSettingsMixin):
             modality (e.g. visual) are run before any trial of the next modality (e.g. auditory) starts, in the order
             defined in `session` (with randomly interspersed catch trials).
         max_sequential: If `shuffle_trials` is True, sets the maximum number of sequential trials of the same modality.
-            Note that exceptions can exist (see description for `max_draws` below for details).
             Defaults to None (no maximum).
-        max_draws: Only used if `shuffle_trials` is True and `max_sequential` is not None. Sets the maximum number of
-            times an attempt is made to select a random trial that does not break the `max_sequential` setting above.
-            Once this many draws are made, a warning is given and the selection is used nonetheless.
-            Defaults to 20.
-            Note that this is mainly relevant when `session` or `catch_prob` is set such that the odds of repetition are
-            very high, and that in this case, a high value for `max_draws` will exponentially slow down the process of
-            creating a trial order.
     """
 
     name: str
@@ -97,7 +89,6 @@ class Task(TaskSettingsMixin):
     catch_prob: float = 0.5
     shuffle_trials: bool = True
     max_sequential: int | None = None
-    max_draws: int = 20
 
     def __post_init__(self):
         # Check input parameters
@@ -116,17 +107,14 @@ class Task(TaskSettingsMixin):
         self._check_bool("shuffle_trials", self.shuffle_trials)
         if self.max_sequential:
             self._check_int_positive("max_sequential", self.max_sequential, strict=True)
-        self._check_int_positive("max_draws", self.max_draws, strict=True)
 
         # store raw inputs
         self._task_settings = vars(self).copy()
 
-        # make self._session adhere to expected format
+        # Derived attributes
         self._session = {i: self.session[i] / sum(self.session.values()) for i in self.session}
         if not self.shuffle_trials:
             self._session = OrderedDict(self._session)
-
-        # Derived attributes
         self._modalities = set(dict.fromkeys(char for string in self._session for char in string))
         self._n_inputs = len(self._modalities) + 1  # includes start cue
         self._constrained_shuffle = self.shuffle_trials and self.max_sequential
@@ -375,31 +363,24 @@ class Task(TaskSettingsMixin):
                 self._rng.shuffle(modality_seq)
 
         else:  # if shuffle and max_seq
-            too_many_reps = self.max_sequential + 1
             modality_seq = []
-            n_failed_max_seq = 0
+            adjusted_options = [*options, "catch"]
+            adjusted_probs = [*(probs / np.sum(probs) * (1 - self.catch_prob)), self.catch_prob]
 
-            adjusted_options = options + ["catch"]  # noqa: RUF005
-            adjusted_probs = [i * (1 - self.catch_prob) for i in probs] + [self.catch_prob]
-
-            for _ in range(self._ntrials):
-                n_attempts = 0
-                modality_seq.append(self._rng.choice(adjusted_options, p=adjusted_probs))
-                while (
-                    [modality_seq[-1]] * too_many_reps == modality_seq[-too_many_reps:]  # exceeded max_sequential
-                    and n_attempts < self.max_draws  # exceeded allowed number of attempts
+            for i in range(self._ntrials):
+                if (  # not reached maximum number of consecutive trials
+                    i < self.max_sequential
+                    or [modality_seq[-1]] * self.max_sequential != modality_seq[-self.max_sequential :]
                 ):
-                    modality_seq[-1] = self._rng.choice(adjusted_options, p=adjusted_probs)
-                    n_attempts += 1
-                    if n_attempts > self.max_draws:
-                        n_failed_max_seq += 1
-            if n_failed_max_seq:
-                msg = (
-                    f"{n_failed_max_seq} occurrences (in {self._ntrials} cases) of failure to enforce the "
-                    f"`max_sequential` condition of {self.max_sequential} repetions after {self.max_draws} attempts. "
-                    f"final sequence is: {'-'.join(modality_seq)}"
-                )
-                warnings.warn(msg, stacklevel=2)
+                    modality_seq.append(self._rng.choice(adjusted_options, p=adjusted_probs))
+                elif modality_seq[-1] == "catch":  # reached maximum number of consecutive catches
+                    modality_seq.append(self._rng.choice(options, p=probs))
+                else:  # reached maximum number of consecutive non-catch trials
+                    readjusted_probs = probs.copy()
+                    readjusted_probs[options.index(modality_seq[-1])] = 0.0
+                    readjusted_probs = readjusted_probs / np.sum(readjusted_probs) * (1 - self.catch_prob)
+                    readjusted_probs = [*readjusted_probs, self.catch_prob]
+                    modality_seq.append(self._rng.choice(adjusted_options, p=readjusted_probs))
 
         return np.array(modality_seq)
 
