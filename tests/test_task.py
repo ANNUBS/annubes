@@ -22,7 +22,7 @@ ITI = 0
 DT = 20
 TAU = 100
 N_OUTPUTS = 2
-OUTPUT_BEHAVIOR = [0, 1]
+OUTPUT_BEHAVIOR = [0.0, 1.0]
 NOISE_STD = 0.01
 SCALING = True
 NTRIALS = 100
@@ -95,7 +95,7 @@ def test_post_init_check_float_positive_invalid(  # noqa: PLR0913
     fix_intensity: Any,
     output_behavior: Any,
     noise_std: Any,
-    expected_exception: Exception,
+    expected_exception: Any,
 ):
     with pytest.raises(expected_exception):
         Task(
@@ -149,7 +149,7 @@ def test_post_init_check_time_vars_invalid(  # noqa: PLR0913
     tau: Any,
     fix_time: Any,
     iti: Any,
-    expected_exception: Exception,
+    expected_exception: Any,
 ):
     with pytest.raises(expected_exception):
         Task(
@@ -185,7 +185,7 @@ def test_post_init_check_other_int_positive_valid(
 def test_post_init_check_other_int_positive_invalid(
     max_sequential: Any,
     n_outputs: Any,
-    expected_exception: Exception,
+    expected_exception: Any,
 ):
     with pytest.raises(expected_exception):
         Task(
@@ -218,7 +218,7 @@ def test_post_init_check_bool_valid(
 def test_post_init_check_bool_invalid(
     shuffle_trials: Any,
     scaling: Any,
-    expected_exception: Exception,
+    expected_exception: Any,
 ):
     with pytest.raises(expected_exception):
         Task(
@@ -261,7 +261,7 @@ def test_post_init_catch_prob_valid(catch_prob: float):
     ("catch_prob", "expected_exception"),
     [(-1, ValueError), (2, ValueError), (None, TypeError), ("0.6", TypeError)],
 )
-def test_post_init_catch_prob_invalid(catch_prob: Any, expected_exception: Exception):
+def test_post_init_catch_prob_invalid(catch_prob: Any, expected_exception: Any):
     with pytest.raises(expected_exception):
         Task(NAME, catch_prob=catch_prob)
 
@@ -284,7 +284,7 @@ def test_post_init_noise_related_valid():
 def test_post_init_noise_related_invalid(
     dt: int,
     tau: int,
-    expected_exception: Exception,
+    expected_exception: Any,
 ):
     with pytest.raises(expected_exception):
         Task(NAME, dt=dt, tau=tau)
@@ -443,7 +443,7 @@ def test_generate_trials_check_invalid(
     task: Task,
     ntrials: Any,
     random_seed: Any,
-    expected_exception: Exception,
+    expected_exception: Any,
 ):
     with pytest.raises(expected_exception):
         task.generate_trials(ntrials=ntrials, random_seed=random_seed)
