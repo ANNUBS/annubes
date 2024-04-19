@@ -171,7 +171,7 @@ def test_post_init_session(
     task = Task(NAME, session=session, shuffle_trials=shuffle_trials)
     assert task.name == NAME
     assert task._session == expected_dict
-    assert isinstance(task._session, expected_type)  # type: ignore # noqa: PGH003
+    assert isinstance(task._session, expected_type)  # type: ignore[arg-type]
 
 
 @pytest.mark.parametrize(
@@ -185,7 +185,7 @@ def test_post_init_session(
     ],
 )
 def test_post_init_catch_prob(catch_prob: float | None, expected: float | None):
-    task = Task(NAME, catch_prob=catch_prob)  # type: ignore # noqa: PGH003
+    task = Task(NAME, catch_prob=catch_prob)  # type: ignore[arg-type]
     assert task.name == NAME
     assert task.catch_prob == expected
 
@@ -299,7 +299,7 @@ def test_build_trials_seq_maximum_sequential_trials(session: dict[str, float], c
 
     # Ensure that no more than the specified maximum number of consecutive trials of the same modality occur
     sequence_string = "".join(task._modality_seq)
-    too_many = task.max_sequential + 1
+    too_many = task.max_sequential + 1  # type: ignore[operator]
     for mod in set(sequence_string):
         assert mod * (too_many) not in sequence_string, f"{mod} was detected too many times (seed: {task._random_seed})"
 

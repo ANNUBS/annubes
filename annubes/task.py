@@ -373,8 +373,8 @@ class Task(TaskSettingsMixin):
 
             for i in range(self._ntrials):
                 if (  # not reached maximum number of consecutive trials
-                    i < self.max_sequential
-                    or [modality_seq[-1]] * self.max_sequential != modality_seq[-self.max_sequential :]
+                    i < self.max_sequential  # type: ignore[operator]
+                    or [modality_seq[-1]] * self.max_sequential != modality_seq[-self.max_sequential :]  # type: ignore[operator]
                 ):
                     modality_seq.append(self._rng.choice(adjusted_options, p=adjusted_probs))
                 elif modality_seq[-1] == "X":  # reached maximum number of consecutive catches
