@@ -91,6 +91,8 @@ def test_post_init_check_float_positive(
         pytest.param(1000, 20, 100, -1, 0, marks=pytest.mark.xfail(raises=ValueError)),
         pytest.param(1000, 20, 100, 100, "a", marks=pytest.mark.xfail(raises=TypeError)),
         pytest.param(1000, 20, 100, 100, -1, marks=pytest.mark.xfail(raises=ValueError)),
+        pytest.param(1000, 20, 100, ("a", 0), 0, marks=pytest.mark.xfail(raises=TypeError)),
+        pytest.param(1000, 20, 100, (-1, 0), 0, marks=pytest.mark.xfail(raises=ValueError)),
         pytest.param(1000, 20, 100, 100, ("a", 0), marks=pytest.mark.xfail(raises=TypeError)),
         pytest.param(1000, 20, 100, 100, (-1, 0), marks=pytest.mark.xfail(raises=ValueError)),
     ],
@@ -284,9 +286,9 @@ def test_build_trials_seq_maximum_sequential_trials():
 
 @pytest.mark.parametrize(
     ("stim_time", "fix_time", "iti"),
-    [(1000, 100, 0), (1000, 100, (300, 500))],
+    [(1000, 100, 0), (1000, 100, (300, 500)), (1000, (3000, 5000), 0)],
 )
-def test_setup_trial_phases(stim_time: int, fix_time: int, iti: int | tuple[int, int]):
+def test_setup_trial_phases(stim_time: int, fix_time: int | tuple[int, int], iti: int | tuple[int, int]):
     task = Task(NAME, stim_time=stim_time, fix_time=fix_time, iti=iti)
     _ = task.generate_trials(ntrials=NTRIALS)
     trial_indices = range(NTRIALS)
@@ -300,27 +302,32 @@ def test_setup_trial_phases(stim_time: int, fix_time: int, iti: int | tuple[int,
     # time
     assert task._time.shape == (NTRIALS,)
     assert all(
-        len(task._time[n_trial]) == int(stim_time + fix_time + task._iti[n_trial] + task.dt) / task.dt
+        len(task._time[n_trial]) == int(stim_time + task._fix_time[n_trial] + task._iti[n_trial] + task.dt) / task.dt
         for n_trial in trial_indices
     )
-    assert all(max(task._time[n_trial]) == stim_time + fix_time + task._iti[n_trial] for n_trial in trial_indices)
+    assert all(
+        max(task._time[n_trial]) == stim_time + task._fix_time[n_trial] + task._iti[n_trial]
+        for n_trial in trial_indices
+    )
     # phases
     assert task._phases.shape == (NTRIALS,)
     assert all(
-        len(task._phases[n_trial]["iti"]) == len(np.where(task._time[n_trial] <= task._iti[n_trial])[0])
+        len(task._phases[n_trial]["fix_time"]) == len(np.where(task._time[n_trial] <= task._fix_time[n_trial])[0])
         for n_trial in trial_indices
     )
     assert all(
-        len(task._phases[n_trial]["fix_time"])
+        len(task._phases[n_trial]["input"])
         == len(
             np.where(
-                (task._time[n_trial] > task._iti[n_trial]) & (task._time[n_trial] <= task._iti[n_trial] + fix_time),
+                (task._time[n_trial] > task._fix_time[n_trial])
+                & (task._time[n_trial] <= task._fix_time[n_trial] + stim_time),
             )[0],
         )
         for n_trial in trial_indices
     )
     assert all(
-        len(task._phases[n_trial]["input"]) == len(np.where(task._time[n_trial] > task._iti[n_trial] + fix_time)[0])
+        len(task._phases[n_trial]["iti"])
+        == len(np.where(task._time[n_trial] >= task._fix_time[n_trial] + stim_time)[0])
         for n_trial in trial_indices
     )
 

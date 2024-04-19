@@ -21,7 +21,9 @@ class TaskSettingsMixin:
     Args:
         fix_intensity: Intensity of input signal during fixation.
             Defaults to 0.
-        fix_time: Fixation time in ms. Note that the duration of each input and output signal is increased by this time.
+        fix_time: Fixation time in ms. If a tuple is given, it is interpreted as an interval of possible values, and
+            for each trial the value will be randomly picked from it. Note that the duration of each input and output
+            signal is increased by this time.
             Defaults to 100.
         iti: Inter-trial interval, or time window between sequential trials, in ms. If a tuple is given, it is
             interpreted as an interval of possible values, and for each trial the value will be randomly picked from it.
@@ -43,7 +45,7 @@ class TaskSettingsMixin:
     """
 
     fix_intensity: float = 0
-    fix_time: int = 100
+    fix_time: int | tuple[int, int] = 100
     iti: int | tuple[int, int] = 0
     dt: int = 20
     tau: int = 100
@@ -150,14 +152,7 @@ class Task(TaskSettingsMixin):
             "time", "phases", "inputs", "outputs").
         """
         # Check input parameters
-        if isinstance(ntrials, tuple):
-            if len(ntrials) != 2:  # noqa: PLR2004
-                msg = "`ntrials` must be an integer or a tuple of two integers."
-                raise ValueError(msg)
-            self._check_int_positive("ntrials", ntrials[0], strict=True)
-            self._check_int_positive("ntrials", ntrials[1], strict=True)
-        else:
-            self._check_int_positive("ntrials", ntrials, strict=True)
+        self._check_range("ntrials", ntrials, strict=True)
         if random_seed is not None:
             self._check_int_positive("random_seed", random_seed, strict=False)
 
@@ -174,7 +169,7 @@ class Task(TaskSettingsMixin):
         self._modality_seq = self._build_trials_seq()
 
         # Setup phases of trial
-        self._iti, self._time, self._phases = self._setup_trial_phases()
+        self._fix_time, self._iti, self._time, self._phases = self._setup_trial_phases()
 
         # Generate inputs and outputs
         self._inputs = self._build_trials_inputs()
@@ -280,7 +275,7 @@ class Task(TaskSettingsMixin):
                 col=1,
             )
             fig.add_vline(
-                x=self._iti[i] + self.fix_time + self.dt,
+                x=self._fix_time[i] + self.dt,
                 line_width=3,
                 line_dash="dash",
                 line_color="red",
@@ -330,25 +325,33 @@ class Task(TaskSettingsMixin):
             msg = f"`{name}` must be greater than or equal to 0."
             raise ValueError(msg)
 
-    def _check_bool(self, name: str, value: Any) -> None:  # noqa: ANN401
-        if not isinstance(value, bool):
-            msg = f"`{name}` must be a boolean."
+    def _check_range(self, name: str, value: Any, strict: bool) -> None:  # noqa: ANN401
+        msg = f"`{name}` must be an integer or a tuple of integers of length 2."
+        if isinstance(value, tuple):
+            if len(value) != 2:  # noqa: PLR2004
+                raise ValueError(msg)
+            for v in value:
+                self._check_int_positive("Each element of " + name, v, strict=strict)
+        elif isinstance(value, int):
+            self._check_int_positive(name, value, strict=strict)
+        else:
             raise TypeError(msg)
 
     def _check_time_vars(self) -> None:
         strictly_positive = {
-            "stim_time": (self.stim_time, True),
-            "dt": (self.dt, True),
-            "tau": (self.tau, True),
-            "fix_time": (self.fix_time, False),
+            "stim_time": self.stim_time,
+            "dt": self.dt,
+            "tau": self.tau,
         }
         for name, value in strictly_positive.items():
-            self._check_int_positive(name, value[0], strict=value[1])
-        if isinstance(self.iti, tuple):
-            for iti in self.iti:
-                self._check_int_positive("iti", iti, strict=False)
-        else:
-            self._check_int_positive("iti", self.iti, strict=False)
+            self._check_int_positive(name, value, strict=True)
+        self._check_range("fix_time", self.fix_time, strict=False)
+        self._check_range("iti", self.iti, strict=False)
+
+    def _check_bool(self, name: str, value: Any) -> None:  # noqa: ANN401
+        if not isinstance(value, bool):
+            msg = f"`{name}` must be a boolean."
+            raise TypeError(msg)
 
     def _build_trials_seq(self) -> NDArray[np.str_]:
         """Generate a sequence of modalities."""
@@ -396,33 +399,46 @@ class Task(TaskSettingsMixin):
                         )
         return np.array(modality_seq)
 
+    def _generate_time_sequence(self, time: int | tuple[int, int]) -> NDArray[np.int64]:
+        """Generate time sequence.
+
+        Args:
+            time: Time in ms. If a tuple is given, it is interpreted as an interval of possible values, and for each
+                trial the value will be randomly picked from it.
+
+        Returns:
+            Time sequence.
+        """
+        if type(time) is tuple:
+            time_seq = self._rng.integers(min(time), max(time), self._ntrials)
+            return np.array([round(i / 100) * 100 for i in time_seq])  # round to the nearest hundred
+        return np.full(self._ntrials, time)
+
     def _setup_trial_phases(
         self,
     ) -> tuple[
+        NDArray[np.int64],
         NDArray[np.int64],
         NDArray[np.float64],
         NDArray[Any],
     ]:
         """Setup phases of trial, time-wise."""
-        # Generate inter-trial duration sequence
-        if type(self.iti) is tuple:
-            iti = self._rng.integers(min(self.iti), max(self.iti), self._ntrials)
-            iti = np.array([round(i / 100) * 100 for i in iti])  # round to the nearest hundred
-        else:
-            iti = np.full(self._ntrials, self.iti)
+        # Generate fixation time sequence
+        fix_time = self._generate_time_sequence(self.fix_time)
+        iti = self._generate_time_sequence(self.iti)
         # Generate time sequence for each trial
         time = np.empty(self._ntrials, dtype=object)
         phases = np.empty(self._ntrials, dtype=object)
         for n in range(self._ntrials):
-            trial_duration = iti[n] + self.fix_time + self.stim_time
+            trial_duration = fix_time[n] + self.stim_time + iti[n]
             time[n] = np.linspace(0, trial_duration, int((trial_duration + self.dt) / self.dt))
             phases[n] = {}
-            phases[n]["iti"] = np.where(time[n] <= iti[n])[0]
-            phases[n]["fix_time"] = np.where(
-                (time[n] > iti[n]) & (time[n] <= iti[n] + self.fix_time),
+            phases[n]["fix_time"] = np.where(time[n] <= fix_time[n])[0]
+            phases[n]["input"] = np.where(
+                (time[n] > fix_time[n]) & (time[n] <= fix_time[n] + self.stim_time),
             )[0]
-            phases[n]["input"] = np.where(time[n] > iti[n] + self.fix_time)[0]
-        return iti, time, phases
+            phases[n]["iti"] = np.where(time[n] >= fix_time[n] + self.stim_time)[0]
+        return fix_time, iti, time, phases
 
     def _minmaxscaler(
         self,
