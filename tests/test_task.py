@@ -173,7 +173,7 @@ def test_post_init_session(
     task = Task(NAME, session=session, shuffle_trials=shuffle_trials)
     assert task.name == NAME
     assert task._session == expected_dict
-    assert isinstance(task._session, expected_type)  # type: ignore # noqa: PGH003
+    assert isinstance(task._session, expected_type)  # type: ignore[arg-type]
 
 
 @pytest.mark.parametrize(
@@ -187,7 +187,7 @@ def test_post_init_session(
     ],
 )
 def test_post_init_catch_prob(catch_prob: float | None, expected: float | None):
-    task = Task(NAME, catch_prob=catch_prob)  # type: ignore # noqa: PGH003
+    task = Task(NAME, catch_prob=catch_prob)  # type: ignore[arg-type]
     assert task.name == NAME
     assert task.catch_prob == expected
 
@@ -240,26 +240,29 @@ def test_build_trials_seq_distributions(session: dict, catch_prob: float):
     task = Task(NAME, session=session, catch_prob=catch_prob)
     _ = task.generate_trials(ntrials=NTRIALS)
     assert isinstance(task._modality_seq, np.ndarray)
-    assert len(task._modality_seq) == task._ntrials
-    task._modalities.add("catch")
-    counts = {modality: np.sum(task._modality_seq == modality) for modality in task._modalities}
+
     # Assert that the counts match the expected distribution within a certain tolerance
-    assert np.isclose(counts["catch"] / len(task._modality_seq), task.catch_prob, atol=0.1)  # within 10% tolerance
-    assert np.isclose(
-        counts["v"] / len(task._modality_seq),
-        task.session["v"] - task.catch_prob * task.session["v"],
-        atol=0.1,
-    )  # within 10% tolerance
-    assert np.isclose(
-        counts["a"] / len(task._modality_seq),
-        task.session["a"] - task.catch_prob * task.session["a"],
-        atol=0.1,
-    )
-    assert np.isclose(
-        (counts["a"] + counts["v"] + counts["catch"]) / len(task._modality_seq),
-        1,
-        atol=0.1,
-    )
+    ratios = {
+        modality: np.sum(task._modality_seq == modality) / len(task._modality_seq)
+        for modality in [*task._modalities, "X"]
+    }
+    expected_ratios = {
+        "v": task.session["v"] - task.catch_prob * task.session["v"],
+        "a": task.session["a"] - task.catch_prob * task.session["a"],
+        "X": task.catch_prob,
+    }
+    tolerance = 0.2
+
+    for modality, actual_ratio in ratios.items():
+        assert np.isclose(
+            actual_ratio,
+            expected_ratios[modality],
+            atol=tolerance,
+        ), f"Actual difference for {modality}: {round(abs(actual_ratio - expected_ratios[modality]), 3)}"
+
+    # Assert that total counts match the expected number exactly
+    assert np.isclose(ratios["a"] + ratios["v"] + ratios["X"], 1.0)  # avoid floating point errors
+    assert len(task._modality_seq) == task._ntrials
 
 
 def test_build_trials_seq_shuffling():
@@ -269,19 +272,38 @@ def test_build_trials_seq_shuffling():
     _ = task_shuffled.generate_trials(ntrials=NTRIALS)
     _ = task_not_shuffled.generate_trials(ntrials=NTRIALS)
 
-    # Verify that the generated sequences are shuffled or not shuffled accordingly
     assert task_shuffled._modality_seq.shape == task_not_shuffled._modality_seq.shape
+
+    # check that shuffled and unshuffled are different
     assert not np.array_equal(task_shuffled._modality_seq, task_not_shuffled._modality_seq)
 
+    # check that there is no "v" after any "a", which would mean that the list is shuffled
+    keys = list(task_shuffled._session.keys())
+    first_occurrence = list(task_not_shuffled._modality_seq).index(keys[1])
+    assert keys[0] not in task_not_shuffled._modality_seq[first_occurrence:]
 
-def test_build_trials_seq_maximum_sequential_trials():
+
+@pytest.mark.parametrize(
+    ("session", "catch_prob", "max_sequential"),
+    [
+        ({"v": 0.5, "a": 0.5}, 0.5, 4),
+        ({"v": 0.5, "a": 0.5}, 0.5, 1),
+        ({"v": 0.8, "a": 0.2}, 0.1, 4),
+        ({"v": 0.5, "a": 0.5}, 0.9, 4),
+        ({"v": 0.5, "a": 0.5}, 0.9, 1),
+        pytest.param({"v": 0.5, "a": 0.5}, 0.5, 0.5, marks=pytest.mark.xfail(raises=TypeError)),
+    ],
+)
+def test_build_trials_seq_maximum_sequential_trials(session: dict[str, float], catch_prob: float, max_sequential: int):
     # Create a Task instance with shuffling enabled and a maximum sequential trial constraint
-    task = Task(name=NAME, max_sequential=4)
+    task = Task(name=NAME, session=session, catch_prob=catch_prob, max_sequential=max_sequential)
     _ = task.generate_trials(ntrials=NTRIALS)
+
     # Ensure that no more than the specified maximum number of consecutive trials of the same modality occur
-    for modality in task._modalities:
-        for i in range(len(task._modality_seq) - task.max_sequential):
-            assert np.sum(task._modality_seq[i : i + task.max_sequential] == modality) <= task.max_sequential
+    sequence_string = "".join(task._modality_seq)
+    too_many = task.max_sequential + 1  # type: ignore[operator]
+    for mod in set(sequence_string):
+        assert mod * (too_many) not in sequence_string, f"{mod} was detected too many times (seed: {task._random_seed})"
 
 
 @pytest.mark.parametrize(

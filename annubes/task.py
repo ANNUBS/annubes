@@ -1,4 +1,5 @@
 import colorsys
+import itertools
 import warnings
 from collections import OrderedDict
 from dataclasses import dataclass, field
@@ -67,24 +68,21 @@ class Task(TaskSettingsMixin):
             It is given by a dictionary representing the ratio (values) of the different trials (keys) within the task.
             Trials with a single modality (e.g., a visual trial) must be represented by single characters, while trials
             with multiple modalities (e.g., an audiovisual trial) are represented by the character combination of those
-            trials. Note that values are read relative to each other, such that e.g. `{"v": 0.25, "a": 0.75}` ==
-            `{"v": 1, "a": 3}` is True.
+            trials. The capital letter X may not be used to signify a modality, as it is reserved for catch trials.
+            Note that values are read relative to each other, such that e.g. `{"v": 0.25, "a": 0.75}` is equivalent to
+            `{"v": 1, "a": 3}`.
             Defaults to {"v": 0.5, "a": 0.5}.
         stim_intensities: List of possible intensity values of each stimulus.
             Defaults to [0.8, 0.9, 1].
         stim_time: Duration of each stimulus in ms.
             Defaults to 1000.
-        catch_prob: probability of catch trials in the session, between 0 and 1 (extremes included).
+        catch_prob: probability of catch trials (denoted by X) in the session. Must be between 0 and 1 (inclusive).
             Defaults to 0.5.
         shuffle_trials: If True (default), trial order will be randomized. If False, all trials corresponding to one
             modality (e.g. visual) are run before any trial of the next modality (e.g. auditory) starts, in the order
-            defined in `session` (with randomly interspersed catch trials).
-        max_sequential: Maximum number of sequential trials of the same modality. Only used if shuffle is True.
+            defined in `session` (catch trials will still be randomly interspersed).
+        max_sequential: If `shuffle_trials` is True, sets the maximum number of sequential trials of the same modality.
             Defaults to None (no maximum).
-
-    Raises:
-        ValueError: if `catch_prob` is not between 0 and 1.
-        TypeError: if `catch_prob` is not a float.
     """
 
     name: str
@@ -97,11 +95,8 @@ class Task(TaskSettingsMixin):
 
     def __post_init__(self):
         # Check input parameters
-        ## Check str
         self._check_str("name", self.name)
-        ## Check dict
         self._check_session("session", self.session)
-        ## Check float
         for intensity in self.stim_intensities:
             self._check_float_positive("stim_intensities", intensity)
         self._check_float_positive("catch_prob", self.catch_prob, prob=True)
@@ -109,27 +104,26 @@ class Task(TaskSettingsMixin):
         for intensity in self.output_behavior:
             self._check_float_positive("output_behavior", intensity)
         self._check_float_positive("noise_std", self.noise_std)
-        ## Check int
         self._check_time_vars()
-        if self.max_sequential is not None:
-            self._check_int_positive("max_sequential", self.max_sequential, strict=True)
         self._check_int_positive("n_outputs", self.n_outputs, strict=True)
-        ## Check bool
-        self._check_bool("shuffle_trials", self.shuffle_trials)
         self._check_bool("scaling", self.scaling)
+        self._check_bool("shuffle_trials", self.shuffle_trials)
+        if self.max_sequential:
+            self._check_int_positive("max_sequential", self.max_sequential, strict=True)
 
+        # store raw inputs
         self._task_settings = vars(self).copy()
 
-        sum_session_vals = sum(self.session.values())
-        self._session = {}
-        for i in self.session:
-            self._session[i] = self.session[i] / sum_session_vals
+        # Derived attributes
+        self._modalities = set(dict.fromkeys(char for string in self.session for char in string))
+        if "X" in self._modalities:
+            msg = "The character X (capital letter x) is reserved for catch trials and may not be used in session)."
+            raise ValueError(msg)
+        self._session = {i: self.session[i] / sum(self.session.values()) for i in self.session}
         if not self.shuffle_trials:
             self._session = OrderedDict(self._session)
-
-        # Derived and other attributes
-        self._modalities = set(dict.fromkeys(char for string in self._session for char in string))
         self._n_inputs = len(self._modalities) + 1  # includes start cue
+        self._constrained_shuffle = self.shuffle_trials and self.max_sequential
 
     def generate_trials(
         self,
@@ -355,48 +349,46 @@ class Task(TaskSettingsMixin):
 
     def _build_trials_seq(self) -> NDArray[np.str_]:
         """Generate a sequence of modalities."""
-        # Extract keys and probabilities from the dictionary
-        scenarios = list(self._session.keys())
-        probabilities = np.array(list(self._session.values()))
-        # Generate random numbers of samples based on the probabilities
-        prob_samples = self._rng.multinomial(self._ntrials, probabilities)
-        # Create a dictionary to store the results
-        session_in_samples = {
-            scenario: self._rng.multinomial(prob_samples[i], [1 - self.catch_prob, self.catch_prob])
-            for i, scenario in enumerate(scenarios)
-        }
-        # Generate the sequence of modalities
-        modality_seq = []
-        for m in scenarios:
-            temp_seq = session_in_samples[m][0] * [m] + session_in_samples[m][1] * ["catch"]
-            self._rng.shuffle(temp_seq)
-            modality_seq += list(temp_seq)
-        if self.shuffle_trials:
-            self._rng.shuffle(modality_seq)
-            if self.max_sequential:
-                # Shuffle the list using Fisher-Yates algorithm with consecutive constraint
-                i = len(modality_seq) - 1
-                while i > 0:
-                    # Picking j can't be fixed, otherwise the algorithm is not random
-                    # We may want to change this in the future
-                    j = self._rng.integers(0, i)
-                    modality_seq[i], modality_seq[j] = modality_seq[j], modality_seq[i]
-                    i -= 1
-                    # Check and fix the consecutive constraint
-                    count = 1
-                    while i > 0 and modality_seq[i] == modality_seq[i - 1] and count >= self.max_sequential:
-                        i -= 1
-                joined_seq = "".join(modality_seq)
-                for mod in self._session:
-                    violations = joined_seq.count(mod * (self.max_sequential + 1))
-                    if violations > 0:
-                        warnings.warn(
-                            f"`max_sequential` limit of {self.max_sequential} was violated {violations} times"
-                            f" for {mod}.\n"
-                            "Please check the current trials sequence, and if it is not acceptable redefine your"
-                            f"task or try to change the random seed, now set to {self._random_seed}.\n",
-                            stacklevel=2,
-                        )
+        # Extract options and probs from the dictionary
+        options = list(self._session.keys())
+        probs = list(self._session.values())
+
+        if not self._constrained_shuffle:
+            n_samples = self._rng.multinomial(self._ntrials, probs)  # Random ratio of samples based on probs
+
+            modality_seq = (  # Create list with expected number of entries for each option (in order and unshuffled)
+                list(
+                    itertools.chain.from_iterable(
+                        itertools.repeat(sample, repeats) for sample, repeats in zip(options, n_samples, strict=False)
+                    ),
+                )
+            )
+            catches = self._rng.binomial(n=1, p=self.catch_prob, size=len(modality_seq))
+            modality_seq = ["X" if x else modality_seq[i] for i, x in enumerate(catches)]  # randomly add catches
+
+            if self.shuffle_trials:  # but not max_seq
+                self._rng.shuffle(modality_seq)
+
+        else:  # if shuffle and max_seq
+            modality_seq = []
+            adjusted_options = [*options, "X"]
+            adjusted_probs = [*(probs / np.sum(probs) * (1 - self.catch_prob)), self.catch_prob]
+
+            for i in range(self._ntrials):
+                if (  # not reached maximum number of consecutive trials
+                    i < self.max_sequential  # type: ignore[operator]
+                    or [modality_seq[-1]] * self.max_sequential != modality_seq[-self.max_sequential :]  # type: ignore[operator]
+                ):
+                    modality_seq.append(self._rng.choice(adjusted_options, p=adjusted_probs))
+                elif modality_seq[-1] == "X":  # reached maximum number of consecutive catches
+                    modality_seq.append(self._rng.choice(options, p=probs))
+                else:  # reached maximum number of consecutive non-catch trials
+                    readjusted_probs = probs.copy()
+                    readjusted_probs[options.index(modality_seq[-1])] = 0.0
+                    readjusted_probs = readjusted_probs / np.sum(readjusted_probs) * (1 - self.catch_prob)
+                    readjusted_probs = [*readjusted_probs, self.catch_prob]
+                    modality_seq.append(self._rng.choice(adjusted_options, p=readjusted_probs))
+
         return np.array(modality_seq)
 
     def _generate_time_sequence(self, time: int | tuple[int, int]) -> NDArray[np.int64]:
@@ -479,7 +471,7 @@ class Task(TaskSettingsMixin):
                 dtype=np.float32,
             )
             for idx, _ in enumerate(self._modalities):
-                value = self._rng.choice(self.stim_intensities, 1) if self._modality_seq[n] != "catch" else 0
+                value = self._rng.choice(self.stim_intensities, 1) if self._modality_seq[n] != "X" else 0
                 x[n][self._phases[n]["fix_time"], idx] = self.fix_intensity
                 x[n][self._phases[n]["input"], idx] = value
             x[n][self._phases[n]["input"], self._n_inputs - 1] = 1  # start cue
@@ -494,7 +486,7 @@ class Task(TaskSettingsMixin):
     def _build_trials_outputs(self) -> NDArray[np.float64]:
         """Generate trials outputs."""
         y = np.empty(self._ntrials, dtype=object)
-        choice = (self._modality_seq != "catch").astype(np.int_)
+        choice = (self._modality_seq != "X").astype(np.int_)
         for n in range(self._ntrials):
             y[n] = np.full((len(self._time[n]), self.n_outputs), min(self.output_behavior), dtype=np.float32)
             y[n][self._phases[n]["input"], choice[n]] = max(self.output_behavior)
