@@ -108,7 +108,7 @@ class Task(TaskSettingsMixin):
         self._check_int_positive("n_outputs", self.n_outputs, strict=True)
         self._check_bool("scaling", self.scaling)
         self._check_bool("shuffle_trials", self.shuffle_trials)
-        if self.max_sequential:
+        if self.max_sequential is not None:
             self._check_int_positive("max_sequential", self.max_sequential, strict=True)
 
         # store raw inputs
