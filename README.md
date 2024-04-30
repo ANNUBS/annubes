@@ -28,6 +28,8 @@ For more details about how to contribute, see the [contribution guidelines](CONT
   - [Overview](#overview)
   - [Table of contents](#table-of-contents)
   - [Installation](#installation)
+    - [Repository installation](#repository-installation)
+    - [Pip installation](#pip-installation)
   - [Get started](#get-started)
     - [Generate synthetic data](#generate-synthetic-data)
     - [Train neural networks](#train-neural-networks)
@@ -36,6 +38,8 @@ For more details about how to contribute, see the [contribution guidelines](CONT
   - [Package development](#package-development)
 
 ## Installation
+
+### Repository installation
 
 We advise to install the package inside a virtual environment (using [conda](https://conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html) or [venv](https://docs.python.org/3/library/venv.html)).
 
@@ -46,6 +50,10 @@ git clone git@github.com:ANNUBS/annubes.git
 cd annubes
 pip install .
 ```
+
+### Pip installation
+
+Under development.
 
 ## Get started
 
