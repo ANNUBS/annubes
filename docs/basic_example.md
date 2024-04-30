@@ -1,4 +1,4 @@
-# Get started
+# Basic example
 
 ## Generate synthetic data
 
