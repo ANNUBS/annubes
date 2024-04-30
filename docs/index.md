@@ -6,7 +6,7 @@ ANNUBeS, which stands for _Artificial Neural Networks to Uncover Behavioral Stra
 
 🔧 [Pull Requests](https://github.com/ANNUBS/annubes/pulls)
 
-For more details about how to contribute, see the [contribution guidelines](CONTRIBUTING.md).
+For more details about how to contribute, see the [contribution guidelines](contributing.md).
 
 ❗❗ DISCLAIMER ❗❗
 
