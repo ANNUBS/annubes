@@ -1,4 +1,4 @@
-name: cffconvert
+name: cff-convert
 
 on:
   push:

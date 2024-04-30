@@ -1,9 +1,39 @@
 # Basic example
 
-## Generating trials
+## Generate synthetic data
 
-Add here basic functionalities examples in code blocks.
+The `Task` data class can be used for defining a behavioral task, and many parameters can be set. The configuration of the trials that can appear during a session is given by a dictionary representing the ratio of the different trials within the task (`session`). Trials with a single modality (e.g., a visual trial) must be represented by single characters, while trials with multiple modalities (e.g., an audiovisual trial) are represented by the character combination of those trials. The probability of catch trials (denoted by X) in the session can be set using the `catch_prob` parameter.
 
-## Training RNNs
+```python
+from annubes.task import Task
 
-Add here basic functionalities examples in code blocks.
+task = Task(name='example_task',
+                session={"v":0.5, "a":0.5},
+                stim_intensities=[0.7, 0.9],
+                stim_time=2000,
+                catch_prob=0.3)
+```
+
+For more details about the `Task` class parameters, see the [API Documentation](https://annubs.github.io/annubes/latest/api/task/#annubes.task.Task).
+
+Then, trials can be generated:
+
+```python
+
+NTRIALS = 10
+trials = task.generate_trials(NTRIALS)
+```
+
+And plotted:
+
+```python
+task.plot_trials(NTRIALS)
+```
+
+<p align="center">
+  <img src="example_trials_plot.png" width="700">
+</p>
+
+## Train neural networks
+
+This functionality is still under development.
