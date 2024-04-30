@@ -1,5 +1,13 @@
 # Welcome to ANNUBeS
 
-The use of animals in neuroscience research is a fundamental tool to understand the inner workings of the brain during perception and cognition in health and disease. Neuroscientists train animals, often rodents, in behavioral tasks over several months, however training protocols are sometimes not well defined and this leads to delays in research, additional costs, or the need of more animals. Finding strategies to optimize animal training in safe and ethical ways is therefore of crucial importance in neuroscience.
-
 ANNUBeS, which stands for _Artificial Neural Networks to Uncover Behavioral Strategies_, is a deep learning framework meant to generate synthetic data and train on them neural networks aimed at developing and evaluating animals' training protocols in neuroscience. The package gives the users the possibility to generate behavioral data in a very flexible way, that can be used to train neural networks in the same way that animals are trained, and study whether the developed models can predict the behavior of the animals. The ultimate goal of the framework is to lead researchers to more efficient training protocols, thus improving neuroscience practices.
+
+🐛 Bugs reports and ⭐ features requests [here](https://github.com/ANNUBS/annubes/issues)
+
+🔧 [Pull Requests](https://github.com/ANNUBS/annubes/pulls)
+
+For more details about how to contribute, see the [contribution guidelines](CONTRIBUTING.md).
+
+❗❗ DISCLAIMER ❗❗
+
+Please note that this software is currently in its early stages of development. As such, some features may not work exactly as intended or envisioned yet. We appreciate your patience and understanding. If you encounter any issues or have suggestions for improvement, we encourage you to open an issue on our repository. Thank you for your support!

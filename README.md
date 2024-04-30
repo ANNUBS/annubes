@@ -22,6 +22,10 @@ ANNUBeS, which stays for _Artificial Neural Networks to Uncover Behavioral Strat
 
 For more details about how to contribute, see the [contribution guidelines](CONTRIBUTING.md).
 
+❗❗ DISCLAIMER ❗❗
+
+Please note that this software is currently in its early stages of development. As such, some features may not work exactly as intended or envisioned yet. We appreciate your patience and understanding. If you encounter any issues or have suggestions for improvement, we encourage you to open an issue on our repository. Thank you for your support!
+
 ## Table of contents
 
 - [ANNUBeS](#annubes)
