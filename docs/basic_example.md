@@ -31,7 +31,7 @@ task.plot_trials(NTRIALS)
 ```
 
 <p align="center">
-  <img src="example_trials_plot.png" width="700">
+  <img src="https://github.com/ANNUBS/annubes/blob/ead1437b7ee6ad6998ce2b3653fd0b3b3d875e25/docs/example_trials_plot.png?raw=true" width="700">
 </p>
 
 ## Train neural networks
