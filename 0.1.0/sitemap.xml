@@ -2,42 +2,42 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
          <loc>https://ANNUBS.github.io/annubes/latest/</loc>
-         <lastmod>2024-04-30</lastmod>
+         <lastmod>2024-05-01</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://ANNUBS.github.io/annubes/latest/basic_example/</loc>
-         <lastmod>2024-04-30</lastmod>
+         <lastmod>2024-05-01</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://ANNUBS.github.io/annubes/latest/code_of_conduct/</loc>
-         <lastmod>2024-04-30</lastmod>
+         <lastmod>2024-05-01</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://ANNUBS.github.io/annubes/latest/contributing/</loc>
-         <lastmod>2024-04-30</lastmod>
+         <lastmod>2024-05-01</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://ANNUBS.github.io/annubes/latest/installation/</loc>
-         <lastmod>2024-04-30</lastmod>
+         <lastmod>2024-05-01</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://ANNUBS.github.io/annubes/latest/license/</loc>
-         <lastmod>2024-04-30</lastmod>
+         <lastmod>2024-05-01</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://ANNUBS.github.io/annubes/latest/api/task/</loc>
-         <lastmod>2024-04-30</lastmod>
+         <lastmod>2024-05-01</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://ANNUBS.github.io/annubes/latest/api/tasksettingsmixin/</loc>
-         <lastmod>2024-04-30</lastmod>
+         <lastmod>2024-05-01</lastmod>
          <changefreq>daily</changefreq>
     </url>
 </urlset>
