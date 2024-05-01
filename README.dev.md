@@ -71,26 +71,32 @@ coverage report
 
 `coverage` can also generate output in HTML and other formats; see `coverage help` for more information.
 
-## Running linters locally
+## Linting and formatting
 
-For linting and sorting imports we will use [ruff](https://beta.ruff.rs/docs/). Running the linters requires an
-activated virtual environment with the development tools installed.
+We use [ruff](https://docs.astral.sh/ruff/) for linting, sorting imports and formatting of python (notebook) files. The configurations of `ruff` are set in [ruff.toml](ruff.toml) file.
 
-```shell
-# linter
-ruff .
+If you are using VS code, please install and activate the [Ruff extension](https://marketplace.visualstudio.com/items?itemName=charliermarsh.ruff) to automatically format and check linting.
 
-# linter with automatic fixing
-ruff . --fix
+Otherwise, please ensure check both linting (`ruff check .`) and formatting (`ruff format .`) before requesting a review. Running the linters and formatters requires an activated virtual environment with the development tools installed.
+
+## Static typing
+
+We use [Mypy](http://mypy-lang.org/) as static type checker:
+
+```
+# install mypy
+pip install mypy
+
+# run mypy
+mypy path-to-source-code
 ```
 
-To fix readability of your code style you can use [yapf](https://github.com/google/yapf).
+Mypy configurations are set in [pyproject.toml](pyproject.toml) file.
 
-You can enable automatic linting with `ruff` on commit by enabling the git hook from `.githooks/pre-commit`, like so:
+For more info about static typing and mypy, see:
 
-```shell
-git config --local core.hooksPath .githooks
-```
+- [Static typing with Python](https://typing.readthedocs.io/en/latest/index.html#)
+- [Mypy doc](https://mypy.readthedocs.io/en/stable/)
 
 ## Docs
 
@@ -128,85 +134,29 @@ instead of `mike serve` to check them.
 
 ## Versioning
 
-Bumping the version across all files is done with [bumpversion](https://github.com/c4urself/bump2version), e.g.
-
-```shell
-bumpversion major
-bumpversion minor
-bumpversion patch
-```
+Bumping the version across all files is done before creating a new package release, running `bump2version [part]` from command line after having installed [bump2version](https://pypi.org/project/bump2version/) on your local environment. Instead of `[part]`, type the part of the version to increase, e.g. minor. The settings in `.bumpversion.cfg` will take care of updating all the files containing version strings.
 
 ## Making a release
 
 This section describes how to make a release in 3 parts:
 
 1. preparation
-1. making a release on PyPI
-1. making a release on GitHub
+2. making a release on GitHub
+3. making a release on PyPI
 
 ### (1/3) Preparation
 
-1. Update the <CHANGELOG.md> (don't forget to update links at bottom of page)
-2. Verify that the information in `CITATION.cff` is correct, and that `.zenodo.json` contains equivalent data
-3. Make sure the [version has been updated](#versioning).
-4. Run the unit tests with `pytest -v`
+1. Verify that the information in `CITATION.cff` is correct, and that `.zenodo.json` contains equivalent data
+2. [Bump the version](https://github.com/DeepRank/deeprank2/blob/dev/README.dev.md#versioning).
+3. Run the unit tests with `pytest -v`
 
-### (2/3) PyPI
+### (2/3) GitHub
 
-In a new terminal:
+Make a [release on GitHub](https://github.com/ANNUBS/annubes/releases/new).
 
-```shell
-# OPTIONAL: prepare a new directory with fresh git clone to ensure the release
-# has the state of origin/main branch
-cd $(mktemp -d annubes.XXXXXX)
-git clone git@github.com:ANNUBS/annubes .
+### (3/3) PyPI
 
-# make sure to have a recent version of pip and the publishing dependencies
-python -m pip install --upgrade pip
-python -m pip install .[publishing]
-
-# create the source distribution and the wheel
-python -m build
-
-# upload to test pypi instance (requires credentials)
-python -m twine upload --repository testpypi dist/*
-```
-
-Visit
-[https://test.pypi.org/project/annubes](https://test.pypi.org/project/annubes)
-and verify that your package was uploaded successfully. Keep the terminal open, we'll need it later.
-
-In a new terminal, without an activated virtual environment or an env directory:
-
-```shell
-cd $(mktemp -d annubes-test.XXXXXX)
-
-# prepare a clean virtual environment and activate it
-python -m venv env
-source env/bin/activate
-
-# make sure to have a recent version of pip and setuptools
-python -m pip install --upgrade pip
-
-# install from test pypi instance:
-python -m pip -v install --no-cache-dir \
---index-url https://test.pypi.org/simple/ \
---extra-index-url https://pypi.org/simple annubes
-```
-
-Check that the package works as it should when installed from pypitest.
-
-Then upload to pypi.org with:
-
-```shell
-# Back to the first terminal,
-# FINAL STEP: upload to PyPI (requires credentials)
-python -m twine upload dist/*
-```
-
-### (3/3) GitHub
-
-Don't forget to also make a [release on GitHub](https://github.com/ANNUBS/annubes/releases/new). If your repository uses the GitHub-Zenodo integration this will also trigger Zenodo into making a snapshot of your repository and sticking a DOI on it.
+The GitHub release will trigger [a GitHub action](https://github.com/DeepRank/deeprank2/actions/workflows/release.yml) that will take care of publishing the package on PyPi.
 
 ## Development conventions
 
