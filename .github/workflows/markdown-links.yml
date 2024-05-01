@@ -1,4 +1,4 @@
-name: markdown-link-check
+name: markdown-links
 
 on:
   push:
@@ -9,7 +9,7 @@ on:
       - main
 
 jobs:
-  markdown-link-check:
+  markdown-links-check:
     name: Check markdown links
     runs-on: ubuntu-latest
     steps:
