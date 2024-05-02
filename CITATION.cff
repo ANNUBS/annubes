@@ -20,7 +20,7 @@ authors:
     orcid: "https://orcid.org/0000-0002-8096-4891"
 date-released: "2024-05-01"
 doi: 10.5281/zenodo.11098460
-version: "0.1.0"
+version: "0.1.1"
 repository-code: "https://github.com/ANNUBS/annubes"
 keywords:
   - neuroscience
