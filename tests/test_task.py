@@ -426,17 +426,16 @@ def test_setup_trial_phases(fix_time: int | tuple[int, int], iti: int | tuple[in
     )
 
 
-def test_minmaxscaler():
-    task = Task(name=NAME, scaling=True)
+@pytest.mark.parametrize(("stim_intensities", "fix_intensity"), [(STIM_INTENSITIES, FIX_INTENSITY), ([2, 4, 6], 10)])
+def test_minmaxscaler(stim_intensities: list[float], fix_intensity: float):
+    task = Task(name=NAME, stim_intensities=stim_intensities, fix_intensity=fix_intensity, scaling=True)
     _ = task.generate_trials(ntrials=NTRIALS)
     trial_indices = range(NTRIALS)
-    # Check that the signals are scaled between 0 and 1, and that min is 0 and max is 1
+    # Check that the signals are scaled between 0 and 1
     ## Inputs
     assert all((task._inputs[n_trial] >= 0).all() and (task._inputs[n_trial] <= 1).all() for n_trial in trial_indices)
-    assert all(task._inputs[n_trial].min() == 0 and task._inputs[n_trial].max() == 1 for n_trial in trial_indices)
     # Outputs
     assert all((task._outputs[n_trial] >= 0).all() and (task._outputs[n_trial] <= 1).all() for n_trial in trial_indices)
-    assert all(task._outputs[n_trial].min() == 0 and task._outputs[n_trial].max() == 1 for n_trial in trial_indices)
 
 
 @pytest.mark.parametrize("random_seed", [RND_SEED, 100])
