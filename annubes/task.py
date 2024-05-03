@@ -72,7 +72,8 @@ class Task(TaskSettingsMixin):
             Note that values are read relative to each other, such that e.g. `{"v": 0.25, "a": 0.75}` is equivalent to
             `{"v": 1, "a": 3}`.
             Defaults to {"v": 0.5, "a": 0.5}.
-        stim_intensities: List of possible intensity values of each stimulus.
+        stim_intensities: List of possible intensity values of each stimulus, when the stimulus is present. Note that
+            when the stimulus is not present, the intensity is set to 0.
             Defaults to [0.8, 0.9, 1].
         stim_time: Duration of each stimulus in ms.
             Defaults to 1000.
