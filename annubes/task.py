@@ -452,7 +452,7 @@ class Task(TaskSettingsMixin):
         abs_max: float,
         rescale_range: tuple[float, float] = (0, 1),
     ) -> NDArray[np.float64]:
-        """Rescale `array_` array to a given range.
+        """Rescale `array_` to a given range.
 
         Rescaling happens as follows:
 
