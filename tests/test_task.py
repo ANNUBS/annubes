@@ -550,3 +550,19 @@ def test_plot_trials(task: Task):
         == f"Number of plots requested ({n_plots}) exceeds number of trials ({ntrials}). Will plot all trials."
     )
     assert warning.category == UserWarning
+
+
+def test_intensity_trials():
+    task = Task(name=NAME, session=SESSION, stim_intensities=STIM_INTENSITIES, scaling=SCALING)
+    trials = task.generate_trials(ntrials=NTRIALS)
+    high_val = 0.6  # for a signal to be considered high
+    low_val = 0.3  # for a signal to be considered low
+    for n in range(NTRIALS):
+        for idx, mod in enumerate(task._modalities):
+            assert (
+                (trials["inputs"][n][task._phases[n]["input"], idx] > high_val).all()
+                if trials["modality_seq"][n] == mod  # check if the signal is high if the modality is the current one
+                else (
+                    trials["inputs"][n][task._phases[n]["input"], idx] < low_val
+                ).all()  # check if the signal is low otherwise
+            )

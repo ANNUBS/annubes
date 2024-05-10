@@ -470,10 +470,10 @@ class Task(TaskSettingsMixin):
                 (len(self._time[n]), self._n_inputs),
                 dtype=np.float32,
             )
-            for idx, _ in enumerate(self._modalities):
-                value = self._rng.choice(self.stim_intensities, 1) if self._modality_seq[n] != "X" else 0
+            for idx, mod in enumerate(self._modalities):
+                if self._modality_seq[n] != "X" and self._modality_seq[n] == mod:
+                    x[n][self._phases[n]["input"], idx] = self._rng.choice(self.stim_intensities, 1)
                 x[n][self._phases[n]["fix_time"], idx] = self.fix_intensity
-                x[n][self._phases[n]["input"], idx] = value
             x[n][self._phases[n]["input"], self._n_inputs - 1] = 1  # start cue
             # add noise
             x[n] += noise_factor * self._rng.normal(loc=0, scale=1, size=x[n].shape)
