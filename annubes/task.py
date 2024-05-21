@@ -72,7 +72,8 @@ class Task(TaskSettingsMixin):
             Note that values are read relative to each other, such that e.g. `{"v": 0.25, "a": 0.75}` is equivalent to
             `{"v": 1, "a": 3}`.
             Defaults to {"v": 0.5, "a": 0.5}.
-        stim_intensities: List of possible intensity values of each stimulus.
+        stim_intensities: List of possible intensity values of each stimulus, when the stimulus is present. Note that
+            when the stimulus is not present, the intensity is set to 0.
             Defaults to [0.8, 0.9, 1].
         stim_time: Duration of each stimulus in ms.
             Defaults to 1000.
@@ -168,6 +169,18 @@ class Task(TaskSettingsMixin):
         # Generate inputs and outputs
         self._inputs = self._build_trials_inputs()
         self._outputs = self._build_trials_outputs()
+
+        # Scaling
+        if self.scaling:
+            flattened = np.concatenate(
+                (np.concatenate(self._inputs).reshape(-1), np.concatenate(self._outputs).reshape(-1)),
+            )
+            abs_min = np.min(flattened)
+            abs_max = np.max(flattened)
+
+            for n in range(self._ntrials):
+                self._inputs[n] = self._minmaxscaler(self._inputs[n], abs_min, abs_max)
+                self._outputs[n] = self._minmaxscaler(self._outputs[n], abs_min, abs_max)
 
         # Store trials settings and data
         return {
@@ -434,30 +447,35 @@ class Task(TaskSettingsMixin):
 
     def _minmaxscaler(
         self,
-        input_: NDArray[np.float64],
+        array_: NDArray[np.float64],
+        abs_min: float,
+        abs_max: float,
         rescale_range: tuple[float, float] = (0, 1),
     ) -> NDArray[np.float64]:
-        """Rescale `input_` array to a given range.
+        """Rescale `array_` to a given range.
 
         Rescaling happens as follows:
 
-            `X_std = (input_ - input_.min()) / (input_.max() - input_.min())`
+            `X_std = (array_ - abs_min) / (abs_max - abs_min)`
             `X_scaled = X_std * (max - min) + min`
             where min, max = range.
         The logic is the same as that of `sklearn.preprocessing.MinMaxScaler` estimator. Each array is rescaled to the
-        given range, for each trial contained in `input_`.
+        given range.
 
 
         Args:
-            input_: Input array of shape (self._ntrials, len(self._time), self._n_inputs).
+            array_: Array to be rescaled. It can be either input or output array, respectively with shape
+                (self._time, self._n_inputs) or (self._time, self.n_outputs).
+            abs_min: Minimum value of the input and output arrays, considering all trials.
+            abs_max: Maximum value of the input and output arrays, considering all trials.
             rescale_range: Desired range of transformed data. Defaults to (0, 1).
 
         Returns:
             Rescaled input array.
         """
-        input_std = (input_ - input_.min()) / (input_.max() - input_.min())
+        array_std = (array_ - abs_min) / (abs_max - abs_min)
 
-        return np.array(input_std * (max(rescale_range) - min(rescale_range)) + min(rescale_range))
+        return np.array(array_std * (max(rescale_range) - min(rescale_range)) + min(rescale_range))
 
     def _build_trials_inputs(self) -> NDArray[np.float64]:
         """Generate trials time and inputs ndarrays."""
@@ -478,9 +496,6 @@ class Task(TaskSettingsMixin):
             # add noise
             x[n] += noise_factor * self._rng.normal(loc=0, scale=1, size=x[n].shape)
 
-            if self.scaling:
-                x[n] = self._minmaxscaler(x[n])
-
         return x
 
     def _build_trials_outputs(self) -> NDArray[np.float64]:
@@ -491,8 +506,5 @@ class Task(TaskSettingsMixin):
             y[n] = np.full((len(self._time[n]), self.n_outputs), min(self.output_behavior), dtype=np.float32)
             y[n][self._phases[n]["input"], choice[n]] = max(self.output_behavior)
             y[n][self._phases[n]["input"], 1 - choice[n]] = min(self.output_behavior)
-
-            if self.scaling:
-                y[n] = self._minmaxscaler(y[n])
 
         return y
