@@ -1,8 +1,8 @@
 # ❗ Repository Archived ❗
 
-# Welcome to ANNUBeS
-
 This repository is no longer actively maintained. All updates and future developments have been moved to [NeuroGym's main repository](https://github.com/neurogym/neurogym). Please visit [NeuroGym](https://github.com/neurogym/neurogym) for the latest code, updates, and ongoing development efforts.
+
+# Welcome to ANNUBeS
 
 ANNUBeS, which stands for _Artificial Neural Networks to Uncover Behavioral Strategies_, is a deep learning framework meant to generate synthetic data and train on them neural networks aimed at developing and evaluating animals' training protocols in neuroscience. The package gives the users the possibility to generate behavioral data in a very flexible way, that can be used to train neural networks in the same way that animals are trained, and study whether the developed models can predict the behavior of the animals. The ultimate goal of the framework is to lead researchers to more efficient training protocols, thus improving neuroscience practices.
 
