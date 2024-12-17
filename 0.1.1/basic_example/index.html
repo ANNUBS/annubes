@@ -873,22 +873,20 @@
 <h1 id="basic-example">Basic example<a class="headerlink" href="#basic-example" title="Permanent link">&para;</a></h1>
 <h2 id="generate-synthetic-data">Generate synthetic data<a class="headerlink" href="#generate-synthetic-data" title="Permanent link">&para;</a></h2>
 <p>The <code>Task</code> data class can be used for defining a behavioral task, and many parameters can be set. The configuration of the trials that can appear during a session is given by a dictionary representing the ratio of the different trials within the task (<code>session</code>). Trials with a single modality (e.g., a visual trial) must be represented by single characters, while trials with multiple modalities (e.g., an audiovisual trial) are represented by the character combination of those trials. The probability of catch trials (denoted by X) in the session can be set using the <code>catch_prob</code> parameter.</p>
-<div class="language-python highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span> <span class="nn">annubes.task</span> <span class="kn">import</span> <span class="n">Task</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="n">task</span> <span class="o">=</span> <span class="n">Task</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;example_task&#39;</span><span class="p">,</span>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>                <span class="n">session</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;v&quot;</span><span class="p">:</span><span class="mf">0.5</span><span class="p">,</span> <span class="s2">&quot;a&quot;</span><span class="p">:</span><span class="mf">0.5</span><span class="p">},</span>
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>                <span class="n">stim_intensities</span><span class="o">=</span><span class="p">[</span><span class="mf">0.7</span><span class="p">,</span> <span class="mf">0.9</span><span class="p">],</span>
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>                <span class="n">stim_time</span><span class="o">=</span><span class="mi">2000</span><span class="p">,</span>
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>                <span class="n">catch_prob</span><span class="o">=</span><span class="mf">0.3</span><span class="p">)</span>
-</code></pre></div>
+<pre class="highlight"><code class="language-python">from annubes.task import Task
+
+task = Task(name='example_task',
+                session={"v":0.5, "a":0.5},
+                stim_intensities=[0.7, 0.9],
+                stim_time=2000,
+                catch_prob=0.3)</code></pre>
 <p>For more details about the <code>Task</code> class parameters, see the <a href="https://annubs.github.io/annubes/latest/api/task/#annubes.task.Task">API Documentation</a>.</p>
 <p>Then, trials can be generated:</p>
-<div class="language-python highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">NTRIALS</span> <span class="o">=</span> <span class="mi">10</span>
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="n">trials</span> <span class="o">=</span> <span class="n">task</span><span class="o">.</span><span class="n">generate_trials</span><span class="p">(</span><span class="n">NTRIALS</span><span class="p">)</span>
-</code></pre></div>
+<pre class="highlight"><code class="language-python">
+NTRIALS = 10
+trials = task.generate_trials(NTRIALS)</code></pre>
 <p>And plotted:</p>
-<div class="language-python highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">task</span><span class="o">.</span><span class="n">plot_trials</span><span class="p">(</span><span class="n">NTRIALS</span><span class="p">)</span>
-</code></pre></div>
+<pre class="highlight"><code class="language-python">task.plot_trials(NTRIALS)</code></pre>
 <p align="center">
   <img src="https://github.com/ANNUBS/annubes/blob/ead1437b7ee6ad6998ce2b3653fd0b3b3d875e25/docs/example_trials_plot.png?raw=true" width="700">
 </p>

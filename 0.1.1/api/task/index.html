@@ -916,29 +916,28 @@
   </span>
 
 <a href="#annubes.task.Task" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="language-python doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">Task</span><span class="p">(</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">name</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="n">session</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#dict">dict</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></span><span class="p">]</span> <span class="o">=</span> <span class="k">lambda</span><span class="p">:</span> <span class="p">{</span>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>        <span class="s2">&quot;v&quot;</span><span class="p">:</span> <span class="mf">0.5</span><span class="p">,</span>
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>        <span class="s2">&quot;a&quot;</span><span class="p">:</span> <span class="mf">0.5</span><span class="p">,</span>
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>    <span class="p">}(),</span>
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>    <span class="n">stim_intensities</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#list">list</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></span><span class="p">]</span> <span class="o">=</span> <span class="k">lambda</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.8</span><span class="p">,</span> <span class="mf">0.9</span><span class="p">,</span> <span class="mi">1</span><span class="p">](),</span>
-<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>    <span class="n">stim_time</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></span> <span class="o">=</span> <span class="mi">1000</span><span class="p">,</span>
-<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>    <span class="n">catch_prob</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></span> <span class="o">=</span> <span class="mf">0.5</span><span class="p">,</span>
-<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>    <span class="n">shuffle_trials</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
-<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>    <span class="n">max_sequential</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>    <span class="o">*</span><span class="p">,</span>
-<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>    <span class="n">fix_intensity</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
-<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>    <span class="n">fix_time</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#tuple">tuple</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></span><span class="p">]</span> <span class="o">=</span> <span class="mi">100</span><span class="p">,</span>
-<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>    <span class="n">iti</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#tuple">tuple</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
-<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a>    <span class="n">dt</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></span> <span class="o">=</span> <span class="mi">20</span><span class="p">,</span>
-<a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a>    <span class="n">tau</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></span> <span class="o">=</span> <span class="mi">100</span><span class="p">,</span>
-<a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a>    <span class="n">n_outputs</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
-<a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a>    <span class="n">output_behavior</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#list">list</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></span><span class="p">]</span> <span class="o">=</span> <span class="k">lambda</span><span class="p">:</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">](),</span>
-<a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a>    <span class="n">noise_std</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></span> <span class="o">=</span> <span class="mf">0.01</span><span class="p">,</span>
-<a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a>    <span class="n">scaling</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">True</span>
-<a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a><span class="p">)</span>
-</code></pre></div>
+<pre class="highlight"><code class="language-python doc-signature">Task(
+    name: <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a>,
+    session: <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#dict">dict</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a>, <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a>] = lambda: {
+        "v": 0.5,
+        "a": 0.5,
+    }(),
+    stim_intensities: <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#list">list</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a>] = lambda: [0.8, 0.9, 1](),
+    stim_time: <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a> = 1000,
+    catch_prob: <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a> = 0.5,
+    shuffle_trials: <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a> = True,
+    max_sequential: <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a> | None = None,
+    *,
+    fix_intensity: <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a> = 0,
+    fix_time: <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a> | <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#tuple">tuple</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a>, <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a>] = 100,
+    iti: <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a> | <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#tuple">tuple</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a>, <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a>] = 0,
+    dt: <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a> = 20,
+    tau: <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a> = 100,
+    n_outputs: <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a> = 2,
+    output_behavior: <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#list">list</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a>] = lambda: [0, 1](),
+    noise_std: <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a> = 0.01,
+    scaling: <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a> = True
+)</code></pre>
 
   <div class="doc doc-contents first">
           <p class="doc doc-class-bases">
@@ -1003,7 +1002,8 @@ Defaults to {"v": 0.5, "a": 0.5}.</p>
           </td>
           <td>
             <div class="doc-md-description">
-              <p>List of possible intensity values of each stimulus.
+              <p>List of possible intensity values of each stimulus, when the stimulus is present. Note that
+when the stimulus is not present, the intensity is set to 0.
 Defaults to [0.8, 0.9, 1].</p>
             </div>
           </td>
@@ -1098,11 +1098,10 @@ Defaults to None (no maximum).</p>
 
 
 <a href="#annubes.task.Task.generate_trials" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="language-python doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">generate_trials</span><span class="p">(</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">ntrials</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#tuple">tuple</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></span><span class="p">]</span> <span class="o">=</span> <span class="mi">20</span><span class="p">,</span>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="n">random_seed</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#dict">dict</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span><span class="p">]</span>
-</code></pre></div>
+<pre class="highlight"><code class="language-python doc-signature">generate_trials(
+    ntrials: <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a> | <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#tuple">tuple</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a>, <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a>] = 20,
+    random_seed: <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a> | None = None,
+) -&gt; <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#dict">dict</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a>, <a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a>]</code></pre>
 
   <div class="doc doc-contents ">
   
@@ -1202,116 +1201,73 @@ Defaults to None (i.e. the initial state itself is random).</p>
 
           <details class="quote">
             <summary>Source code in <code>annubes/task.py</code></summary>
-            <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-128">128</a></span>
-<span class="normal"><a href="#__codelineno-0-129">129</a></span>
-<span class="normal"><a href="#__codelineno-0-130">130</a></span>
-<span class="normal"><a href="#__codelineno-0-131">131</a></span>
-<span class="normal"><a href="#__codelineno-0-132">132</a></span>
-<span class="normal"><a href="#__codelineno-0-133">133</a></span>
-<span class="normal"><a href="#__codelineno-0-134">134</a></span>
-<span class="normal"><a href="#__codelineno-0-135">135</a></span>
-<span class="normal"><a href="#__codelineno-0-136">136</a></span>
-<span class="normal"><a href="#__codelineno-0-137">137</a></span>
-<span class="normal"><a href="#__codelineno-0-138">138</a></span>
-<span class="normal"><a href="#__codelineno-0-139">139</a></span>
-<span class="normal"><a href="#__codelineno-0-140">140</a></span>
-<span class="normal"><a href="#__codelineno-0-141">141</a></span>
-<span class="normal"><a href="#__codelineno-0-142">142</a></span>
-<span class="normal"><a href="#__codelineno-0-143">143</a></span>
-<span class="normal"><a href="#__codelineno-0-144">144</a></span>
-<span class="normal"><a href="#__codelineno-0-145">145</a></span>
-<span class="normal"><a href="#__codelineno-0-146">146</a></span>
-<span class="normal"><a href="#__codelineno-0-147">147</a></span>
-<span class="normal"><a href="#__codelineno-0-148">148</a></span>
-<span class="normal"><a href="#__codelineno-0-149">149</a></span>
-<span class="normal"><a href="#__codelineno-0-150">150</a></span>
-<span class="normal"><a href="#__codelineno-0-151">151</a></span>
-<span class="normal"><a href="#__codelineno-0-152">152</a></span>
-<span class="normal"><a href="#__codelineno-0-153">153</a></span>
-<span class="normal"><a href="#__codelineno-0-154">154</a></span>
-<span class="normal"><a href="#__codelineno-0-155">155</a></span>
-<span class="normal"><a href="#__codelineno-0-156">156</a></span>
-<span class="normal"><a href="#__codelineno-0-157">157</a></span>
-<span class="normal"><a href="#__codelineno-0-158">158</a></span>
-<span class="normal"><a href="#__codelineno-0-159">159</a></span>
-<span class="normal"><a href="#__codelineno-0-160">160</a></span>
-<span class="normal"><a href="#__codelineno-0-161">161</a></span>
-<span class="normal"><a href="#__codelineno-0-162">162</a></span>
-<span class="normal"><a href="#__codelineno-0-163">163</a></span>
-<span class="normal"><a href="#__codelineno-0-164">164</a></span>
-<span class="normal"><a href="#__codelineno-0-165">165</a></span>
-<span class="normal"><a href="#__codelineno-0-166">166</a></span>
-<span class="normal"><a href="#__codelineno-0-167">167</a></span>
-<span class="normal"><a href="#__codelineno-0-168">168</a></span>
-<span class="normal"><a href="#__codelineno-0-169">169</a></span>
-<span class="normal"><a href="#__codelineno-0-170">170</a></span>
-<span class="normal"><a href="#__codelineno-0-171">171</a></span>
-<span class="normal"><a href="#__codelineno-0-172">172</a></span>
-<span class="normal"><a href="#__codelineno-0-173">173</a></span>
-<span class="normal"><a href="#__codelineno-0-174">174</a></span>
-<span class="normal"><a href="#__codelineno-0-175">175</a></span>
-<span class="normal"><a href="#__codelineno-0-176">176</a></span>
-<span class="normal"><a href="#__codelineno-0-177">177</a></span>
-<span class="normal"><a href="#__codelineno-0-178">178</a></span>
-<span class="normal"><a href="#__codelineno-0-179">179</a></span>
-<span class="normal"><a href="#__codelineno-0-180">180</a></span>
-<span class="normal"><a href="#__codelineno-0-181">181</a></span>
-<span class="normal"><a href="#__codelineno-0-182">182</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-128" name="__codelineno-0-128"></a><span class="k">def</span> <span class="nf">generate_trials</span><span class="p">(</span>
-<a id="__codelineno-0-129" name="__codelineno-0-129"></a>    <span class="bp">self</span><span class="p">,</span>
-<a id="__codelineno-0-130" name="__codelineno-0-130"></a>    <span class="n">ntrials</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="mi">20</span><span class="p">,</span>
-<a id="__codelineno-0-131" name="__codelineno-0-131"></a>    <span class="n">random_seed</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-<a id="__codelineno-0-132" name="__codelineno-0-132"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
-<a id="__codelineno-0-133" name="__codelineno-0-133"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Method for generating trials.</span>
-<a id="__codelineno-0-134" name="__codelineno-0-134"></a>
-<a id="__codelineno-0-135" name="__codelineno-0-135"></a><span class="sd">    Args:</span>
-<a id="__codelineno-0-136" name="__codelineno-0-136"></a><span class="sd">        ntrials: Number of trials to generate. If a tuple is given, it is interpreted as an interval of</span>
-<a id="__codelineno-0-137" name="__codelineno-0-137"></a><span class="sd">            possible values, and a value will be randomly picked from it.</span>
-<a id="__codelineno-0-138" name="__codelineno-0-138"></a><span class="sd">            Defaults to 20.</span>
-<a id="__codelineno-0-139" name="__codelineno-0-139"></a><span class="sd">        random_seed: Seed for numpy&#39;s random number generator (rng). If an int is given, it will be used as the seed</span>
-<a id="__codelineno-0-140" name="__codelineno-0-140"></a><span class="sd">            for `np.random.default_rng()`.</span>
-<a id="__codelineno-0-141" name="__codelineno-0-141"></a><span class="sd">            Defaults to None (i.e. the initial state itself is random).</span>
-<a id="__codelineno-0-142" name="__codelineno-0-142"></a>
-<a id="__codelineno-0-143" name="__codelineno-0-143"></a><span class="sd">    Returns:</span>
-<a id="__codelineno-0-144" name="__codelineno-0-144"></a><span class="sd">        dict containing all input parameters of `Task` (&quot;task_settings&quot;), the input parameters for the current</span>
-<a id="__codelineno-0-145" name="__codelineno-0-145"></a><span class="sd">        `generate_trials()` method&#39;s call (&quot;ntrials&quot;, &quot;random_state&quot;), and the generated data (&quot;modality_seq&quot;,</span>
-<a id="__codelineno-0-146" name="__codelineno-0-146"></a><span class="sd">        &quot;time&quot;, &quot;phases&quot;, &quot;inputs&quot;, &quot;outputs&quot;).</span>
-<a id="__codelineno-0-147" name="__codelineno-0-147"></a><span class="sd">    &quot;&quot;&quot;</span>
-<a id="__codelineno-0-148" name="__codelineno-0-148"></a>    <span class="c1"># Check input parameters</span>
-<a id="__codelineno-0-149" name="__codelineno-0-149"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">_check_range</span><span class="p">(</span><span class="s2">&quot;ntrials&quot;</span><span class="p">,</span> <span class="n">ntrials</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<a id="__codelineno-0-150" name="__codelineno-0-150"></a>    <span class="k">if</span> <span class="n">random_seed</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-<a id="__codelineno-0-151" name="__codelineno-0-151"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_check_int_positive</span><span class="p">(</span><span class="s2">&quot;random_seed&quot;</span><span class="p">,</span> <span class="n">random_seed</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-<a id="__codelineno-0-152" name="__codelineno-0-152"></a>
-<a id="__codelineno-0-153" name="__codelineno-0-153"></a>    <span class="c1"># Set random state</span>
-<a id="__codelineno-0-154" name="__codelineno-0-154"></a>    <span class="k">if</span> <span class="n">random_seed</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-<a id="__codelineno-0-155" name="__codelineno-0-155"></a>        <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">random_seed</span><span class="p">)</span>
-<a id="__codelineno-0-156" name="__codelineno-0-156"></a>        <span class="n">random_seed</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">integers</span><span class="p">(</span><span class="mi">2</span><span class="o">**</span><span class="mi">32</span><span class="p">)</span>
-<a id="__codelineno-0-157" name="__codelineno-0-157"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">_rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">random_seed</span><span class="p">)</span>
-<a id="__codelineno-0-158" name="__codelineno-0-158"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">_random_seed</span> <span class="o">=</span> <span class="n">random_seed</span>
-<a id="__codelineno-0-159" name="__codelineno-0-159"></a>
-<a id="__codelineno-0-160" name="__codelineno-0-160"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">_ntrials</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rng</span><span class="o">.</span><span class="n">integers</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="n">ntrials</span><span class="p">),</span> <span class="nb">max</span><span class="p">(</span><span class="n">ntrials</span><span class="p">))</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ntrials</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)</span> <span class="k">else</span> <span class="n">ntrials</span>
-<a id="__codelineno-0-161" name="__codelineno-0-161"></a>
-<a id="__codelineno-0-162" name="__codelineno-0-162"></a>    <span class="c1"># Generate sequence of modalities</span>
-<a id="__codelineno-0-163" name="__codelineno-0-163"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">_modality_seq</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_build_trials_seq</span><span class="p">()</span>
-<a id="__codelineno-0-164" name="__codelineno-0-164"></a>
-<a id="__codelineno-0-165" name="__codelineno-0-165"></a>    <span class="c1"># Setup phases of trial</span>
-<a id="__codelineno-0-166" name="__codelineno-0-166"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">_fix_time</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_iti</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_time</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_phases</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_setup_trial_phases</span><span class="p">()</span>
-<a id="__codelineno-0-167" name="__codelineno-0-167"></a>
-<a id="__codelineno-0-168" name="__codelineno-0-168"></a>    <span class="c1"># Generate inputs and outputs</span>
-<a id="__codelineno-0-169" name="__codelineno-0-169"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">_inputs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_build_trials_inputs</span><span class="p">()</span>
-<a id="__codelineno-0-170" name="__codelineno-0-170"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">_outputs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_build_trials_outputs</span><span class="p">()</span>
-<a id="__codelineno-0-171" name="__codelineno-0-171"></a>
-<a id="__codelineno-0-172" name="__codelineno-0-172"></a>    <span class="c1"># Store trials settings and data</span>
-<a id="__codelineno-0-173" name="__codelineno-0-173"></a>    <span class="k">return</span> <span class="p">{</span>
-<a id="__codelineno-0-174" name="__codelineno-0-174"></a>        <span class="s2">&quot;task_settings&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_task_settings</span><span class="p">,</span>
-<a id="__codelineno-0-175" name="__codelineno-0-175"></a>        <span class="s2">&quot;ntrials&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ntrials</span><span class="p">,</span>
-<a id="__codelineno-0-176" name="__codelineno-0-176"></a>        <span class="s2">&quot;random_seed&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_random_seed</span><span class="p">,</span>
-<a id="__codelineno-0-177" name="__codelineno-0-177"></a>        <span class="s2">&quot;modality_seq&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_modality_seq</span><span class="p">,</span>
-<a id="__codelineno-0-178" name="__codelineno-0-178"></a>        <span class="s2">&quot;time&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_time</span><span class="p">,</span>
-<a id="__codelineno-0-179" name="__codelineno-0-179"></a>        <span class="s2">&quot;phases&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_phases</span><span class="p">,</span>
-<a id="__codelineno-0-180" name="__codelineno-0-180"></a>        <span class="s2">&quot;inputs&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_inputs</span><span class="p">,</span>
-<a id="__codelineno-0-181" name="__codelineno-0-181"></a>        <span class="s2">&quot;outputs&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_outputs</span><span class="p">,</span>
-<a id="__codelineno-0-182" name="__codelineno-0-182"></a>    <span class="p">}</span>
-</code></pre></div></td></tr></table></div>
+            <pre class="highlight"><code class="language-python">def generate_trials(
+    self,
+    ntrials: int | tuple[int, int] = 20,
+    random_seed: int | None = None,
+) -&gt; dict[str, Any]:
+    """Method for generating trials.
+
+    Args:
+        ntrials: Number of trials to generate. If a tuple is given, it is interpreted as an interval of
+            possible values, and a value will be randomly picked from it.
+            Defaults to 20.
+        random_seed: Seed for numpy's random number generator (rng). If an int is given, it will be used as the seed
+            for `np.random.default_rng()`.
+            Defaults to None (i.e. the initial state itself is random).
+
+    Returns:
+        dict containing all input parameters of `Task` ("task_settings"), the input parameters for the current
+        `generate_trials()` method's call ("ntrials", "random_state"), and the generated data ("modality_seq",
+        "time", "phases", "inputs", "outputs").
+    """
+    # Check input parameters
+    self._check_range("ntrials", ntrials, strict=True)
+    if random_seed is not None:
+        self._check_int_positive("random_seed", random_seed, strict=False)
+
+    # Set random state
+    if random_seed is None:
+        rng = np.random.default_rng(random_seed)
+        random_seed = rng.integers(2**32)
+    self._rng = np.random.default_rng(random_seed)
+    self._random_seed = random_seed
+
+    self._ntrials = self._rng.integers(min(ntrials), max(ntrials)) if isinstance(ntrials, tuple) else ntrials
+
+    # Generate sequence of modalities
+    self._modality_seq = self._build_trials_seq()
+
+    # Setup phases of trial
+    self._fix_time, self._iti, self._time, self._phases = self._setup_trial_phases()
+
+    # Generate inputs and outputs
+    self._inputs = self._build_trials_inputs()
+    self._outputs = self._build_trials_outputs()
+
+    # Scaling
+    if self.scaling:
+        flattened = np.concatenate(
+            (np.concatenate(self._inputs).reshape(-1), np.concatenate(self._outputs).reshape(-1)),
+        )
+        abs_min = np.min(flattened)
+        abs_max = np.max(flattened)
+
+        for n in range(self._ntrials):
+            self._inputs[n] = self._minmaxscaler(self._inputs[n], abs_min, abs_max)
+            self._outputs[n] = self._minmaxscaler(self._outputs[n], abs_min, abs_max)
+
+    # Store trials settings and data
+    return {
+        "task_settings": self._task_settings,
+        "ntrials": self._ntrials,
+        "random_seed": self._random_seed,
+        "modality_seq": self._modality_seq,
+        "time": self._time,
+        "phases": self._phases,
+        "inputs": self._inputs,
+        "outputs": self._outputs,
+    }</code></pre>
           </details>
   </div>
 
@@ -1327,8 +1283,7 @@ Defaults to None (i.e. the initial state itself is random).</p>
 
 
 <a href="#annubes.task.Task.plot_trials" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="language-python doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">plot_trials</span><span class="p">(</span><span class="n">n_plots</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></span> <span class="o">=</span> <span class="mi">1</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="plotly.Figure">Figure</span></span>
-</code></pre></div>
+<pre class="highlight"><code class="language-python doc-signature">plot_trials(n_plots: <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a> = 1) -&gt; <span title="plotly.Figure">Figure</span></code></pre>
 
   <div class="doc doc-contents ">
   
@@ -1390,202 +1345,104 @@ Defaults to None (i.e. the initial state itself is random).</p>
 
           <details class="quote">
             <summary>Source code in <code>annubes/task.py</code></summary>
-            <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-184">184</a></span>
-<span class="normal"><a href="#__codelineno-0-185">185</a></span>
-<span class="normal"><a href="#__codelineno-0-186">186</a></span>
-<span class="normal"><a href="#__codelineno-0-187">187</a></span>
-<span class="normal"><a href="#__codelineno-0-188">188</a></span>
-<span class="normal"><a href="#__codelineno-0-189">189</a></span>
-<span class="normal"><a href="#__codelineno-0-190">190</a></span>
-<span class="normal"><a href="#__codelineno-0-191">191</a></span>
-<span class="normal"><a href="#__codelineno-0-192">192</a></span>
-<span class="normal"><a href="#__codelineno-0-193">193</a></span>
-<span class="normal"><a href="#__codelineno-0-194">194</a></span>
-<span class="normal"><a href="#__codelineno-0-195">195</a></span>
-<span class="normal"><a href="#__codelineno-0-196">196</a></span>
-<span class="normal"><a href="#__codelineno-0-197">197</a></span>
-<span class="normal"><a href="#__codelineno-0-198">198</a></span>
-<span class="normal"><a href="#__codelineno-0-199">199</a></span>
-<span class="normal"><a href="#__codelineno-0-200">200</a></span>
-<span class="normal"><a href="#__codelineno-0-201">201</a></span>
-<span class="normal"><a href="#__codelineno-0-202">202</a></span>
-<span class="normal"><a href="#__codelineno-0-203">203</a></span>
-<span class="normal"><a href="#__codelineno-0-204">204</a></span>
-<span class="normal"><a href="#__codelineno-0-205">205</a></span>
-<span class="normal"><a href="#__codelineno-0-206">206</a></span>
-<span class="normal"><a href="#__codelineno-0-207">207</a></span>
-<span class="normal"><a href="#__codelineno-0-208">208</a></span>
-<span class="normal"><a href="#__codelineno-0-209">209</a></span>
-<span class="normal"><a href="#__codelineno-0-210">210</a></span>
-<span class="normal"><a href="#__codelineno-0-211">211</a></span>
-<span class="normal"><a href="#__codelineno-0-212">212</a></span>
-<span class="normal"><a href="#__codelineno-0-213">213</a></span>
-<span class="normal"><a href="#__codelineno-0-214">214</a></span>
-<span class="normal"><a href="#__codelineno-0-215">215</a></span>
-<span class="normal"><a href="#__codelineno-0-216">216</a></span>
-<span class="normal"><a href="#__codelineno-0-217">217</a></span>
-<span class="normal"><a href="#__codelineno-0-218">218</a></span>
-<span class="normal"><a href="#__codelineno-0-219">219</a></span>
-<span class="normal"><a href="#__codelineno-0-220">220</a></span>
-<span class="normal"><a href="#__codelineno-0-221">221</a></span>
-<span class="normal"><a href="#__codelineno-0-222">222</a></span>
-<span class="normal"><a href="#__codelineno-0-223">223</a></span>
-<span class="normal"><a href="#__codelineno-0-224">224</a></span>
-<span class="normal"><a href="#__codelineno-0-225">225</a></span>
-<span class="normal"><a href="#__codelineno-0-226">226</a></span>
-<span class="normal"><a href="#__codelineno-0-227">227</a></span>
-<span class="normal"><a href="#__codelineno-0-228">228</a></span>
-<span class="normal"><a href="#__codelineno-0-229">229</a></span>
-<span class="normal"><a href="#__codelineno-0-230">230</a></span>
-<span class="normal"><a href="#__codelineno-0-231">231</a></span>
-<span class="normal"><a href="#__codelineno-0-232">232</a></span>
-<span class="normal"><a href="#__codelineno-0-233">233</a></span>
-<span class="normal"><a href="#__codelineno-0-234">234</a></span>
-<span class="normal"><a href="#__codelineno-0-235">235</a></span>
-<span class="normal"><a href="#__codelineno-0-236">236</a></span>
-<span class="normal"><a href="#__codelineno-0-237">237</a></span>
-<span class="normal"><a href="#__codelineno-0-238">238</a></span>
-<span class="normal"><a href="#__codelineno-0-239">239</a></span>
-<span class="normal"><a href="#__codelineno-0-240">240</a></span>
-<span class="normal"><a href="#__codelineno-0-241">241</a></span>
-<span class="normal"><a href="#__codelineno-0-242">242</a></span>
-<span class="normal"><a href="#__codelineno-0-243">243</a></span>
-<span class="normal"><a href="#__codelineno-0-244">244</a></span>
-<span class="normal"><a href="#__codelineno-0-245">245</a></span>
-<span class="normal"><a href="#__codelineno-0-246">246</a></span>
-<span class="normal"><a href="#__codelineno-0-247">247</a></span>
-<span class="normal"><a href="#__codelineno-0-248">248</a></span>
-<span class="normal"><a href="#__codelineno-0-249">249</a></span>
-<span class="normal"><a href="#__codelineno-0-250">250</a></span>
-<span class="normal"><a href="#__codelineno-0-251">251</a></span>
-<span class="normal"><a href="#__codelineno-0-252">252</a></span>
-<span class="normal"><a href="#__codelineno-0-253">253</a></span>
-<span class="normal"><a href="#__codelineno-0-254">254</a></span>
-<span class="normal"><a href="#__codelineno-0-255">255</a></span>
-<span class="normal"><a href="#__codelineno-0-256">256</a></span>
-<span class="normal"><a href="#__codelineno-0-257">257</a></span>
-<span class="normal"><a href="#__codelineno-0-258">258</a></span>
-<span class="normal"><a href="#__codelineno-0-259">259</a></span>
-<span class="normal"><a href="#__codelineno-0-260">260</a></span>
-<span class="normal"><a href="#__codelineno-0-261">261</a></span>
-<span class="normal"><a href="#__codelineno-0-262">262</a></span>
-<span class="normal"><a href="#__codelineno-0-263">263</a></span>
-<span class="normal"><a href="#__codelineno-0-264">264</a></span>
-<span class="normal"><a href="#__codelineno-0-265">265</a></span>
-<span class="normal"><a href="#__codelineno-0-266">266</a></span>
-<span class="normal"><a href="#__codelineno-0-267">267</a></span>
-<span class="normal"><a href="#__codelineno-0-268">268</a></span>
-<span class="normal"><a href="#__codelineno-0-269">269</a></span>
-<span class="normal"><a href="#__codelineno-0-270">270</a></span>
-<span class="normal"><a href="#__codelineno-0-271">271</a></span>
-<span class="normal"><a href="#__codelineno-0-272">272</a></span>
-<span class="normal"><a href="#__codelineno-0-273">273</a></span>
-<span class="normal"><a href="#__codelineno-0-274">274</a></span>
-<span class="normal"><a href="#__codelineno-0-275">275</a></span>
-<span class="normal"><a href="#__codelineno-0-276">276</a></span>
-<span class="normal"><a href="#__codelineno-0-277">277</a></span>
-<span class="normal"><a href="#__codelineno-0-278">278</a></span>
-<span class="normal"><a href="#__codelineno-0-279">279</a></span>
-<span class="normal"><a href="#__codelineno-0-280">280</a></span>
-<span class="normal"><a href="#__codelineno-0-281">281</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-184" name="__codelineno-0-184"></a><span class="k">def</span> <span class="nf">plot_trials</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n_plots</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">:</span>
-<a id="__codelineno-0-185" name="__codelineno-0-185"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Method for plotting generated trials.</span>
-<a id="__codelineno-0-186" name="__codelineno-0-186"></a>
-<a id="__codelineno-0-187" name="__codelineno-0-187"></a><span class="sd">    Args:</span>
-<a id="__codelineno-0-188" name="__codelineno-0-188"></a><span class="sd">        n_plots: number of trials to plot (capped by number of trials generated). Defaults to 1.</span>
-<a id="__codelineno-0-189" name="__codelineno-0-189"></a>
-<a id="__codelineno-0-190" name="__codelineno-0-190"></a><span class="sd">    Returns:</span>
-<a id="__codelineno-0-191" name="__codelineno-0-191"></a><span class="sd">        go.Figure: Plotly figure of trial results.</span>
-<a id="__codelineno-0-192" name="__codelineno-0-192"></a><span class="sd">    &quot;&quot;&quot;</span>
-<a id="__codelineno-0-193" name="__codelineno-0-193"></a>    <span class="c1"># Check input parameters</span>
-<a id="__codelineno-0-194" name="__codelineno-0-194"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">_check_int_positive</span><span class="p">(</span><span class="s2">&quot;n_plots&quot;</span><span class="p">,</span> <span class="n">n_plots</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<a id="__codelineno-0-195" name="__codelineno-0-195"></a>
-<a id="__codelineno-0-196" name="__codelineno-0-196"></a>    <span class="k">if</span> <span class="p">(</span><span class="n">p</span> <span class="o">:=</span> <span class="n">n_plots</span><span class="p">)</span> <span class="o">&gt;</span> <span class="p">(</span><span class="n">t</span> <span class="o">:=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ntrials</span><span class="p">):</span>
-<a id="__codelineno-0-197" name="__codelineno-0-197"></a>        <span class="n">msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Number of plots requested (</span><span class="si">{</span><span class="n">p</span><span class="si">}</span><span class="s2">) exceeds number of trials (</span><span class="si">{</span><span class="n">t</span><span class="si">}</span><span class="s2">). Will plot all trials.&quot;</span>
-<a id="__codelineno-0-198" name="__codelineno-0-198"></a>        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="n">msg</span><span class="p">,</span> <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
-<a id="__codelineno-0-199" name="__codelineno-0-199"></a>        <span class="n">n_plots</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ntrials</span>
-<a id="__codelineno-0-200" name="__codelineno-0-200"></a>
-<a id="__codelineno-0-201" name="__codelineno-0-201"></a>    <span class="n">fig</span> <span class="o">=</span> <span class="n">make_subplots</span><span class="p">(</span>
-<a id="__codelineno-0-202" name="__codelineno-0-202"></a>        <span class="n">rows</span><span class="o">=</span><span class="n">n_plots</span><span class="p">,</span>
-<a id="__codelineno-0-203" name="__codelineno-0-203"></a>        <span class="n">cols</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
-<a id="__codelineno-0-204" name="__codelineno-0-204"></a>        <span class="n">shared_xaxes</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-<a id="__codelineno-0-205" name="__codelineno-0-205"></a>        <span class="n">vertical_spacing</span><span class="o">=</span><span class="mf">0.5</span> <span class="o">/</span> <span class="n">n_plots</span><span class="p">,</span>
-<a id="__codelineno-0-206" name="__codelineno-0-206"></a>        <span class="n">subplot_titles</span><span class="o">=</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;Trial </span><span class="si">{</span><span class="n">i</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2">  - modality </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_modality_seq</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_plots</span><span class="p">)],</span>
-<a id="__codelineno-0-207" name="__codelineno-0-207"></a>    <span class="p">)</span>
-<a id="__codelineno-0-208" name="__codelineno-0-208"></a>    <span class="n">showlegend</span> <span class="o">=</span> <span class="kc">True</span>
-<a id="__codelineno-0-209" name="__codelineno-0-209"></a>    <span class="n">colors</span> <span class="o">=</span> <span class="p">[</span>
-<a id="__codelineno-0-210" name="__codelineno-0-210"></a>        <span class="s2">&quot;#</span><span class="si">{:02x}{:02x}{:02x}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
-<a id="__codelineno-0-211" name="__codelineno-0-211"></a>            <span class="o">*</span><span class="nb">tuple</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">c</span> <span class="o">*</span> <span class="mi">255</span><span class="p">)</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">colorsys</span><span class="o">.</span><span class="n">hsv_to_rgb</span><span class="p">(</span><span class="n">i</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">_n_inputs</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)),</span>
-<a id="__codelineno-0-212" name="__codelineno-0-212"></a>        <span class="p">)</span>
-<a id="__codelineno-0-213" name="__codelineno-0-213"></a>        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_n_inputs</span><span class="p">)</span>
-<a id="__codelineno-0-214" name="__codelineno-0-214"></a>    <span class="p">]</span>
-<a id="__codelineno-0-215" name="__codelineno-0-215"></a>    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_plots</span><span class="p">):</span>
-<a id="__codelineno-0-216" name="__codelineno-0-216"></a>        <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">m</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_modalities</span><span class="p">):</span>
-<a id="__codelineno-0-217" name="__codelineno-0-217"></a>            <span class="n">fig</span><span class="o">.</span><span class="n">add_trace</span><span class="p">(</span>
-<a id="__codelineno-0-218" name="__codelineno-0-218"></a>                <span class="n">go</span><span class="o">.</span><span class="n">Scatter</span><span class="p">(</span>
-<a id="__codelineno-0-219" name="__codelineno-0-219"></a>                    <span class="n">name</span><span class="o">=</span><span class="n">m</span><span class="p">,</span>
-<a id="__codelineno-0-220" name="__codelineno-0-220"></a>                    <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;markers+lines&quot;</span><span class="p">,</span>
-<a id="__codelineno-0-221" name="__codelineno-0-221"></a>                    <span class="n">x</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_time</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
-<a id="__codelineno-0-222" name="__codelineno-0-222"></a>                    <span class="n">y</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_inputs</span><span class="p">[</span><span class="n">i</span><span class="p">][:,</span> <span class="n">idx</span><span class="p">],</span>
-<a id="__codelineno-0-223" name="__codelineno-0-223"></a>                    <span class="n">marker_symbol</span><span class="o">=</span><span class="s2">&quot;star&quot;</span><span class="p">,</span>
-<a id="__codelineno-0-224" name="__codelineno-0-224"></a>                    <span class="n">legendgroup</span><span class="o">=</span><span class="n">m</span><span class="p">,</span>
-<a id="__codelineno-0-225" name="__codelineno-0-225"></a>                    <span class="n">showlegend</span><span class="o">=</span><span class="n">showlegend</span><span class="p">,</span>
-<a id="__codelineno-0-226" name="__codelineno-0-226"></a>                    <span class="n">line_color</span><span class="o">=</span><span class="n">colors</span><span class="p">[</span><span class="n">idx</span><span class="p">],</span>
-<a id="__codelineno-0-227" name="__codelineno-0-227"></a>                <span class="p">),</span>
-<a id="__codelineno-0-228" name="__codelineno-0-228"></a>                <span class="n">row</span><span class="o">=</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span>
-<a id="__codelineno-0-229" name="__codelineno-0-229"></a>                <span class="n">col</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
-<a id="__codelineno-0-230" name="__codelineno-0-230"></a>            <span class="p">)</span>
-<a id="__codelineno-0-231" name="__codelineno-0-231"></a>        <span class="n">fig</span><span class="o">.</span><span class="n">add_trace</span><span class="p">(</span>
-<a id="__codelineno-0-232" name="__codelineno-0-232"></a>            <span class="n">go</span><span class="o">.</span><span class="n">Scatter</span><span class="p">(</span>
-<a id="__codelineno-0-233" name="__codelineno-0-233"></a>                <span class="n">name</span><span class="o">=</span><span class="s2">&quot;START&quot;</span><span class="p">,</span>
-<a id="__codelineno-0-234" name="__codelineno-0-234"></a>                <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;markers+lines&quot;</span><span class="p">,</span>
-<a id="__codelineno-0-235" name="__codelineno-0-235"></a>                <span class="n">x</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_time</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
-<a id="__codelineno-0-236" name="__codelineno-0-236"></a>                <span class="n">y</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_inputs</span><span class="p">[</span><span class="n">i</span><span class="p">][:,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_n_inputs</span> <span class="o">-</span> <span class="mi">1</span><span class="p">],</span>
-<a id="__codelineno-0-237" name="__codelineno-0-237"></a>                <span class="n">marker_symbol</span><span class="o">=</span><span class="s2">&quot;star&quot;</span><span class="p">,</span>
-<a id="__codelineno-0-238" name="__codelineno-0-238"></a>                <span class="n">legendgroup</span><span class="o">=</span><span class="s2">&quot;START&quot;</span><span class="p">,</span>
-<a id="__codelineno-0-239" name="__codelineno-0-239"></a>                <span class="n">showlegend</span><span class="o">=</span><span class="n">showlegend</span><span class="p">,</span>
-<a id="__codelineno-0-240" name="__codelineno-0-240"></a>                <span class="n">line_color</span><span class="o">=</span><span class="s2">&quot;green&quot;</span><span class="p">,</span>
-<a id="__codelineno-0-241" name="__codelineno-0-241"></a>            <span class="p">),</span>
-<a id="__codelineno-0-242" name="__codelineno-0-242"></a>            <span class="n">row</span><span class="o">=</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span>
-<a id="__codelineno-0-243" name="__codelineno-0-243"></a>            <span class="n">col</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
-<a id="__codelineno-0-244" name="__codelineno-0-244"></a>        <span class="p">)</span>
-<a id="__codelineno-0-245" name="__codelineno-0-245"></a>        <span class="n">fig</span><span class="o">.</span><span class="n">add_trace</span><span class="p">(</span>
-<a id="__codelineno-0-246" name="__codelineno-0-246"></a>            <span class="n">go</span><span class="o">.</span><span class="n">Scatter</span><span class="p">(</span>
-<a id="__codelineno-0-247" name="__codelineno-0-247"></a>                <span class="n">name</span><span class="o">=</span><span class="s2">&quot;Choice 1: NO STIMULUS&quot;</span><span class="p">,</span>
-<a id="__codelineno-0-248" name="__codelineno-0-248"></a>                <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;lines&quot;</span><span class="p">,</span>
-<a id="__codelineno-0-249" name="__codelineno-0-249"></a>                <span class="n">x</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_time</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
-<a id="__codelineno-0-250" name="__codelineno-0-250"></a>                <span class="n">y</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_outputs</span><span class="p">[</span><span class="n">i</span><span class="p">][:,</span> <span class="mi">0</span><span class="p">],</span>
-<a id="__codelineno-0-251" name="__codelineno-0-251"></a>                <span class="n">legendgroup</span><span class="o">=</span><span class="s2">&quot;Choice 1&quot;</span><span class="p">,</span>
-<a id="__codelineno-0-252" name="__codelineno-0-252"></a>                <span class="n">showlegend</span><span class="o">=</span><span class="n">showlegend</span><span class="p">,</span>
-<a id="__codelineno-0-253" name="__codelineno-0-253"></a>                <span class="n">line_color</span><span class="o">=</span><span class="s2">&quot;orange&quot;</span><span class="p">,</span>
-<a id="__codelineno-0-254" name="__codelineno-0-254"></a>            <span class="p">),</span>
-<a id="__codelineno-0-255" name="__codelineno-0-255"></a>            <span class="n">row</span><span class="o">=</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span>
-<a id="__codelineno-0-256" name="__codelineno-0-256"></a>            <span class="n">col</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
-<a id="__codelineno-0-257" name="__codelineno-0-257"></a>        <span class="p">)</span>
-<a id="__codelineno-0-258" name="__codelineno-0-258"></a>        <span class="n">fig</span><span class="o">.</span><span class="n">add_trace</span><span class="p">(</span>
-<a id="__codelineno-0-259" name="__codelineno-0-259"></a>            <span class="n">go</span><span class="o">.</span><span class="n">Scatter</span><span class="p">(</span>
-<a id="__codelineno-0-260" name="__codelineno-0-260"></a>                <span class="n">name</span><span class="o">=</span><span class="s2">&quot;Choice 2: STIMULUS&quot;</span><span class="p">,</span>
-<a id="__codelineno-0-261" name="__codelineno-0-261"></a>                <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;lines&quot;</span><span class="p">,</span>
-<a id="__codelineno-0-262" name="__codelineno-0-262"></a>                <span class="n">x</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_time</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
-<a id="__codelineno-0-263" name="__codelineno-0-263"></a>                <span class="n">y</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_outputs</span><span class="p">[</span><span class="n">i</span><span class="p">][:,</span> <span class="mi">1</span><span class="p">],</span>
-<a id="__codelineno-0-264" name="__codelineno-0-264"></a>                <span class="n">legendgroup</span><span class="o">=</span><span class="s2">&quot;Choice 2&quot;</span><span class="p">,</span>
-<a id="__codelineno-0-265" name="__codelineno-0-265"></a>                <span class="n">showlegend</span><span class="o">=</span><span class="n">showlegend</span><span class="p">,</span>
-<a id="__codelineno-0-266" name="__codelineno-0-266"></a>                <span class="n">line_color</span><span class="o">=</span><span class="s2">&quot;purple&quot;</span><span class="p">,</span>
-<a id="__codelineno-0-267" name="__codelineno-0-267"></a>            <span class="p">),</span>
-<a id="__codelineno-0-268" name="__codelineno-0-268"></a>            <span class="n">row</span><span class="o">=</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span>
-<a id="__codelineno-0-269" name="__codelineno-0-269"></a>            <span class="n">col</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
-<a id="__codelineno-0-270" name="__codelineno-0-270"></a>        <span class="p">)</span>
-<a id="__codelineno-0-271" name="__codelineno-0-271"></a>        <span class="n">fig</span><span class="o">.</span><span class="n">add_vline</span><span class="p">(</span>
-<a id="__codelineno-0-272" name="__codelineno-0-272"></a>            <span class="n">x</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_fix_time</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">dt</span><span class="p">,</span>
-<a id="__codelineno-0-273" name="__codelineno-0-273"></a>            <span class="n">line_width</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
-<a id="__codelineno-0-274" name="__codelineno-0-274"></a>            <span class="n">line_dash</span><span class="o">=</span><span class="s2">&quot;dash&quot;</span><span class="p">,</span>
-<a id="__codelineno-0-275" name="__codelineno-0-275"></a>            <span class="n">line_color</span><span class="o">=</span><span class="s2">&quot;red&quot;</span><span class="p">,</span>
-<a id="__codelineno-0-276" name="__codelineno-0-276"></a>            <span class="n">row</span><span class="o">=</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span>
-<a id="__codelineno-0-277" name="__codelineno-0-277"></a>            <span class="n">col</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
-<a id="__codelineno-0-278" name="__codelineno-0-278"></a>        <span class="p">)</span>
-<a id="__codelineno-0-279" name="__codelineno-0-279"></a>        <span class="n">showlegend</span> <span class="o">=</span> <span class="kc">False</span>
-<a id="__codelineno-0-280" name="__codelineno-0-280"></a>    <span class="n">fig</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span><span class="n">height</span><span class="o">=</span><span class="mi">1300</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="mi">900</span><span class="p">,</span> <span class="n">title_text</span><span class="o">=</span><span class="s2">&quot;Trials&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-281" name="__codelineno-0-281"></a>    <span class="k">return</span> <span class="n">fig</span>
-</code></pre></div></td></tr></table></div>
+            <pre class="highlight"><code class="language-python">def plot_trials(self, n_plots: int = 1) -&gt; go.Figure:
+    """Method for plotting generated trials.
+
+    Args:
+        n_plots: number of trials to plot (capped by number of trials generated). Defaults to 1.
+
+    Returns:
+        go.Figure: Plotly figure of trial results.
+    """
+    # Check input parameters
+    self._check_int_positive("n_plots", n_plots, strict=True)
+
+    if (p := n_plots) &gt; (t := self._ntrials):
+        msg = f"Number of plots requested ({p}) exceeds number of trials ({t}). Will plot all trials."
+        warnings.warn(msg, stacklevel=2)
+        n_plots = self._ntrials
+
+    fig = make_subplots(
+        rows=n_plots,
+        cols=1,
+        shared_xaxes=True,
+        vertical_spacing=0.5 / n_plots,
+        subplot_titles=[f"Trial {i + 1}  - modality {self._modality_seq[i]}" for i in range(n_plots)],
+    )
+    showlegend = True
+    colors = [
+        "#{:02x}{:02x}{:02x}".format(
+            *tuple(int(c * 255) for c in colorsys.hsv_to_rgb(i / self._n_inputs, 1.0, 1.0)),
+        )
+        for i in range(self._n_inputs)
+    ]
+    for i in range(n_plots):
+        for idx, m in enumerate(self._modalities):
+            fig.add_trace(
+                go.Scatter(
+                    name=m,
+                    mode="markers+lines",
+                    x=self._time[i],
+                    y=self._inputs[i][:, idx],
+                    marker_symbol="star",
+                    legendgroup=m,
+                    showlegend=showlegend,
+                    line_color=colors[idx],
+                ),
+                row=i + 1,
+                col=1,
+            )
+        fig.add_trace(
+            go.Scatter(
+                name="START",
+                mode="markers+lines",
+                x=self._time[i],
+                y=self._inputs[i][:, self._n_inputs - 1],
+                marker_symbol="star",
+                legendgroup="START",
+                showlegend=showlegend,
+                line_color="green",
+            ),
+            row=i + 1,
+            col=1,
+        )
+        fig.add_trace(
+            go.Scatter(
+                name="Choice 1: NO STIMULUS",
+                mode="lines",
+                x=self._time[i],
+                y=self._outputs[i][:, 0],
+                legendgroup="Choice 1",
+                showlegend=showlegend,
+                line_color="orange",
+            ),
+            row=i + 1,
+            col=1,
+        )
+        fig.add_trace(
+            go.Scatter(
+                name="Choice 2: STIMULUS",
+                mode="lines",
+                x=self._time[i],
+                y=self._outputs[i][:, 1],
+                legendgroup="Choice 2",
+                showlegend=showlegend,
+                line_color="purple",
+            ),
+            row=i + 1,
+            col=1,
+        )
+        fig.add_vline(
+            x=self._fix_time[i] + self.dt,
+            line_width=3,
+            line_dash="dash",
+            line_color="red",
+            row=i + 1,
+            col=1,
+        )
+        showlegend = False
+    fig.update_layout(height=1300, width=900, title_text="Trials")
+    return fig</code></pre>
           </details>
   </div>
 
